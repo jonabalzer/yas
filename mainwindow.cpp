@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <algorithm>
 
+
 using namespace std;
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -313,22 +314,32 @@ void MainWindow::on_actionSet_Directory_triggered()
 
 double MainWindow::get_smoothed_depth(size_t i, size_t j) {
 
-    size_t s = (double)m_depths.size();
+//    size_t s = (double)m_depths.size();
 
-    double vals[s];
+//    double vals[s];
 
-    for(size_t k=0; k<s; k++) {
-        vals[k] = (double)m_depths[k].at<unsigned short>(i,j);
-        //cout << vals[k] << endl;
+//    for(size_t k=0; k<s; k++) {
+//        vals[k] = (double)m_depths[k].at<unsigned short>(i,j);
+//        //cout << vals[k] << endl;
 
-      }
+//      }
 
-    sort(vals,vals+s);
+//    sort(vals,vals+s);
 
-    if(s%2==1)
-        return vals[(size_t)((s+1)/2)-1];
-    else
-        return 0.5*(vals[s/2-1]+vals[s/2]);
+//    if(s%2==1)
+//        return vals[(size_t)((s+1)/2)-1];
+//    else
+//        return 0.5*(vals[s/2-1]+vals[s/2]);
+
+   return (double)m_depths.back().at<unsigned short>(i,j);
 
 }
 
+
+void MainWindow::on_action3D_View_triggered()
+{
+    m_viewer = new ViewerWindow(this);
+    m_viewer->show();
+
+
+}

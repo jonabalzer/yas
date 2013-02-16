@@ -1,12 +1,14 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+
 #include <QMainWindow>
 #include <QTimer>
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include "opencv2/opencv.hpp"
 #include <boost/circular_buffer.hpp>
+#include "viewerwindow.h"
 
 using namespace cv;
 using namespace Imf;
@@ -37,18 +39,23 @@ private slots:
 
     void on_actionSet_Directory_triggered();
 
+    void on_action3D_View_triggered();
+
 private:
     Ui::MainWindow *ui;
+
     VideoCapture m_cap;
     QTimer m_timer;
     Mat m_rgb;
     Mat m_depth;
     size_t m_img_counter[3];
     double m_zmax;
+    boost::circular_buffer<Mat> m_depths;
+
+    ViewerWindow* m_viewer;
 
     bool save_as_ply(string fn);
     void update_zmax();
-    boost::circular_buffer<Mat> m_depths;
 
     double get_smoothed_depth(size_t i, size_t j);
 
