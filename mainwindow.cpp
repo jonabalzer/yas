@@ -127,6 +127,8 @@ void MainWindow::on_saveButton_clicked()
 
         Array2D<Rgba> out(m_depth.rows,m_depth.cols);
 
+        update_zmax();
+
         for(size_t i=0; i<(size_t)m_depth.rows; i++) {
 
             for(size_t j=0; j<(size_t)m_depth.cols; j++) {
@@ -135,7 +137,13 @@ void MainWindow::on_saveButton_clicked()
                 val.b = half(m_rgb.at<Vec3b>(i,j)[0]);
                 val.g = half(m_rgb.at<Vec3b>(i,j)[1]);
                 val.r = half(m_rgb.at<Vec3b>(i,j)[2]);
-                val.a = half(m_depth.at<unsigned short>(i,j));      // depth map in two bytes
+                //val.a = half(m_depth.at<unsigned short>(i,j));      // depth map in two bytes
+                half z = half(get_smoothed_depth(i,j));
+
+                if(z<m_zmax)
+                    val.a = z;
+                else
+                    val.a = 0;
 
                 out[i][j] = val;
 
@@ -311,7 +319,7 @@ double MainWindow::get_smoothed_depth(size_t i, size_t j) {
 
     for(size_t k=0; k<s; k++) {
         vals[k] = (double)m_depths[k].at<unsigned short>(i,j);
-        cout << vals[k] << endl;
+        //cout << vals[k] << endl;
 
       }
 
