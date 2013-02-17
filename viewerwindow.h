@@ -15,6 +15,9 @@ public:
     explicit ViewerWindow(QWidget *parent = 0);
     ~ViewerWindow();
     
+private slots:
+    void on_pushButton_clicked();
+
 private:
     Ui::ViewerWindow *ui;
 };

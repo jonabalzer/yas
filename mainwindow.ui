@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>670</width>
-    <height>744</height>
+    <height>711</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -38,9 +38,23 @@
       </widget>
      </item>
      <item>
+      <widget class="Line" name="line_4">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="stepButton">
        <property name="text">
         <string>Step</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_5">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
        </property>
       </widget>
      </item>
@@ -71,6 +85,9 @@
     <property name="text">
      <string/>
     </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QLabel" name="labelRGB">
     <property name="geometry">
@@ -90,58 +107,9 @@
     <property name="text">
      <string/>
     </property>
-   </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>590</y>
-      <width>651</width>
-      <height>51</height>
-     </rect>
+    <property name="scaledContents">
+     <bool>true</bool>
     </property>
-    <layout class="QHBoxLayout" name="saveControl">
-     <item>
-      <widget class="QLabel" name="labelDir">
-       <property name="text">
-        <string>Output directory</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="dirEdit">
-       <property name="text">
-        <string>.</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="formatBox">
-       <item>
-        <property name="text">
-         <string>.png</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>.exr</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>.ply</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="saveButton">
-       <property name="text">
-        <string>Save</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
    </widget>
    <widget class="QWidget" name="horizontalLayoutWidget_3">
     <property name="geometry">
@@ -176,7 +144,7 @@
     <property name="geometry">
      <rect>
       <x>180</x>
-      <y>560</y>
+      <y>630</y>
       <width>213</width>
       <height>31</height>
      </rect>
@@ -209,7 +177,7 @@
     <property name="geometry">
      <rect>
       <x>430</x>
-      <y>560</y>
+      <y>630</y>
       <width>231</width>
       <height>31</height>
      </rect>
@@ -242,7 +210,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>560</y>
+      <y>630</y>
       <width>141</width>
       <height>31</height>
      </rect>
@@ -290,17 +258,157 @@
      <string>Live view</string>
     </property>
    </widget>
-   <zorder>horizontalLayoutWidget_2</zorder>
-   <zorder>labelDepth</zorder>
-   <zorder>labelRGB</zorder>
-   <zorder>horizontalLayoutWidget</zorder>
-   <zorder>horizontalLayoutWidget_3</zorder>
-   <zorder>horizontalLayoutWidget_4</zorder>
-   <zorder>horizontalLayoutWidget_5</zorder>
-   <zorder>horizontalLayoutWidget_6</zorder>
-   <zorder>maxDepth</zorder>
-   <zorder>labelTriangulation</zorder>
-   <zorder>liveLabel</zorder>
+   <widget class="QLabel" name="labeRGBStorage">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>320</y>
+      <width>320</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Box</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Sunken</enum>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="labelDepthStorage">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>320</y>
+      <width>320</width>
+      <height>240</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Box</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Sunken</enum>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_7">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>570</y>
+      <width>557</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="saveControlLayout">
+     <item>
+      <widget class="QPushButton" name="storeButton">
+       <property name="text">
+        <string>Store</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_3">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="loadButton">
+       <property name="text">
+        <string>Load</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="alignButton">
+       <property name="text">
+        <string>Align</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_6">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="saveButton">
+       <property name="text">
+        <string>Save</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="saveAllButton">
+       <property name="text">
+        <string>Save All</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="formatBox">
+       <item>
+        <property name="text">
+         <string>.png</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>.exr</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>.ply</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QSpinBox" name="spinBoxStorage">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>570</y>
+      <width>60</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <number>0</number>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -315,7 +423,6 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionSet_Directory"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
@@ -336,11 +443,6 @@
   <action name="actionUpdateClipDepth">
    <property name="text">
     <string>updateClipDepth</string>
-   </property>
-  </action>
-  <action name="actionSet_Directory">
-   <property name="text">
-    <string>Set Directory</string>
    </property>
   </action>
   <action name="action3D_View">

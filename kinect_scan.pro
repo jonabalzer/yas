@@ -12,16 +12,21 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     viewerwindow.cpp \
-    pcviewer.cpp
+    pcviewer.cpp \
+    alignwindow.cpp \
+    calignransac.cpp
 
 HEADERS  += mainwindow.h \
     viewerwindow.h \
-    pcviewer.h
+    pcviewer.h \
+    alignwindow.h \
+    calignransac.h
 
 FORMS    += mainwindow.ui \
-    viewerwindow.ui
+    viewerwindow.ui \
+    alignwindow.ui
 
-unix:!symbian: LIBS += -L/usr/local/lib/ -lopencv_core -lopencv_highgui -lopencv_video -lHalf -lIlmImf -lGLU -lglut
+unix:!symbian: LIBS += -L/usr/local/lib/ -lopencv_core -lopencv_highgui -lopencv_video -lopencv_features2d -lopencv_nonfree -lHalf -lIlmImf -lGLU -lglut
 
 INCLUDEPATH += /usr/local/include
 INCLUDEPATH += /usr/include/OpenEXR
