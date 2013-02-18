@@ -1,6 +1,7 @@
 #ifndef CALIGNRANSAC_H
 #define CALIGNRANSAC_H
 
+#include <QWidget>
 #include "opencv2/opencv.hpp"
 
 using namespace cv;
@@ -14,7 +15,7 @@ public:
 
     Mat GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& depth1, double threshold, double zmax);
 
-    Mat RunConcensus(size_t nosamples, double tol);
+    Mat RunConcensus(size_t nosamples, double tol, QWidget* parent = 0);
 
 
 private:

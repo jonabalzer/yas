@@ -1,6 +1,6 @@
 #include "calignransac.h"
 #include <opencv2/nonfree/nonfree.hpp>
-#include <QProgressBar>
+#include <QProgressDialog>
 
 CAlignRansac::CAlignRansac(float fu, float fv, float cu, float cv):
     m_x0(),
@@ -188,19 +188,22 @@ vector<size_t> CAlignRansac::EvaluateHypothesis(const Mat& F, double tolerance) 
 }
 
 
-Mat CAlignRansac::RunConcensus(size_t nosamples, double tol) {
+Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, QWidget* parent) {
 
     Mat result(4,4,CV_32FC1);
     size_t max = 0;
     vector<size_t> ilmax;
 
-    QProgressBar* bar = new QProgressBar();
-    bar->show();
-    bar->setWindowTitle("Progress");
-    bar->setMinimum(0);
-    bar->setMaximum(nosamples);
+    QProgressDialog progress("Consensus in progress...", "Abort", 0,nosamples,parent);
+    progress.setWindowModality(Qt::WindowModal);
+
 
     for(size_t k=0; k<nosamples; k++) {
+
+        progress.setValue(k);
+
+        if (progress.wasCanceled())
+            break;
 
         // draw three random indices of source points
         vector<size_t> inds;
@@ -226,9 +229,11 @@ Mat CAlignRansac::RunConcensus(size_t nosamples, double tol) {
 
         }
 
-        bar->setValue(k);
 
     }
+
+    progress.setValue(nosamples);
+
 
     // estimate motion with the inlier set
     EstimateMotion(ilmax,result);

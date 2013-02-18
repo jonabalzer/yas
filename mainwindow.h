@@ -4,6 +4,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QKeyEvent>
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include "opencv2/opencv.hpp"
@@ -90,6 +91,11 @@ private:
     QImage convert_rgb(Mat& depth);
 
     Mat transforms_to_first_image(size_t index);
+
+protected:
+
+    virtual void keyPressEvent(QKeyEvent* event);
+
 
 };
 

@@ -30,7 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->labelRGB->setScaledContents(true);
 
     if(!m_cap.isOpened())
-        ui->statusBar->showMessage("ERROR: Could not open source!");
+        QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
 
 }
 
@@ -55,8 +55,7 @@ bool MainWindow::on_stepButton_clicked()
         QImage imgd(m_rgb.data,m_rgb.cols,m_rgb.rows,QImage::Format_RGB888);
         ui->labelRGB->setPixmap(QPixmap::fromImage(imgd.rgbSwapped()));
 
-        Mat depthf  (Size(640,480),CV_8UC1);
-        //m_depth.convertTo(depthf, CV_8UC1, 255.0/6000.0);
+        Mat depthf  (Size(640,480),CV_8UC1); // exchange this with member function
         m_depth_buffer.back().convertTo(depthf, CV_8UC1, 255.0/6000.0);
 
         QImage imgdd(depthf.data,depthf.cols,depthf.rows,QImage::Format_Indexed8);
@@ -92,7 +91,7 @@ void MainWindow::on_runButton_clicked()
     if(m_cap.isOpened())
         m_timer.start(1);
     else
-        ui->statusBar->showMessage("ERROR: Could not open source!");
+        QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
 
 }
 
@@ -129,15 +128,8 @@ void MainWindow::on_saveButton_clicked()
     else
         error = 1;
 
-    if(error) {
-
-        QMessageBox msgBox;
-        msgBox.setWindowTitle("Error");
-        msgBox.setFixedWidth(300);
-        msgBox.setText("Could not write file to disk.");
-        msgBox.exec();
-
-    }
+    if(error)
+        QMessageBox::warning(this,"Error","Could not write to disk");
 
     m_timer.start();
 
@@ -188,15 +180,8 @@ void MainWindow::on_saveAllButton_clicked()
 
     }
 
-    if(error) {
-
-        QMessageBox msgBox;
-        msgBox.setWindowTitle("Error");
-        msgBox.setFixedWidth(300);
-        msgBox.setText("Could not write file to disk.");
-        msgBox.exec();
-
-    }
+    if(error)
+        QMessageBox::warning(this,"Error","Could not write to disk");
 
     m_timer.start();
 
@@ -425,6 +410,9 @@ void MainWindow::on_loadButton_clicked()
                                                     ".",
                                                     tr("*.exr"));
 
+    if(filename.isEmpty())
+        return;
+
     RgbaInputFile file(filename.toStdString().c_str());
 
     Box2i dw = file.dataWindow();
@@ -481,6 +469,7 @@ void MainWindow::on_storeButton_clicked()
 
     // stop timer to make sure that the buffer does not get flushed
     m_timer.stop();
+
     if(!on_stepButton_clicked()) {
 
         // send copy of current rgb/depth to storage
@@ -503,15 +492,12 @@ void MainWindow::on_storeButton_clicked()
         ui->labeRGBStorage->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb_storage.back())));
         ui->labelDepthStorage->setPixmap(QPixmap::fromImage(convert_depth(m_depth_storage.back())));
 
-
+        // restart timer only if capture was successful
+        m_timer.start(1);
 
     }
 
-    // restart timer
-    m_timer.start(1);
-
 }
-
 
 QImage MainWindow::convert_rgb(Mat& img) {
 
@@ -592,6 +578,8 @@ void MainWindow::on_alignButton_clicked()
 
     // show window
     m_alignment->show();
+    m_alignment->activateWindow();
+
 
     // get cam parameters
     float fu, fv, cu, cv;
@@ -614,9 +602,10 @@ void MainWindow::on_alignButton_clicked()
 
     QImage cvis = convert_rgb(vis);
     m_alignment->show_image(cvis);
+    m_alignment->repaint();
 
     // optimize
-    Mat F = alignment.RunConcensus(50000,10);
+    Mat F = alignment.RunConcensus(50000,10,this);
 
     m_trafo_storage[index] = F;
 
@@ -634,5 +623,34 @@ Mat MainWindow::transforms_to_first_image(size_t index){
         F = F*m_trafo_storage[i];
 
     return F;
+
+}
+
+
+void MainWindow::keyPressEvent(QKeyEvent* event) {
+
+    switch(event->key()) {
+
+    case 46:  // remote with logitech
+
+        on_storeButton_clicked();
+
+        break;
+
+    case Qt::Key_Return:
+
+        on_storeButton_clicked();
+
+        break;
+
+    case Qt::Key_L:
+
+        on_loadButton_clicked();
+
+        break;
+
+
+
+    }
 
 }
