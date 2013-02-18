@@ -195,8 +195,8 @@ Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, QWidget* parent) {
     vector<size_t> ilmax;
 
     QProgressDialog progress("Consensus in progress...", "Abort", 0,nosamples,parent);
+    progress.setWindowTitle("KinectScan");
     progress.setWindowModality(Qt::WindowModal);
-
 
     for(size_t k=0; k<nosamples; k++) {
 

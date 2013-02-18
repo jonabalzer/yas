@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_trafo_storage(),
     m_zmax(6000),
     m_depth_buffer(1),
+    m_viewer(new ViewerWindow),
     m_alignment(new AlignWindow)
 {
     ui->setupUi(this);
@@ -38,6 +39,7 @@ MainWindow::~MainWindow()
 {
     m_cap.release();
     delete ui;
+    delete m_alignment;
 }
 
 bool MainWindow::on_stepButton_clicked()
@@ -51,6 +53,10 @@ bool MainWindow::on_stepButton_clicked()
         m_cap.retrieve(m_depth, CV_CAP_OPENNI_DEPTH_MAP );
 
         m_depth_buffer.push_back(m_depth.clone());
+
+        // visualize
+        //ui->labelRGB->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb)));
+        //ui->labelDepth->setPixmap(QPixmap::fromImage(convert_depth(m_depth)));
 
         QImage imgd(m_rgb.data,m_rgb.cols,m_rgb.rows,QImage::Format_RGB888);
         ui->labelRGB->setPixmap(QPixmap::fromImage(imgd.rgbSwapped()));
@@ -68,7 +74,6 @@ bool MainWindow::on_stepButton_clicked()
 
                 if((double)m_depth.at<unsigned short>(i,j)>m_zmax)
                     lpt[j] = 0;
-                    //imgdd.setPixel(j,i,0);
 
             }
         }
@@ -131,7 +136,7 @@ void MainWindow::on_saveButton_clicked()
     if(error)
         QMessageBox::warning(this,"Error","Could not write to disk");
 
-    m_timer.start();
+//    m_timer.start();
 
 }
 
@@ -183,7 +188,7 @@ void MainWindow::on_saveAllButton_clicked()
     if(error)
         QMessageBox::warning(this,"Error","Could not write to disk");
 
-    m_timer.start();
+    //m_timer.start();
 
 }
 
@@ -307,21 +312,19 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
 
             if(z<m_zmax) {
 
-                //x = (z/fu)*((double)j-cu);
-                //y = (z/fv)*((double)i-cv);
                 x.x = (z/fu)*((double)j-cu);
                 x.y = (z/fv)*((double)i-cv);
                 x.z = z;
                 xarray.push_back(x);
-
                 cv::transform(xarray,xarray,Fsr);
 
             }
             else {
 
-                xarray[0].x = 0;
-                xarray[0].y = 0;
-                xarray[0].z = 0;
+                x.x = 0;
+                x.y = 0;
+                x.z = 0;
+                xarray.push_back(x);
 
 
             }
@@ -331,6 +334,10 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
         }
 
     }
+
+
+    cout << "c" << endl;
+
 
     // write faces (maybe as triangles)
     for(size_t k=0; k<indices.size(); k++)
@@ -397,9 +404,7 @@ Mat MainWindow::get_depth_from_buffer() {
 
 void MainWindow::on_action3D_View_triggered()
 {
-    m_viewer = new ViewerWindow(this);
-    m_viewer->show();
-
+   m_viewer->show();
 
 }
 
@@ -519,28 +524,29 @@ QImage MainWindow::convert_depth(Mat& img) {
 
             if(z<m_zmax)
                 cimg.setPixel(j,i,qRgb(zn,zn,zn));
-
+            else
+                cimg.setPixel(j,i,qRgb(0,0,0));
         }
-
     }
 
 
 
-    //Mat depthf(img.rows,img.cols,CV_8UC1);
-    //img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
+//    Mat depthf(img.rows,img.cols,CV_8UC1);
+//    img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
+//    QImage cimg(depthf.data,img.cols,img.rows,QImage::Format_Indexed8);
 
-    //for(size_t i=0; i<(size_t)img.rows; i++) {
+//    for(size_t i=0; i<(size_t)img.rows; i++) {
 
-     //   uchar* lpt = cimg.scanLine(i);
+//          uchar* lpt = cimg.scanLine(i);
 
-//        for(size_t j=0; j<(size_t)img.cols; j++) {
+//            for(size_t j=0; j<(size_t)img.cols; j++) {
 
 
 //            if((double)img.at<unsigned short>(i,j)>m_zmax)
 //                lpt[j] = 0;
-//            //double z = (double)img.at<unsigned short>(i,j);
 
-//        }
+//            }
+
 //    }
 
     return cimg;
@@ -653,4 +659,9 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 
     }
 
+}
+
+void MainWindow::on_actionExit_triggered()
+{
+    QApplication::exit();
 }

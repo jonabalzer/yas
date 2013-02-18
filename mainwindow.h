@@ -53,6 +53,8 @@ private slots:
 
     void on_alignButton_clicked();
 
+    void on_actionExit_triggered();
+
 private:
     Ui::MainWindow *ui;
 
@@ -88,7 +90,7 @@ private:
     Mat get_depth_from_buffer();
 
     QImage convert_depth(Mat& depth);
-    QImage convert_rgb(Mat& depth);
+    QImage convert_rgb(Mat& rgb);
 
     Mat transforms_to_first_image(size_t index);
 
