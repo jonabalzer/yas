@@ -4,6 +4,7 @@
 #include <sstream>
 #include <fstream>
 #include <QFileDialog>
+#include <QProgressDialog>
 #include <QMessageBox>
 #include <algorithm>
 
@@ -150,7 +151,16 @@ void MainWindow::on_saveAllButton_clicked()
 
     bool error = false;
 
+    QProgressDialog progress("Saving...", "Abort",0,(int)m_rgb_storage.size(),this);
+    progress.setWindowTitle("KinectScan");
+    progress.setWindowModality(Qt::WindowModal);
+
     for(size_t i=0; i<m_rgb_storage.size(); i++)  {
+
+        progress.setValue(i);
+
+        if (progress.wasCanceled())
+            break;
 
         stringstream ss;
         ss.fill('0');
@@ -184,6 +194,8 @@ void MainWindow::on_saveAllButton_clicked()
         }
 
     }
+
+    progress.setValue(m_rgb_storage.size());
 
     if(error)
         QMessageBox::warning(this,"Error","Could not write to disk");
@@ -335,10 +347,6 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
 
     }
 
-
-    cout << "c" << endl;
-
-
     // write faces (maybe as triangles)
     for(size_t k=0; k<indices.size(); k++)
         out << 4 << " " << indices[k] << " " << indices[k]+m_depth.cols << " " << indices[k]+m_depth.cols+1 << " " << indices[k]+1 << endl;
@@ -405,7 +413,11 @@ Mat MainWindow::get_depth_from_buffer() {
 void MainWindow::on_action3D_View_triggered()
 {
    m_viewer->show();
-
+   m_viewer->raise();
+   m_viewer->activateWindow();
+   m_viewer->repaint();
+    m_viewer->repaint();
+    m_viewer->repaint();
 }
 
 void MainWindow::on_loadButton_clicked()
@@ -589,6 +601,13 @@ void MainWindow::on_alignButton_clicked()
 
     // get cam parameters
     float fu, fv, cu, cv;
+    size_t nosamples;
+    double fthreshold, goodfeatures, acceptthreshold;
+    fthreshold = ui->featureThresholdEdit->text().toDouble();
+    goodfeatures = ui->goodMatchEdit->text().toDouble();
+    acceptthreshold = ui->acceptanceEdit->text().toDouble();
+    nosamples = (size_t)ui->nosamplesEdit->text().toInt();
+
     fu = ui->fuEdit->text().toFloat();
     fv = ui->fvEdit->text().toFloat();
     cu = ui->cuEdit->text().toFloat();
@@ -603,7 +622,8 @@ void MainWindow::on_alignButton_clicked()
                                            m_rgb_storage[index],
                                            m_depth_storage[index-1],
                                            m_depth_storage[index],
-                                           0.9,
+                                           fthreshold,
+                                           goodfeatures,
                                            m_zmax);
 
     QImage cvis = convert_rgb(vis);
@@ -611,7 +631,7 @@ void MainWindow::on_alignButton_clicked()
     m_alignment->repaint();
 
     // optimize
-    Mat F = alignment.RunConcensus(50000,10,this);
+    Mat F = alignment.RunConcensus(nosamples,acceptthreshold,this);
 
     m_trafo_storage[index] = F;
 
@@ -664,4 +684,42 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 void MainWindow::on_actionExit_triggered()
 {
     QApplication::exit();
+}
+
+void MainWindow::on_clearButton_clicked()
+{
+    // get image index
+    size_t index = (size_t)ui->spinBoxStorage->value();
+    index--;
+
+    // delete from storage
+    m_rgb_storage.erase(m_rgb_storage.begin()+index);
+    m_depth_storage.erase(m_depth_storage.begin()+index);
+    m_trafo_storage.erase(m_trafo_storage.begin()+index);
+
+    // correct actual minimum
+    size_t max = (size_t)ui->spinBoxStorage->maximum();
+    max--;
+
+    ui->spinBoxStorage->setMaximum(max);
+    ui->spinBoxStorage->setValue(index);
+
+    // update display
+    index--;
+    if(m_rgb_storage.size()>0) {
+
+        ui->labeRGBStorage->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb_storage[index])));
+        ui->labelDepthStorage->setPixmap(QPixmap::fromImage(convert_depth(m_depth_storage[index])));
+
+    }
+    else {
+
+        QImage black(ui->labeRGBStorage->size(),QImage::Format_RGB888);
+        black.fill(qRgb(0,0,0));
+
+        ui->labeRGBStorage->setPixmap(QPixmap::fromImage(black));
+        ui->labelDepthStorage->setPixmap(QPixmap::fromImage(black));
+
+    }
+
 }

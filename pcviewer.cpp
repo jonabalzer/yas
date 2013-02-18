@@ -65,12 +65,12 @@ void PCViewer::paintGL() {
 
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-//    glLoadIdentity();
+    glLoadIdentity();
 
-//    glTranslatef(0,0,5.0f);
-//    glPointSize(2);
-//    glColor3f(1.0,1.0,1.0);
-//    glVertex3f(0,0,0);
+    glTranslatef(0,0,5.0f);
+    glPointSize(2);
+    glColor3f(1.0,1.0,1.0);
+    glVertex3f(0,0,0);
 //    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 //    glLoadIdentity();
 //    glTranslated(5.0, 5.0, 0.0);
@@ -89,7 +89,8 @@ void PCViewer::paintGL() {
 
     //glDisable(GL_DEPTH_TEST);
 
-    renderText(0,0,-10,"FUCK");
+    //renderText(0,0,-10,"FUCK");
+
 
 }
 

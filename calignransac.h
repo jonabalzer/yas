@@ -13,7 +13,7 @@ public:
 
     CAlignRansac(float fu, float fv, float cu, float cv);
 
-    Mat GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& depth1, double threshold, double zmax);
+    Mat GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& depth1, double fthreshold, double threshold, double zmax);
 
     Mat RunConcensus(size_t nosamples, double tol, QWidget* parent = 0);
 

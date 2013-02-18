@@ -13,13 +13,13 @@ CAlignRansac::CAlignRansac(float fu, float fv, float cu, float cv):
 
 }
 
-Mat CAlignRansac::GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& depth1, double threshold, double zmax) {
+Mat CAlignRansac::GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& depth1, double fthreshold, double threshold, double zmax) {
 
     // init non-free module
     initModule_nonfree();
 
-    Ptr<FeatureDetector> detector = FeatureDetector::create("SIFT");
-    //detector->set("threshold",50);
+    Ptr<FeatureDetector> detector = FeatureDetector::create("FAST");
+    detector->set("threshold",fthreshold);
 
     // detect
     vector<KeyPoint> kp0, kp1;
