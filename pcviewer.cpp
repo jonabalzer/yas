@@ -1,5 +1,5 @@
 #include "pcviewer.h"
-#include <GL/glut.h>
+//#include <GL/glut.h>
 #include <math.h>
 #include <iostream>
 
@@ -99,26 +99,5 @@ void PCViewer::resizeGL( int width, int height ) {
     //glViewport(0,0,w,h);
     //updateGL();
 
-    double xMin = 0, xMax = 10, yMin = 0, yMax = 10;
-    glViewport(0,0,(GLint)width, (GLint)height);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(-1,1,-1,1);
-    if (width > height){
-    height = height?height:1;
-    double newWidth = (xMax - xMin) * width / height;
-    double difWidth = newWidth - (xMax - xMin);
-    xMin = 0.0 + difWidth / 2.0;
-    xMax = 10 + difWidth / 2.0;
-    } else {
-    width = width?width:1;
-    double newHeight = (yMax - yMin) * width / height;
-    double difHeight = newHeight - (yMax - yMin);
-    yMin = 0.0 + difHeight / 2.0;
-    yMax = 10 + difHeight / 2.0;
-    }
-    gluOrtho2D(xMin, xMax, yMin, yMax);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 
 }
