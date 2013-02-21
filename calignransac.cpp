@@ -13,7 +13,7 @@ CAlignRansac::CAlignRansac(float fu, float fv, float cu, float cv):
 
 }
 
-Mat CAlignRansac::GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& depth1, double fthreshold, double threshold, double zmax) {
+Mat CAlignRansac::GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& depth1, double fthreshold, double threshold) {
 
     // init non-free module
     initModule_nonfree();
@@ -55,7 +55,7 @@ Mat CAlignRansac::GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& dep
             z1 = (float)depth1.at<unsigned short>((size_t)u1.y,(size_t)u1.x);
 
             // if both points have depth, compute their 3d location
-            if(z0>0 && z0<(float)zmax && z1>0 && z1<(float)zmax) {
+            if(z0>0 && z1>0) {
 
                 Vec3f x0, x1;
                 x0[0] = (z0/m_f[0])*(u0.x-m_c[0]);

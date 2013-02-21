@@ -91,10 +91,12 @@ private:
     unsigned short get_smoothed_depth(size_t i, size_t j);
     Mat get_depth_from_buffer();
 
-    QImage convert_depth(Mat& depth);
+    QImage convert_depth(Mat& depth);            // FIXME: what is wrong here?
     QImage convert_rgb(Mat& rgb);
 
     Mat transforms_to_first_image(size_t index);
+
+    void update_live_view();
 
 protected:
 

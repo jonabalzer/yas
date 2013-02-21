@@ -51,36 +51,11 @@ bool MainWindow::on_stepButton_clicked()
         ui->statusBar->clearMessage();
 
         m_cap.retrieve(m_rgb, CV_CAP_OPENNI_BGR_IMAGE );
-        m_cap.retrieve(m_depth, CV_CAP_OPENNI_DEPTH_MAP );
-
+        m_cap.retrieve(m_depth, CV_CAP_OPENNI_DEPTH_MAP );      // get rid of this!
         m_depth_buffer.push_back(m_depth.clone());
 
-        // visualize
-        //ui->labelRGB->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb)));
-        //ui->labelDepth->setPixmap(QPixmap::fromImage(convert_depth(m_depth)));
-
-        QImage imgd(m_rgb.data,m_rgb.cols,m_rgb.rows,QImage::Format_RGB888);
-        ui->labelRGB->setPixmap(QPixmap::fromImage(imgd.rgbSwapped()));
-
-        Mat depthf  (Size(640,480),CV_8UC1); // exchange this with member function
-        m_depth_buffer.back().convertTo(depthf, CV_8UC1, 255.0/6000.0);
-
-        QImage imgdd(depthf.data,depthf.cols,depthf.rows,QImage::Format_Indexed8);
-
-        for(size_t i=0; i<(size_t)m_depth.rows; i++) {
-
-            uchar* lpt = imgdd.scanLine(i);
-
-            for(size_t j=0; j<(size_t)m_depth.cols; j++) {
-
-                if((double)m_depth.at<unsigned short>(i,j)>m_zmax)
-                    lpt[j] = 0;
-
-            }
-        }
-
-
-        ui->labelDepth->setPixmap(QPixmap::fromImage(imgdd));
+        // update visualization
+        update_live_view();
 
     } else {
         ui->statusBar->showMessage("Capture failed.");
@@ -525,41 +500,23 @@ QImage MainWindow::convert_rgb(Mat& img) {
 
 QImage MainWindow::convert_depth(Mat& img) {
 
-    QImage cimg(img.cols,img.rows,QImage::Format_RGB888);
+    Mat depthf(img.rows,img.cols,CV_8UC1);
+    img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
+    QImage cimg(depthf.data,img.cols,img.rows,QImage::Format_Indexed8);
 
     for(size_t i=0; i<(size_t)img.rows; i++) {
 
-        for(size_t j=0; j<(size_t)img.cols; j++) {
+          uchar* lpt = cimg.scanLine(i);
 
-            double z = (double)img.at<unsigned short>(i,j);
-            size_t zn = (unsigned char)((255.0*z)/6000.0);
+            for(size_t j=0; j<(size_t)img.cols; j++) {
 
-            if(z<m_zmax)
-                cimg.setPixel(j,i,qRgb(zn,zn,zn));
-            else
-                cimg.setPixel(j,i,qRgb(0,0,0));
-        }
+
+            if((double)img.at<unsigned short>(i,j)>m_zmax)
+                lpt[j] = 0;
+
+            }
+
     }
-
-
-
-//    Mat depthf(img.rows,img.cols,CV_8UC1);
-//    img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
-//    QImage cimg(depthf.data,img.cols,img.rows,QImage::Format_Indexed8);
-
-//    for(size_t i=0; i<(size_t)img.rows; i++) {
-
-//          uchar* lpt = cimg.scanLine(i);
-
-//            for(size_t j=0; j<(size_t)img.cols; j++) {
-
-
-//            if((double)img.at<unsigned short>(i,j)>m_zmax)
-//                lpt[j] = 0;
-
-//            }
-
-//    }
 
     return cimg;
 }
@@ -613,8 +570,6 @@ void MainWindow::on_alignButton_clicked()
     cu = ui->cuEdit->text().toFloat();
     cv = ui->cvEdit->text().toFloat();
 
-    update_zmax();
-
     // create ransac object
     CAlignRansac alignment(fu,fv,cu,cv);
 
@@ -623,8 +578,7 @@ void MainWindow::on_alignButton_clicked()
                                            m_depth_storage[index-1],
                                            m_depth_storage[index],
                                            fthreshold,
-                                           goodfeatures,
-                                           m_zmax);
+                                           goodfeatures);
 
     QImage cvis = convert_rgb(vis);
     m_alignment->show_image(cvis);
@@ -688,9 +642,18 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_clearButton_clicked()
 {
+
+
+
     // get image index
     size_t index = (size_t)ui->spinBoxStorage->value();
+
+    cout << index << " " << m_rgb_storage.size() << endl;
+    if(index==0)
+        return;
+
     index--;
+
 
     // delete from storage
     m_rgb_storage.erase(m_rgb_storage.begin()+index);
@@ -700,13 +663,14 @@ void MainWindow::on_clearButton_clicked()
     // correct actual minimum
     size_t max = (size_t)ui->spinBoxStorage->maximum();
     max--;
-
     ui->spinBoxStorage->setMaximum(max);
     ui->spinBoxStorage->setValue(index);
 
     // update display
-    index--;
     if(m_rgb_storage.size()>0) {
+
+        if(index>0)
+            index--;
 
         ui->labeRGBStorage->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb_storage[index])));
         ui->labelDepthStorage->setPixmap(QPixmap::fromImage(convert_depth(m_depth_storage[index])));
@@ -720,6 +684,81 @@ void MainWindow::on_clearButton_clicked()
         ui->labeRGBStorage->setPixmap(QPixmap::fromImage(black));
         ui->labelDepthStorage->setPixmap(QPixmap::fromImage(black));
 
+        ui->spinBoxStorage->setMinimum(0);
     }
+
+}
+
+
+void MainWindow::update_live_view() {
+
+    // visualize
+    ui->labelRGB->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb)));
+    //ui->labelDepth->setPixmap(QPixmap::fromImage(convert_depth(m_depth)));
+
+    //QImage imgd(m_rgb.data,m_rgb.cols,m_rgb.rows,QImage::Format_RGB888);
+    //ui->labelRGB->setPixmap(QPixmap::fromImage(imgd.rgbSwapped()));
+
+    Mat img = m_depth_buffer.back();
+    Mat depthf  (Size(640,480),CV_8UC1); // exchange this with member function
+    img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
+
+    Mat depthrgb;
+    cvtColor(depthf, depthrgb, CV_GRAY2BGR);
+
+    //QImage imgdd(depthf.data,depthf.cols,depthf.rows,QImage::Format_Indexed8);
+    QImage imgdd(depthrgb.data,depthf.cols,depthf.rows,QImage::Format_RGB888);
+
+//    for(size_t i=0; i<(size_t)m_depth.rows; i++) {
+
+//        uchar* lpt = imgdd.scanLine(i);
+
+//        for(size_t j=0; j<(size_t)m_depth.cols; j++) {
+
+//            if((double)m_depth.at<unsigned short>(i,j)>m_zmax) {
+
+//                //lpt[j] = 255;
+//                //lpt[j+1] = 0;
+//                //lpt[j+2] = 0;
+//                imgdd.setPixel(j,i,qRgb(255,0,0));
+
+//            }
+
+//        }
+//    }
+
+    double variance = ui->triEdit->text().toDouble();
+
+    for(size_t i=0; i<(size_t)m_depth.rows-1; i++) {
+
+        for(size_t j=0; j<(size_t)m_depth.cols-1; j++) {
+
+            double zq[4];
+            zq[0] = (double)img.at<unsigned short>(i,j);
+            zq[1] = (double)img.at<unsigned short>(i+1,j);
+            zq[2] = (double)img.at<unsigned short>(i,j+1);
+            zq[3] = (double)img.at<unsigned short>(i+1,j+1);
+
+            if(zq[0]>m_zmax)
+                imgdd.setPixel(j,i,qRgb(0,0,0));
+            else if(zq[0]<m_zmax && zq[1]<m_zmax && zq[2]<m_zmax && zq[3]<m_zmax) {
+
+                double mean = 0.25*(zq[0] + zq[1] + zq[2] + zq[3]);
+
+                double var = 0;
+                for(size_t k=0; k<4; k++)
+                    var += (zq[k]-mean)*(zq[k]-mean);
+                var = sqrt(var);
+
+                if(var>variance)
+                    imgdd.setPixel(j,i,qRgb(255,0,0));
+
+            }
+
+        }
+
+    }
+
+    ui->labelDepth->setPixmap(QPixmap::fromImage(imgdd));
 
 }
