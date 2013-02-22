@@ -30,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
     ui->labelDepth->setScaledContents(true);
     ui->labelRGB->setScaledContents(true);
+    this->setFixedSize(this->width(),this->height());
 
     if(!m_cap.isOpened())
         QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
@@ -391,8 +392,8 @@ void MainWindow::on_action3D_View_triggered()
    m_viewer->raise();
    m_viewer->activateWindow();
    m_viewer->repaint();
-    m_viewer->repaint();
-    m_viewer->repaint();
+   m_viewer->repaint();
+   m_viewer->repaint();
 }
 
 void MainWindow::on_loadButton_clicked()
@@ -554,6 +555,7 @@ void MainWindow::on_alignButton_clicked()
     // show window
     m_alignment->show();
     m_alignment->activateWindow();
+    m_alignment->raise();
 
 
     // get cam parameters
@@ -587,6 +589,10 @@ void MainWindow::on_alignButton_clicked()
     // optimize
     Mat F = alignment.RunConcensus(nosamples,acceptthreshold,this);
 
+    // bring alignment vis back
+    m_alignment->raise();
+
+    // store transformation
     m_trafo_storage[index] = F;
 
 }
@@ -643,17 +649,13 @@ void MainWindow::on_actionExit_triggered()
 void MainWindow::on_clearButton_clicked()
 {
 
-
-
     // get image index
     size_t index = (size_t)ui->spinBoxStorage->value();
 
-    cout << index << " " << m_rgb_storage.size() << endl;
     if(index==0)
         return;
 
     index--;
-
 
     // delete from storage
     m_rgb_storage.erase(m_rgb_storage.begin()+index);

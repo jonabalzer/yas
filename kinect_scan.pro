@@ -6,6 +6,8 @@
 
 QT       += core gui opengl
 
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
 TARGET = kinect_scan
 TEMPLATE = app
 
@@ -26,9 +28,23 @@ FORMS    += mainwindow.ui \
     viewerwindow.ui \
     alignwindow.ui
 
-unix:!symbian: LIBS += -L/usr/local/lib/ -L/opt/local/lib/ -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_features2d -lopencv_nonfree -lHalf -lIlmImf -lGLU -lglut
+unix:!symbian: {
+
+LIBS += -L/usr/local/lib/ -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_features2d -lopencv_nonfree -lHalf -lIlmImf -lGLU -lglut
 
 INCLUDEPATH += /usr/local/include
 INCLUDEPATH += /usr/include/OpenEXR
-INCLUDEPATH += /opt/local/include
-INCLUDEPATH += /opt/local/include/OpenEXR
+
+}
+
+mac:!symbian: {
+
+    LIBS += -L/usr/local/lib/ -L/opt/local/lib/ -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_features2d -lopencv_nonfree -lHalf -lIlmImf -lGLU -lglut
+
+    INCLUDEPATH += /usr/local/include
+    INCLUDEPATH += /usr/include/OpenEXR
+    INCLUDEPATH += /opt/local/include
+    INCLUDEPATH += /opt/local/include/OpenEXR
+
+
+}
