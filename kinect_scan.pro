@@ -26,7 +26,7 @@ FORMS    += mainwindow.ui \
     viewerwindow.ui \
     alignwindow.ui
 
-unix:!symbian: LIBS += -L/usr/local/lib/ -L/opt/local/lib/ -lopencv_core -lopencv_highgui -lopencv_video -lopencv_features2d -lopencv_nonfree -lHalf -lIlmImf
+unix:!symbian: LIBS += -L/usr/local/lib/ -L/opt/local/lib/ -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_video -lopencv_features2d -lopencv_nonfree -lHalf -lIlmImf
 
 INCLUDEPATH += /opt/local/include
 INCLUDEPATH += /opt/local/include/OpenEXR

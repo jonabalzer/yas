@@ -271,7 +271,7 @@
      <item>
       <widget class="QLineEdit" name="triEdit">
        <property name="text">
-        <string>25</string>
+        <string>50</string>
        </property>
       </widget>
      </item>
