@@ -9,7 +9,7 @@ AlignWindow::AlignWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-
+    this->setFixedSize(1300,500);
 
     //MainWindow* mw = qobject_cast<MainWindow*>(parent);
     //ui->spinBox->setMaximum(mw->storage_size());

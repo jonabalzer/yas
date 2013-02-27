@@ -35,6 +35,8 @@ MainWindow::MainWindow(QWidget *parent) :
     if(!m_cap.isOpened())
         QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
 
+    connect(this,SIGNAL(current_image_changed(cv::Mat&,cv::Mat&)),this,SLOT(updata_static_view(Mat&,Mat&)));
+
 }
 
 MainWindow::~MainWindow()
@@ -314,7 +316,6 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
                 x.z = 0;
                 xarray.push_back(x);
 
-
             }
 
             out << xarray[0].x << " " << xarray[0].y << " " << xarray[0].z << " " << (unsigned int)m_rgb_storage[index].at<Vec3b>(i,j)[2] << " " << (unsigned int)m_rgb_storage[index].at<Vec3b>(i,j)[1] << " " << (unsigned int)m_rgb_storage[index].at<Vec3b>(i,j)[0] << endl;
@@ -336,13 +337,25 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
 void MainWindow::on_actionUpdateClipDepth_triggered()
 {
 
-    update_zmax();
+     m_zmax = (double)ui->depthclipSlider->sliderPosition()*(6000.0/99.0);
 
     stringstream ss;
     size_t zmax = (size_t)m_zmax;
     ss << zmax;
 
     ui->maxDepth->setText(QString(ss.str().c_str()));
+
+    int index = ui->spinBoxStorage->value();
+
+    if(index>0) {
+
+        // show images
+        ui->labeRGBStorage->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb_storage[index-1])));
+        ui->labelDepthStorage->setPixmap(QPixmap::fromImage(convert_depth(m_depth_storage[index-1])));
+        emit current_image_changed(m_rgb_storage[index-1],m_depth_storage[index-1]);
+
+    }
+
 }
 
 void MainWindow::update_zmax() {
@@ -391,9 +404,13 @@ void MainWindow::on_action3D_View_triggered()
    m_viewer->show();
    m_viewer->raise();
    m_viewer->activateWindow();
-   m_viewer->repaint();
-   m_viewer->repaint();
-   m_viewer->repaint();
+
+   //m_viewer->
+
+
+
+   //m_viewer->repaint();
+
 }
 
 void MainWindow::on_loadButton_clicked()
@@ -501,25 +518,66 @@ QImage MainWindow::convert_rgb(Mat& img) {
 
 QImage MainWindow::convert_depth(Mat& img) {
 
-    Mat depthf(img.rows,img.cols,CV_8UC1);
+    Mat depthf  (Size(640,480),CV_8UC1);            // exchange this with member function
     img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
-    QImage cimg(depthf.data,img.cols,img.rows,QImage::Format_Indexed8);
 
-    for(size_t i=0; i<(size_t)img.rows; i++) {
+    Mat depthrgb;
+    cvtColor(depthf, depthrgb, CV_GRAY2BGR);
 
-          uchar* lpt = cimg.scanLine(i);
+    QImage imgdd(depthrgb.data,depthf.cols,depthf.rows,QImage::Format_RGB888);
 
-            for(size_t j=0; j<(size_t)img.cols; j++) {
+    double variance = ui->triEdit->text().toDouble();
 
+    for(size_t i=0; i<(size_t)img.rows-1; i++) {
 
-            if((double)img.at<unsigned short>(i,j)>m_zmax)
-                lpt[j] = 0;
+        for(size_t j=0; j<(size_t)img.cols-1; j++) {
 
-            }
+//            double zq[4];
+//            zq[0] = (double)img.at<unsigned short>(i,j);
+//            zq[1] = (double)img.at<unsigned short>(i+1,j);
+//            zq[2] = (double)img.at<unsigned short>(i,j+1);
+//            zq[3] = (double)img.at<unsigned short>(i+1,j+1);
+
+//            if(zq[0]>m_zmax)
+//                imgdd.setPixel(j,i,qRgb(0,0,0));
+//            else if(zq[0]<m_zmax && zq[1]<m_zmax && zq[2]<m_zmax && zq[3]<m_zmax) {
+
+//                double mean = 0.25*(zq[0] + zq[1] + zq[2] + zq[3]);
+
+//                double var = 0;
+//                for(size_t k=0; k<4; k++)
+//                    var += (zq[k]-mean)*(zq[k]-mean);
+//                var = sqrt(var);
+
+//                if(var>variance)
+                    imgdd.setPixel(j,i,qRgb(255,0,0));
+
+            //}
+
+        }
 
     }
 
-    return cimg;
+    return imgdd;
+//    Mat depthf(img.rows,img.cols,CV_8UC1);
+//    img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
+//    QImage cimg(depthf.data,img.cols,img.rows,QImage::Format_Indexed8);
+
+//    for(size_t i=0; i<(size_t)img.rows; i++) {
+
+//          uchar* lpt = cimg.scanLine(i);
+
+//            for(size_t j=0; j<(size_t)img.cols; j++) {
+
+
+//            if((double)img.at<unsigned short>(i,j)>m_zmax)
+//                lpt[j] = 0;
+
+//            }
+
+//    }
+
+//    return cimg;
 }
 
 void MainWindow::on_spinBoxStorage_valueChanged(int arg1)
@@ -532,6 +590,7 @@ void MainWindow::on_spinBoxStorage_valueChanged(int arg1)
         // show images
         ui->labeRGBStorage->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb_storage[arg1-1])));
         ui->labelDepthStorage->setPixmap(QPixmap::fromImage(convert_depth(m_depth_storage[arg1-1])));
+        emit current_image_changed(m_rgb_storage[arg1-1],m_depth_storage[arg1-1]);
 
     }
 
@@ -560,12 +619,15 @@ void MainWindow::on_alignButton_clicked()
 
     // get cam parameters
     float fu, fv, cu, cv;
-    size_t nosamples;
-    double fthreshold, goodfeatures, acceptthreshold;
-    fthreshold = ui->featureThresholdEdit->text().toDouble();
+    size_t nfeat, noct, ninliers, nosamples, nmatches;
+    double pthresh, ethresh, goodfeatures, acceptthreshold;
+    nfeat = ui->noFeatEdit->text().toInt();
+    noct = ui->noOctavesEdit->text().toInt();
+    pthresh = ui->pointThresholdEdit->text().toDouble();
+    ethresh = ui->edgeThresholdEdit->text().toDouble();
     goodfeatures = ui->goodMatchEdit->text().toDouble();
-    acceptthreshold = ui->acceptanceEdit->text().toDouble();
     nosamples = (size_t)ui->nosamplesEdit->text().toInt();
+    acceptthreshold = ui->acceptanceEdit->text().toDouble();
 
     fu = ui->fuEdit->text().toFloat();
     fv = ui->fvEdit->text().toFloat();
@@ -579,21 +641,33 @@ void MainWindow::on_alignButton_clicked()
                                            m_rgb_storage[index],
                                            m_depth_storage[index-1],
                                            m_depth_storage[index],
-                                           fthreshold,
-                                           goodfeatures);
+                                           nfeat,
+                                           noct,
+                                           pthresh,
+                                           ethresh,
+                                           goodfeatures,
+                                           nmatches);
 
     QImage cvis = convert_rgb(vis);
     m_alignment->show_image(cvis);
     m_alignment->repaint();
 
     // optimize
-    Mat F = alignment.RunConcensus(nosamples,acceptthreshold,this);
+    Mat F = alignment.RunConcensus(nosamples,acceptthreshold,ninliers,this);
 
     // bring alignment vis back
     m_alignment->raise();
 
     // store transformation
     m_trafo_storage[index] = F;
+
+    // show inlier/outlier ratio
+    double ratio = (double)ninliers/(double)nmatches;
+    ratio *= 100;
+    stringstream ss;
+    ss << "The inlier ratio is " << ratio << "\%.";
+    ui->statusBar->showMessage(ss.str().c_str());
+
 
 }
 
@@ -617,7 +691,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 
     switch(event->key()) {
 
-    case 46:  // remote with logitech
+    case 16777239:  // remote with logitech
 
         on_storeButton_clicked();
 
@@ -634,8 +708,6 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
         on_loadButton_clicked();
 
         break;
-
-
 
     }
 
@@ -762,5 +834,54 @@ void MainWindow::update_live_view() {
     }
 
     ui->labelDepth->setPixmap(QPixmap::fromImage(imgdd));
+
+}
+
+void MainWindow::updata_static_view(Mat& rgb, Mat& depth) {
+
+    QImage cimg(rgb.data,rgb.cols,rgb.rows,QImage::Format_RGB888);
+    ui->labeRGBStorage->setPixmap(QPixmap::fromImage(cimg.rgbSwapped()));
+
+    Mat depthf  (Size(640,480),CV_8UC1); // exchange this with member function
+    depth.convertTo(depthf, CV_8UC1, 255.0/6000.0);
+
+    Mat depthrgb;
+    cvtColor(depthf, depthrgb, CV_GRAY2BGR);
+
+    QImage imgdd(depthrgb.data,depthf.cols,depthf.rows,QImage::Format_RGB888);
+
+    double variance = ui->triEdit->text().toDouble();
+
+    for(size_t i=0; i<(size_t)m_depth.rows-1; i++) {
+
+        for(size_t j=0; j<(size_t)m_depth.cols-1; j++) {
+
+            double zq[4];
+            zq[0] = (double)depth.at<unsigned short>(i,j);
+            zq[1] = (double)depth.at<unsigned short>(i+1,j);
+            zq[2] = (double)depth.at<unsigned short>(i,j+1);
+            zq[3] = (double)depth.at<unsigned short>(i+1,j+1);
+
+            if(zq[0]>m_zmax)
+                imgdd.setPixel(j,i,qRgb(0,0,0));
+            else if(zq[0]<m_zmax && zq[1]<m_zmax && zq[2]<m_zmax && zq[3]<m_zmax) {
+
+                double mean = 0.25*(zq[0] + zq[1] + zq[2] + zq[3]);
+
+                double var = 0;
+                for(size_t k=0; k<4; k++)
+                    var += (zq[k]-mean)*(zq[k]-mean);
+                var = sqrt(var);
+
+                if(var>variance)
+                    imgdd.setPixel(j,i,qRgb(255,0,0));
+
+            }
+
+        }
+
+    }
+
+    ui->labelDepthStorage->setPixmap(QPixmap::fromImage(imgdd));
 
 }

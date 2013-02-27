@@ -13,24 +13,20 @@ CAlignRansac::CAlignRansac(float fu, float fv, float cu, float cv):
 
 }
 
-Mat CAlignRansac::GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& depth1, double fthreshold, double threshold) {
+Mat CAlignRansac::GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& depth1, size_t nfeat, size_t noct, double pthresh, double ethresh, double threshold, size_t& nmatches) {
 
     // init non-free module
     initModule_nonfree();
 
-    Ptr<FeatureDetector> detector = FeatureDetector::create("FAST");
-    detector->set("threshold",fthreshold);
+    // create SIFT object
+    SIFT detector(nfeat,noct,pthresh,ethresh,0.5);
 
-    // detect
+    // detect and compute descriptors
     vector<KeyPoint> kp0, kp1;
-    detector->detect(rgb0,kp0);
-    detector->detect(rgb1,kp1);
-
-    // compute descriptors
-    Ptr<DescriptorExtractor> extractor = DescriptorExtractor::create("SIFT");
     Mat desc0, desc1;
-    extractor->compute(rgb0, kp0, desc0);
-    extractor->compute(rgb1, kp1, desc1);
+    detector(rgb0,Mat(),kp0,desc0);
+    detector(rgb1,Mat(),kp1,desc1);
+
 
     // matching
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-L1");
@@ -74,6 +70,9 @@ Mat CAlignRansac::GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& dep
         }
 
     }
+
+    // save number of matches for statistics
+    nmatches = good_matches.size();
 
     // create of good matches visualization
     Mat img_matches;
@@ -188,7 +187,7 @@ vector<size_t> CAlignRansac::EvaluateHypothesis(const Mat& F, double tolerance) 
 }
 
 
-Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, QWidget* parent) {
+Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, size_t& ninliers, QWidget* parent) {
 
     Mat result(4,4,CV_32FC1);
     size_t max = 0;
@@ -237,6 +236,8 @@ Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, QWidget* parent) {
 
     // estimate motion with the inlier set
     EstimateMotion(ilmax,result);
+
+    ninliers = ilmax.size();
 
     return result;
 

@@ -29,7 +29,12 @@ public:
     ~MainWindow();
 
     size_t storage_size() { return m_rgb_storage.size(); };
-    
+
+signals:
+
+    void current_image_changed(cv::Mat& rgb, cv::Mat& depth);
+
+
 private slots:
     bool on_stepButton_clicked();
 
@@ -56,6 +61,9 @@ private slots:
     void on_actionExit_triggered();
 
     void on_clearButton_clicked();
+
+    void updata_static_view(Mat& rgb, Mat& depth);
+
 
 private:
     Ui::MainWindow *ui;

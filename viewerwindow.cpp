@@ -12,9 +12,3 @@ ViewerWindow::~ViewerWindow()
 {
     delete ui;
 }
-
-void ViewerWindow::on_pushButton_clicked()
-{
-    ui->pcPanel->updateGL();
-
-}

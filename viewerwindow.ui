@@ -17,24 +17,11 @@
    <widget class="PCViewer" name="pcPanel">
     <property name="geometry">
      <rect>
-      <x>250</x>
+      <x>0</x>
       <y>0</y>
-      <width>551</width>
-      <height>561</height>
+      <width>801</width>
+      <height>551</height>
      </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton">
-    <property name="geometry">
-     <rect>
-      <x>60</x>
-      <y>120</y>
-      <width>98</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>PushButton</string>
     </property>
    </widget>
   </widget>

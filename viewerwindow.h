@@ -16,7 +16,7 @@ public:
     ~ViewerWindow();
     
 private slots:
-    void on_pushButton_clicked();
+
 
 private:
     Ui::ViewerWindow *ui;
