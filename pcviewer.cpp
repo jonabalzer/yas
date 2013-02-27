@@ -23,6 +23,8 @@ void PCViewer::set_pcl(cv::Mat& rgb, cv::Mat& depth) {
     m_rgb = rgb;
     m_depth = depth;
 
+    updateGL();
+
 }
 
 
@@ -30,16 +32,18 @@ void PCViewer::initializeGL() {
 
     glShadeModel(GL_SMOOTH);
     glClearColor(0, 0, 0, 1.0);
-    glClearDepth(1.0f);
+    glClearDepth(1.0);
     glEnable(GL_DEPTH_TEST);
-
+    glEnable(GL_COLOR_MATERIAL);
     glDepthFunc(GL_LEQUAL);
 
-    glMatrixMode(GL_PROJECTION);    // load projection matrix of kinect
+    glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+    glOrtho(-500,500,-500,500, 1, 6000);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    glGetDoublev(GL_MODELVIEW_MATRIX,m_F);
 
     GLfloat pos1[] = { 0.1,  0.1, -0.02, 0.0};
     GLfloat pos2[] = {-0.1,  0.1, -0.02, 0.0};
@@ -74,9 +78,14 @@ void PCViewer::paintGL() {
 
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-   glLoadIdentity();
-   glPointSize(5);
+   //glMatrixMode(GL_MODELVIEW);
+   glMatrixMode(GL_MODELVIEW);
+   glLoadMatrixd(m_F);
 
+   glPushMatrix();
+   glLoadIdentity();
+
+   glPointSize(2);
 
    double fu, fv, cu, cv;
    fu = 515;
@@ -97,8 +106,8 @@ void PCViewer::paintGL() {
             g = (float)m_rgb.at<Vec3b>(i,j)[1]/255.0;
             b = (float)m_rgb.at<Vec3b>(i,j)[0]/255.0;
 
-            glColor3f((z/fu)*((double)j-cu),(z/fv)*((double)i-cv),z);
-            glVertex3d(r,g,b);
+            glColor3f(r,g,b);
+            glVertex3d((z/fu)*((double)j-cu),-(z/fv)*((double)i-cv),-z);
 
        }
 
@@ -108,6 +117,8 @@ void PCViewer::paintGL() {
    glEnd();
 
 
+   glPopMatrix();
+
 }
 
 void PCViewer::resizeGL( int width, int height ) {
@@ -116,3 +127,42 @@ void PCViewer::resizeGL( int width, int height ) {
     updateGL();
 
 }
+
+void PCViewer::on_update_extrinsics(double fu, double fv, double cu, double cv) {
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    GLdouble K[16];
+
+
+
+
+    //glGetDoublev(GL_PROJECTION_MATRIX,K);
+
+    glMatrixMode(GL_MODELVIEW);
+
+
+
+}
+
+void PCViewer::translate(float dx, float dy, float dz) {
+
+    makeCurrent();
+    glLoadIdentity();
+    glTranslated(dx,dy,dz);
+    glMultMatrixd(m_F);
+    glGetDoublev(GL_MODELVIEW_MATRIX,m_F);
+
+}
+
+void PCViewer::wheelEvent(QWheelEvent* event)
+{
+
+  float d = -(float)event->delta() / 120.0 * 0.2 * 100;
+  cout << d << endl;
+  translate(0,0,d);
+  updateGL();
+  event->accept();
+}
+

@@ -32,7 +32,7 @@ public:
 
 signals:
 
-    void current_image_changed(cv::Mat& rgb, cv::Mat& depth);
+    void current_image_changed(Mat& rgb, Mat& depth);
 
 
 private slots:
@@ -73,7 +73,7 @@ private:
 
     // current data
     Mat m_rgb;
-    Mat m_depth;    // remove this if we work with the ring buffer
+    //Mat m_depth;    // remove this if we work with the ring buffer
 
     // saved images
     vector<Mat> m_rgb_storage;          //!< stored rgb images
@@ -98,9 +98,6 @@ private:
     void update_zmax();
     unsigned short get_smoothed_depth(size_t i, size_t j);
     Mat get_depth_from_buffer();
-
-    QImage convert_depth(Mat& depth);            // FIXME: what is wrong here?
-    QImage convert_rgb(Mat& rgb);
 
     Mat transforms_to_first_image(size_t index);
 

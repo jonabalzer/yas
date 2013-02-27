@@ -17,12 +17,12 @@ MainWindow::MainWindow(QWidget *parent) :
     m_cap(CV_CAP_OPENNI),
     m_timer(this),
     m_rgb(Size(640,480),CV_8UC3,Scalar(0)),
-    m_depth(Size(640,480),CV_16UC1),
+    //m_depth(Size(640,480),CV_16UC1),
     m_rgb_storage(),
     m_depth_storage(),
     m_trafo_storage(),
     m_zmax(6000),
-    m_depth_buffer(1),
+    m_depth_buffer(5),
     m_viewer(new ViewerWindow),
     m_alignment(new AlignWindow)
 {
@@ -35,7 +35,8 @@ MainWindow::MainWindow(QWidget *parent) :
     if(!m_cap.isOpened())
         QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
 
-    connect(this,SIGNAL(current_image_changed(cv::Mat&,cv::Mat&)),this,SLOT(updata_static_view(Mat&,Mat&)));
+    connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),this,SLOT(updata_static_view(Mat&,Mat&)));
+    connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),m_viewer,SLOT(on_current_image_changed(Mat&,Mat&)));
 
 }
 
@@ -54,8 +55,9 @@ bool MainWindow::on_stepButton_clicked()
         ui->statusBar->clearMessage();
 
         m_cap.retrieve(m_rgb, CV_CAP_OPENNI_BGR_IMAGE );
-        m_cap.retrieve(m_depth, CV_CAP_OPENNI_DEPTH_MAP );      // get rid of this!
-        m_depth_buffer.push_back(m_depth.clone());
+        Mat depth;
+        m_cap.retrieve(depth, CV_CAP_OPENNI_DEPTH_MAP );      // get rid of this!
+        m_depth_buffer.push_back(depth.clone());
 
         // update visualization
         update_live_view();
@@ -191,13 +193,13 @@ bool MainWindow::save_as_png(size_t index, QString fn) {
 }
 bool MainWindow::save_as_exr(size_t index, QString fn) {
 
-    Array2D<Rgba> out(m_depth.rows,m_depth.cols);
+    Array2D<Rgba> out(m_rgb.rows,m_rgb.cols);
 
     update_zmax();
 
-    for(size_t i=0; i<(size_t)m_depth.rows; i++) {
+    for(size_t i=0; i<(size_t)m_rgb.rows; i++) {
 
-        for(size_t j=0; j<(size_t)m_depth.cols; j++) {
+        for(size_t j=0; j<(size_t)m_rgb.cols; j++) {
 
             Rgba val;
             val.b = half(m_rgb_storage[index].at<Vec3b>(i,j)[0]);
@@ -217,9 +219,9 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
 
     }
 
-    RgbaOutputFile file(fn.toStdString().c_str(),m_depth.cols,m_depth.rows, WRITE_RGBA);
-    file.setFrameBuffer (&out[0][0],1,m_depth.cols);
-    file.writePixels (m_depth.rows);
+    RgbaOutputFile file(fn.toStdString().c_str(),m_rgb.cols,m_rgb.rows, WRITE_RGBA);
+    file.setFrameBuffer (&out[0][0],1,m_rgb.cols);
+    file.writePixels (m_rgb.rows);
 
     return 0;
 
@@ -241,9 +243,9 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
 
     double variance = ui->triEdit->text().toDouble();
 
-    for(size_t i=0; i<(size_t)m_depth.rows-1; i++) {
+    for(size_t i=0; i<(size_t)m_depth_storage[index].rows-1; i++) {
 
-        for(size_t j=0; j<(size_t)m_depth.cols-1; j++) {
+        for(size_t j=0; j<(size_t)m_depth_storage[index].cols-1; j++) {
 
             double zq[4];
             zq[0] = (double)m_depth_storage[index].at<unsigned short>(i,j);
@@ -261,7 +263,7 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
                 var = sqrt(var);
 
                 if(var<variance)
-                    indices.push_back(i*m_depth.cols+j);
+                    indices.push_back(i*m_depth_storage[index].cols+j);
 
             }
 
@@ -272,7 +274,7 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
     out << "ply" << endl;
     out <<  "format ascii 1.0" << endl;
     out <<  "comment" << endl;
-    out << "element vertex " << m_depth.rows*m_depth.cols << endl;
+    out << "element vertex " << m_depth_storage[index].rows*m_depth_storage[index].cols << endl;
     out << "property float32 x" << endl;
     out << "property float32 y" << endl;
     out << "property float32 z" << endl;
@@ -291,9 +293,9 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
 
     update_zmax();
 
-    for(size_t i=0; i<(size_t)m_depth.rows; i++) {
+    for(size_t i=0; i<(size_t)m_depth_storage[index].rows; i++) {
 
-        for(size_t j=0; j<(size_t)m_depth.cols; j++) {
+        for(size_t j=0; j<(size_t)m_depth_storage[index].cols; j++) {
 
             vector<Point3d> xarray;
             Point3d x;
@@ -326,7 +328,7 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
 
     // write faces (maybe as triangles)
     for(size_t k=0; k<indices.size(); k++)
-        out << 4 << " " << indices[k] << " " << indices[k]+m_depth.cols << " " << indices[k]+m_depth.cols+1 << " " << indices[k]+1 << endl;
+        out << 4 << " " << indices[k] << " " << indices[k]+m_depth_storage[index].cols << " " << indices[k]+m_depth_storage[index].cols+1 << " " << indices[k]+1 << endl;
 
     out.close();
 
@@ -347,14 +349,8 @@ void MainWindow::on_actionUpdateClipDepth_triggered()
 
     int index = ui->spinBoxStorage->value();
 
-    if(index>0) {
-
-        // show images
-        ui->labeRGBStorage->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb_storage[index-1])));
-        ui->labelDepthStorage->setPixmap(QPixmap::fromImage(convert_depth(m_depth_storage[index-1])));
+    if(index>0)
         emit current_image_changed(m_rgb_storage[index-1],m_depth_storage[index-1]);
-
-    }
 
 }
 
@@ -461,8 +457,7 @@ void MainWindow::on_loadButton_clicked()
    m_trafo_storage.push_back(trafo);
 
    // display
-   ui->labeRGBStorage->setPixmap(QPixmap::fromImage(convert_rgb(rgb)));
-   ui->labelDepthStorage->setPixmap(QPixmap::fromImage(convert_depth(depth)));
+   emit current_image_changed(rgb,depth);
 
    // adjust counter
    ui->spinBoxStorage->setMaximum(m_rgb_storage.size());
@@ -499,85 +494,13 @@ void MainWindow::on_storeButton_clicked()
         ui->spinBoxStorage->setValue(m_rgb_storage.size());
 
         // show images
-        ui->labeRGBStorage->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb_storage.back())));
-        ui->labelDepthStorage->setPixmap(QPixmap::fromImage(convert_depth(m_depth_storage.back())));
+        emit current_image_changed(m_rgb_storage.back(),m_depth_storage.back());
 
         // restart timer only if capture was successful
         m_timer.start(1);
 
     }
 
-}
-
-QImage MainWindow::convert_rgb(Mat& img) {
-
-    QImage cimg(img.data,img.cols,img.rows,QImage::Format_RGB888);
-
-    return cimg.rgbSwapped();
-}
-
-QImage MainWindow::convert_depth(Mat& img) {
-
-    Mat depthf  (Size(640,480),CV_8UC1);            // exchange this with member function
-    img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
-
-    Mat depthrgb;
-    cvtColor(depthf, depthrgb, CV_GRAY2BGR);
-
-    QImage imgdd(depthrgb.data,depthf.cols,depthf.rows,QImage::Format_RGB888);
-
-    double variance = ui->triEdit->text().toDouble();
-
-    for(size_t i=0; i<(size_t)img.rows-1; i++) {
-
-        for(size_t j=0; j<(size_t)img.cols-1; j++) {
-
-//            double zq[4];
-//            zq[0] = (double)img.at<unsigned short>(i,j);
-//            zq[1] = (double)img.at<unsigned short>(i+1,j);
-//            zq[2] = (double)img.at<unsigned short>(i,j+1);
-//            zq[3] = (double)img.at<unsigned short>(i+1,j+1);
-
-//            if(zq[0]>m_zmax)
-//                imgdd.setPixel(j,i,qRgb(0,0,0));
-//            else if(zq[0]<m_zmax && zq[1]<m_zmax && zq[2]<m_zmax && zq[3]<m_zmax) {
-
-//                double mean = 0.25*(zq[0] + zq[1] + zq[2] + zq[3]);
-
-//                double var = 0;
-//                for(size_t k=0; k<4; k++)
-//                    var += (zq[k]-mean)*(zq[k]-mean);
-//                var = sqrt(var);
-
-//                if(var>variance)
-                    imgdd.setPixel(j,i,qRgb(255,0,0));
-
-            //}
-
-        }
-
-    }
-
-    return imgdd;
-//    Mat depthf(img.rows,img.cols,CV_8UC1);
-//    img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
-//    QImage cimg(depthf.data,img.cols,img.rows,QImage::Format_Indexed8);
-
-//    for(size_t i=0; i<(size_t)img.rows; i++) {
-
-//          uchar* lpt = cimg.scanLine(i);
-
-//            for(size_t j=0; j<(size_t)img.cols; j++) {
-
-
-//            if((double)img.at<unsigned short>(i,j)>m_zmax)
-//                lpt[j] = 0;
-
-//            }
-
-//    }
-
-//    return cimg;
 }
 
 void MainWindow::on_spinBoxStorage_valueChanged(int arg1)
@@ -588,13 +511,12 @@ void MainWindow::on_spinBoxStorage_valueChanged(int arg1)
         ui->spinBoxStorage->setValue(arg1);
 
         // show images
-        ui->labeRGBStorage->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb_storage[arg1-1])));
-        ui->labelDepthStorage->setPixmap(QPixmap::fromImage(convert_depth(m_depth_storage[arg1-1])));
         emit current_image_changed(m_rgb_storage[arg1-1],m_depth_storage[arg1-1]);
 
     }
 
 }
+
 
 void MainWindow::on_alignButton_clicked()
 {
@@ -648,8 +570,8 @@ void MainWindow::on_alignButton_clicked()
                                            goodfeatures,
                                            nmatches);
 
-    QImage cvis = convert_rgb(vis);
-    m_alignment->show_image(cvis);
+    QImage cvis(vis.data,vis.cols,vis.rows,QImage::Format_RGB888);
+    m_alignment->show_image(cvis.rgbSwapped());
     m_alignment->repaint();
 
     // optimize
@@ -746,8 +668,7 @@ void MainWindow::on_clearButton_clicked()
         if(index>0)
             index--;
 
-        ui->labeRGBStorage->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb_storage[index])));
-        ui->labelDepthStorage->setPixmap(QPixmap::fromImage(convert_depth(m_depth_storage[index])));
+        emit current_image_changed(m_rgb_storage[index],m_depth_storage[index]);
 
     }
     else {
@@ -767,11 +688,8 @@ void MainWindow::on_clearButton_clicked()
 void MainWindow::update_live_view() {
 
     // visualize
-    ui->labelRGB->setPixmap(QPixmap::fromImage(convert_rgb(m_rgb)));
-    //ui->labelDepth->setPixmap(QPixmap::fromImage(convert_depth(m_depth)));
-
-    //QImage imgd(m_rgb.data,m_rgb.cols,m_rgb.rows,QImage::Format_RGB888);
-    //ui->labelRGB->setPixmap(QPixmap::fromImage(imgd.rgbSwapped()));
+    QImage cimg(m_rgb.data,m_rgb.cols,m_rgb.rows,QImage::Format_RGB888);
+    ui->labelRGB->setPixmap(QPixmap::fromImage(cimg.rgbSwapped()));
 
     Mat img = m_depth_buffer.back();
     Mat depthf  (Size(640,480),CV_8UC1); // exchange this with member function
@@ -783,29 +701,11 @@ void MainWindow::update_live_view() {
     //QImage imgdd(depthf.data,depthf.cols,depthf.rows,QImage::Format_Indexed8);
     QImage imgdd(depthrgb.data,depthf.cols,depthf.rows,QImage::Format_RGB888);
 
-//    for(size_t i=0; i<(size_t)m_depth.rows; i++) {
-
-//        uchar* lpt = imgdd.scanLine(i);
-
-//        for(size_t j=0; j<(size_t)m_depth.cols; j++) {
-
-//            if((double)m_depth.at<unsigned short>(i,j)>m_zmax) {
-
-//                //lpt[j] = 255;
-//                //lpt[j+1] = 0;
-//                //lpt[j+2] = 0;
-//                imgdd.setPixel(j,i,qRgb(255,0,0));
-
-//            }
-
-//        }
-//    }
-
     double variance = ui->triEdit->text().toDouble();
 
-    for(size_t i=0; i<(size_t)m_depth.rows-1; i++) {
+    for(size_t i=0; i<(size_t)img.rows-1; i++) {
 
-        for(size_t j=0; j<(size_t)m_depth.cols-1; j++) {
+        for(size_t j=0; j<(size_t)img.cols-1; j++) {
 
             double zq[4];
             zq[0] = (double)img.at<unsigned short>(i,j);
@@ -852,9 +752,9 @@ void MainWindow::updata_static_view(Mat& rgb, Mat& depth) {
 
     double variance = ui->triEdit->text().toDouble();
 
-    for(size_t i=0; i<(size_t)m_depth.rows-1; i++) {
+    for(size_t i=0; i<(size_t)depth.rows-1; i++) {
 
-        for(size_t j=0; j<(size_t)m_depth.cols-1; j++) {
+        for(size_t j=0; j<(size_t)depth.cols-1; j++) {
 
             double zq[4];
             zq[0] = (double)depth.at<unsigned short>(i,j);

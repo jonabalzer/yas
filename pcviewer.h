@@ -4,6 +4,9 @@
 #include "opencv2/opencv.hpp"
 
 #include <QGLWidget>
+#include <QWheelEvent>
+
+using namespace cv;
 
 class PCViewer : public QGLWidget
 {
@@ -18,7 +21,9 @@ signals:
     
 public slots:
 
-    void set_pcl(cv::Mat& rgb, cv::Mat& depth);
+    void set_pcl(Mat& rgb, Mat& depth);
+
+    void on_update_extrinsics(double fu, double fv, double cu, double cv);
 
 private:
 
@@ -33,8 +38,19 @@ private:
 
 
     // data members
-    cv::Mat m_rgb;
-    cv::Mat m_depth;
+    Mat m_rgb;
+    Mat m_depth;
+    //GLdouble m_K[16];
+    GLdouble m_F[16];
+
+    void translate(float dx, float dy, float dz);
+
+protected:
+
+    //virtual void mousePressEvent(QMouseEvent*);
+    //virtual void mouseReleaseEvent(QMouseEvent*);
+    //virtual void mouseMoveEvent(QMouseEvent*);
+    virtual void wheelEvent(QWheelEvent* event);
 
 };
 

@@ -1,7 +1,10 @@
 #ifndef VIEWERWINDOW_H
 #define VIEWERWINDOW_H
 
+#include "opencv2/opencv.hpp"
 #include <QMainWindow>
+
+using namespace cv;
 
 namespace Ui {
 class ViewerWindow;
@@ -15,8 +18,13 @@ public:
     explicit ViewerWindow(QWidget *parent = 0);
     ~ViewerWindow();
     
-private slots:
+public slots:
 
+    void on_current_image_changed(Mat& rgb, Mat& depth);
+
+signals:
+
+    void current_image_changed(Mat& rgb, Mat& depth);
 
 private:
     Ui::ViewerWindow *ui;
