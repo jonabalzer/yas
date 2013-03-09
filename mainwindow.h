@@ -65,6 +65,8 @@ private slots:
     void updata_static_view(Mat& rgb, Mat& depth);
 
 
+    void on_actionAbout_triggered();
+
 private:
     Ui::MainWindow *ui;
 

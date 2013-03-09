@@ -673,13 +673,10 @@ void MainWindow::on_clearButton_clicked()
     }
     else {
 
-        QImage black(ui->labeRGBStorage->size(),QImage::Format_RGB888);
-        black.fill(qRgb(0,0,0));
-
-        ui->labeRGBStorage->setPixmap(QPixmap::fromImage(black));
-        ui->labelDepthStorage->setPixmap(QPixmap::fromImage(black));
-
+        ui->labeRGBStorage->clear();
+        ui->labelDepthStorage->clear();
         ui->spinBoxStorage->setMinimum(0);
+
     }
 
 }
@@ -784,4 +781,9 @@ void MainWindow::updata_static_view(Mat& rgb, Mat& depth) {
 
     ui->labelDepthStorage->setPixmap(QPixmap::fromImage(imgdd));
 
+}
+
+void MainWindow::on_actionAbout_triggered()
+{
+      QMessageBox::information(this,"About","More info: http://vision.ucla.edu");
 }
