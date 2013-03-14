@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "calignransac.h"
+#include "cplaneransac.h"
 #include <sstream>
 #include <fstream>
 #include <QFileDialog>
@@ -8,7 +9,7 @@
 #include <QMessageBox>
 #include <algorithm>
 
-
+#include <set>
 using namespace std;
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -17,26 +18,26 @@ MainWindow::MainWindow(QWidget *parent) :
     m_cap(CV_CAP_OPENNI),
     m_timer(this),
     m_rgb(Size(640,480),CV_8UC3,Scalar(0)),
-    //m_depth(Size(640,480),CV_16UC1),
+    m_depth_buffer(5),
     m_rgb_storage(),
     m_depth_storage(),
     m_trafo_storage(),
     m_zmax(6000),
-    m_depth_buffer(5),
     m_viewer(new ViewerWindow),
     m_alignment(new AlignWindow)
 {
     ui->setupUi(this);
-    connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
+
     ui->labelDepth->setScaledContents(true);
     ui->labelRGB->setScaledContents(true);
     this->setFixedSize(this->width(),this->height());
 
-    if(!m_cap.isOpened())
-        QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
-
+    connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
     connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),this,SLOT(updata_static_view(Mat&,Mat&)));
     connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),m_viewer,SLOT(on_current_image_changed(Mat&,Mat&)));
+
+    if(!m_cap.isOpened())
+        QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
 
 }
 
@@ -149,7 +150,6 @@ void MainWindow::on_saveAllButton_clicked()
 
         string prefix = dirname.toStdString() + string("/img") + ss.str();
 
-
         switch(ui->formatBox->currentIndex()) {
 
         case 0:
@@ -195,8 +195,6 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
 
     Array2D<Rgba> out(m_rgb.rows,m_rgb.cols);
 
-    update_zmax();
-
     for(size_t i=0; i<(size_t)m_rgb.rows; i++) {
 
         for(size_t j=0; j<(size_t)m_rgb.cols; j++) {
@@ -227,12 +225,16 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
 
 }
 
-
 bool  MainWindow::save_as_ply(size_t index, QString fn) {
 
     // get transformation to first frame, if it exists
-    Mat F = transforms_to_first_image(index);
-    Mat Fsr = F(Range(0,3),Range(0,4));
+    Mat F = transform_to_first_image(index);
+    Mat Fw0 = estimate_world_frame();                   // just do once
+    cout << Fw0 << endl;
+    Mat F0w = Fw0.inv();
+    cout << F0w << endl;
+    Mat Ff = F0w*F;
+    Mat Fsr = Ff(Range(0,3),Range(0,4));
 
     ofstream out(fn.toStdString().c_str());
 
@@ -290,8 +292,6 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
     fv = ui->fvEdit->text().toDouble();
     cu = ui->cuEdit->text().toDouble();
     cv = ui->cvEdit->text().toDouble();
-
-    update_zmax();
 
     for(size_t i=0; i<(size_t)m_depth_storage[index].rows; i++) {
 
@@ -351,12 +351,6 @@ void MainWindow::on_actionUpdateClipDepth_triggered()
 
     if(index>0)
         emit current_image_changed(m_rgb_storage[index-1],m_depth_storage[index-1]);
-
-}
-
-void MainWindow::update_zmax() {
-
-    m_zmax = (double)ui->depthclipSlider->sliderPosition()*(6000.0/99.0);
 
 }
 
@@ -594,7 +588,7 @@ void MainWindow::on_alignButton_clicked()
 }
 
 
-Mat MainWindow::transforms_to_first_image(size_t index){
+Mat MainWindow::transform_to_first_image(size_t index){
 
     Mat F = Mat::eye(4,4,CV_32FC1);
 
@@ -786,4 +780,178 @@ void MainWindow::updata_static_view(Mat& rgb, Mat& depth) {
 void MainWindow::on_actionAbout_triggered()
 {
       QMessageBox::information(this,"About","More info: http://vision.ucla.edu");
+}
+
+
+Mat MainWindow::estimate_world_frame() {
+
+    Mat T = Mat::zeros(m_trafo_storage.size()-1,3,CV_32FC1);
+    Mat F = Mat::eye(4,4,CV_32FC1);
+
+    Vec3f mean;
+    mean *= 0;
+
+    for(size_t i=1; i<m_trafo_storage.size(); i++) {
+
+        // trafo from cam i to cam 0
+        F = F*m_trafo_storage[i];
+
+        // keep translations
+        for(size_t j=0; j<3; j++) {
+
+            T.at<float>(i-1,j) = F.at<float>(j,3);
+            mean[j] += F.at<float>(j,3);
+        }
+
+    }
+
+    // first guess for origin (project onto dominant plane later)
+    mean *= (1.0/(float)(m_trafo_storage.size()-1));
+
+    // remove mean
+    for(size_t i=0; i<(size_t)T.rows; i++) {
+
+        for(size_t j=0; j<3; j++)
+            T.at<float>(i,j) -= mean[j];
+
+    }
+
+    Mat Sigma, U, Vt;
+    SVD::compute(T, Sigma, U, Vt);
+    Vec3f n, ex;
+
+    for(size_t j=0; j<3; j++) {
+
+        n[j] = Vt.at<float>(2,j);
+        ex[j] = T.at<float>(0,j);       // connection to first cam position
+    }
+
+    // normalize ez, FIXME: no necessary because of SVD props, check if all frames are set!
+    Vec3f ez = n *= (1/cv::norm(n));
+
+    // make ex and n normal
+    ex = ex - ez*(ex[0]*ez[0] + ex[1]*ez[1] + ex[2]*ez[2]);
+    ex *= (1/cv::norm(ex));
+
+    // fill in frame from world to cam 0
+    Mat Fw = Mat::eye(4,4,CV_32FC1);
+    for(size_t i=0; i<3; i++) {
+
+        Fw.at<float>(i,0) = ex[i];
+        Fw.at<float>(i,2) = ez[i];
+        Fw.at<float>(i,3) = mean[i];
+
+    }
+
+    // ey by cross product
+    Fw.at<float>(0,1) = ez[1]*ex[2] - ez[2]*ex[1];
+    Fw.at<float>(1,1) = ez[2]*ex[0] - ez[0]*ex[2];
+    Fw.at<float>(2,1) = ez[0]*ex[1] - ez[1]*ex[0];
+
+    // invert
+    Mat Fwinv = Fw.inv();
+
+    // get point cloud of first view, FIXME: set from zmax
+    float maxr = (float)m_zmax;
+    vector<Point3f> pcl;
+    get_pcl(0,600,Fwinv,pcl);
+
+    CEstimatePlaneRansac pransac(pcl);
+    size_t ninliers;
+    Vec4f plane = pransac.RunConsensus(5000,5,ninliers,this);
+
+    cout << plane[0] << " " << plane[1] << " " << plane[2] << " " << plane[3] << endl;
+
+    // the normal must be rotated back to cam 0 coordinates, use old variable
+    for(size_t i=0; i<3; i++) {
+
+        n[i] = 0;
+
+        for(size_t j=0; j<3; j++) {
+
+            n[i] += Fw.at<float>(i,j)*plane[j];
+
+        }
+
+    }
+
+    // project origin on plane
+    mean = mean - n*(mean[0]*n[0]+mean[1]*n[1]+mean[2]*n[2]-plane[3]);
+
+    // ez is already normal, project ex on plane
+    ez = n;
+    ex = ex - ez*(ex[0]*ez[0] + ex[1]*ez[1] + ex[2]*ez[2]);
+
+    // update Fw
+    for(size_t i=0; i<3; i++) {
+
+        Fw.at<float>(i,0) = ex[i];
+        Fw.at<float>(i,2) = ez[i];
+        Fw.at<float>(i,3) = mean[i];
+
+    }
+
+    // ey by cross product
+    Fw.at<float>(0,1) = ez[1]*ex[2] - ez[2]*ex[1];
+    Fw.at<float>(1,1) = ez[2]*ex[0] - ez[0]*ex[2];
+    Fw.at<float>(2,1) = ez[0]*ex[1] - ez[1]*ex[0];
+
+
+    // estimate world cs -> only once, button, draw (abhaengig von z-slider!!)
+    // downsample for svd
+
+    // save cancel button
+    // load together
+    // matching -> fast instead of brute force
+    // move save/load buttons into menu
+    // set cam0 -> world (with signals)
+    // align all
+    // saving (triangulation, pcl)
+
+
+    return Fw;
+
+}
+
+void MainWindow::get_pcl(size_t index, float maxr, Mat F, vector<Point3f>& vertices) {
+
+    Mat Fsr = F(Range(0,3),Range(0,4));
+
+    double fu, fv, cu, cv;
+    fu = ui->fuEdit->text().toDouble();
+    fv = ui->fvEdit->text().toDouble();
+    cu = ui->cuEdit->text().toDouble();
+    cv = ui->cvEdit->text().toDouble();
+
+    vector<Point3f> xarray;
+
+    for(size_t i=0; i<(size_t)m_depth_storage[index].rows; i++) {
+
+        for(size_t j=0; j<(size_t)m_depth_storage[index].cols; j++) {
+
+            xarray.clear();
+
+            double z = (double)m_depth_storage[index].at<unsigned short>(i,j);
+
+            Point3f x;
+            x.x = (z/fu)*((double)j-cu);
+            x.y = (z/fv)*((double)i-cv);
+            x.z = z;
+
+            xarray.push_back(x);
+            cv::transform(xarray,xarray,Fsr);
+
+            // check if distance condition holds
+            if(cv::norm(xarray[0])<maxr)
+                vertices.push_back(xarray[0]);
+
+        }
+
+    }
+
+}
+
+void MainWindow::on_alignAllButton_clicked()
+{
+
 }

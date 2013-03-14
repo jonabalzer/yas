@@ -34,8 +34,8 @@ signals:
 
     void current_image_changed(Mat& rgb, Mat& depth);
 
-
 private slots:
+
     bool on_stepButton_clicked();
 
     void on_runButton_clicked();
@@ -64,18 +64,22 @@ private slots:
 
     void updata_static_view(Mat& rgb, Mat& depth);
 
-
     void on_actionAbout_triggered();
 
+    void on_alignAllButton_clicked();
+
 private:
+
+    // ui
     Ui::MainWindow *ui;
 
+    // video capture
     VideoCapture m_cap;
     QTimer m_timer;
 
     // current data
     Mat m_rgb;
-    //Mat m_depth;    // remove this if we work with the ring buffer
+    boost::circular_buffer<Mat> m_depth_buffer;
 
     // saved images
     vector<Mat> m_rgb_storage;          //!< stored rgb images
@@ -85,25 +89,24 @@ private:
     // maximum depth
     double m_zmax;
 
-    // depth buffer
-    boost::circular_buffer<Mat> m_depth_buffer;
-
     // windows for tools
     ViewerWindow* m_viewer;
     AlignWindow* m_alignment;
 
-
+    // save routines
     bool save_as_ply(size_t index, QString fn);
     bool save_as_png(size_t index, QString fn);
     bool save_as_exr(size_t index, QString fn);
 
-    void update_zmax();
+    // helpher routine
     unsigned short get_smoothed_depth(size_t i, size_t j);
     Mat get_depth_from_buffer();
-
-    Mat transforms_to_first_image(size_t index);
-
     void update_live_view();
+
+    // geometry/alignment functions
+    Mat transform_to_first_image(size_t index);
+    Mat estimate_world_frame();
+    void get_pcl(size_t index, float maxr, Mat F, vector<Point3f>& vertices);         // replace depth by distance from projection center everywhere!!!!
 
 protected:
 

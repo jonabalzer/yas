@@ -16,13 +16,15 @@ SOURCES += main.cpp\
     viewerwindow.cpp \
     pcviewer.cpp \
     alignwindow.cpp \
-    calignransac.cpp
+    calignransac.cpp \
+    cplaneransac.cpp
 
 HEADERS  += mainwindow.h \
     viewerwindow.h \
     pcviewer.h \
     alignwindow.h \
-    calignransac.h
+    calignransac.h \
+    cplaneransac.h
 
 FORMS    += mainwindow.ui \
     viewerwindow.ui \

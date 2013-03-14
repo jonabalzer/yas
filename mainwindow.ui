@@ -429,7 +429,7 @@
    <widget class="QPushButton" name="alignButton">
     <property name="geometry">
      <rect>
-      <x>870</x>
+      <x>872</x>
       <y>450</y>
       <width>98</width>
       <height>27</height>
@@ -561,6 +561,19 @@
       </widget>
      </item>
     </layout>
+   </widget>
+   <widget class="QPushButton" name="alignAllButton">
+    <property name="geometry">
+     <rect>
+      <x>770</x>
+      <y>450</y>
+      <width>98</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Align All</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
