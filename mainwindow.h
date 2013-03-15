@@ -11,6 +11,7 @@
 #include <boost/circular_buffer.hpp>
 #include "viewerwindow.h"
 #include "alignwindow.h"
+#include "psensors.h"
 
 using namespace cv;
 using namespace Imf;
@@ -34,6 +35,11 @@ signals:
 
     void current_image_changed(Mat& rgb, Mat& depth);
 
+public slots:
+
+    // overloading to make sure the application quits when main window closes
+    virtual bool close() { on_actionExit_triggered(); };
+
 private slots:
 
     bool on_stepButton_clicked();
@@ -42,19 +48,13 @@ private slots:
 
     void on_pauseButton_clicked();
 
-    void on_saveButton_clicked();
-
     void on_actionUpdateClipDepth_triggered();
 
     void on_action3D_View_triggered();
 
-    void on_loadButton_clicked();
-
     void on_storeButton_clicked();
 
     void on_spinBoxStorage_valueChanged(int arg1);
-
-    void on_saveAllButton_clicked();
 
     void on_alignButton_clicked();
 
@@ -66,6 +66,14 @@ private slots:
 
     void on_actionAbout_triggered();
 
+    void on_actionSave_triggered();
+
+    void on_actionOpen_triggered();
+
+    void on_actionSave_all_triggered();
+
+    void on_triangulateCheckBox_stateChanged(int arg1);
+
     void on_alignAllButton_clicked();
 
 private:
@@ -74,7 +82,7 @@ private:
     Ui::MainWindow *ui;
 
     // video capture
-    VideoCapture m_cap;
+    CPrimeSensors m_sensors;
     QTimer m_timer;
 
     // current data
@@ -94,11 +102,12 @@ private:
     AlignWindow* m_alignment;
 
     // save routines
-    bool save_as_ply(size_t index, QString fn);
+    bool save_pcl_as_ply(size_t index, QString fn);
+    bool save_mesh_as_ply(size_t index, QString fn);
     bool save_as_png(size_t index, QString fn);
     bool save_as_exr(size_t index, QString fn);
 
-    // helpher routine
+    // helper routine
     unsigned short get_smoothed_depth(size_t i, size_t j);
     Mat get_depth_from_buffer();
     void update_live_view();
@@ -106,12 +115,30 @@ private:
     // geometry/alignment functions
     Mat transform_to_first_image(size_t index);
     Mat estimate_world_frame();
-    void get_pcl(size_t index, float maxr, Mat F, vector<Point3f>& vertices);         // replace depth by distance from projection center everywhere!!!!
+
+    /*! \brief Converts an image in the storage into a colored 3d point cloud for export or visualization.
+     * \param[in] index number of stored depth image
+     * \param[out] vertices point cloud in 3d
+     * \param[out] colors color of points
+     * \param[in] maxr threshold on the distance points can have to the origin (after application of the transform \f$F\f$)
+     * \param[in] F coordinate to apply to the points
+     */
+    void get_pcl(size_t index, vector<Point3f>& vertices, vector<Vec3b>& colors, float maxr = 10000, Mat F = Mat::eye(4,4,CV_32FC1));
+
+    /*! \brief Converts an image in the storage into a colored 3d mesh.
+     * \param[in] index number of stored depth image
+     * \param[out] vertices point cloud in 3d
+     * \param[out] colors color of points
+     * \param[out] faces connectivity of the mesh
+     * \param[in] maxr threshold on the distance points can have to the origin (after application of the transform \f$F\f$)
+     * \param[in] F coordinate to apply to the points
+     */
+    void get_mesh(size_t index, vector<Point3f>& vertices, vector<Vec3b>& colors, vector<Vec4i>& faces, float maxr = 10000, Mat F = Mat::eye(4,4,CV_32FC1));
 
 protected:
 
+    //! Handles keyboard input.
     virtual void keyPressEvent(QKeyEvent* event);
-
 
 };
 

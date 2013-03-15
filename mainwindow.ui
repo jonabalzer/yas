@@ -97,186 +97,6 @@
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget_3">
-    <property name="geometry">
-     <rect>
-      <x>680</x>
-      <y>70</y>
-      <width>291</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="depthControl">
-     <item>
-      <widget class="QLabel" name="maxdepthLabel">
-       <property name="text">
-        <string>Max</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSlider" name="depthclipSlider">
-       <property name="value">
-        <number>99</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="maxDepth">
-       <property name="text">
-        <string>6000</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget_4">
-    <property name="geometry">
-     <rect>
-      <x>680</x>
-      <y>110</y>
-      <width>291</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="focalLength">
-     <item>
-      <widget class="QLabel" name="labelCameraControl">
-       <property name="font">
-        <font>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>Camera</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QLabel" name="fLabel">
-       <property name="text">
-        <string>Focal length</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="fvEdit">
-       <property name="text">
-        <string>525</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="fuEdit">
-       <property name="text">
-        <string>525</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget_5">
-    <property name="geometry">
-     <rect>
-      <x>680</x>
-      <y>150</y>
-      <width>291</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="principalPoint">
-     <item>
-      <widget class="QLabel" name="cLabel">
-       <property name="text">
-        <string>Principal point</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="cuEdit">
-       <property name="text">
-        <string>319.5</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="cvEdit">
-       <property name="text">
-        <string>239.5</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget_6">
-    <property name="geometry">
-     <rect>
-      <x>680</x>
-      <y>30</y>
-      <width>291</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="triangulationControl">
-     <item>
-      <widget class="QLabel" name="labelDepthControl">
-       <property name="font">
-        <font>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>Depth</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QLabel" name="labelTriangulation">
-       <property name="text">
-        <string>Triangulation Threshold</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="triEdit">
-       <property name="text">
-        <string>20</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
    <widget class="QLabel" name="liveLabel">
     <property name="geometry">
      <rect>
@@ -343,13 +163,61 @@
    <widget class="QWidget" name="horizontalLayoutWidget_7">
     <property name="geometry">
      <rect>
-      <x>120</x>
+      <x>10</x>
       <y>570</y>
-      <width>541</width>
+      <width>651</width>
       <height>31</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="saveControlLayout">
+     <item>
+      <widget class="QSpinBox" name="spinBoxStorage">
+       <property name="maximum">
+        <number>0</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="vertLine">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="maxdepthLabel">
+       <property name="text">
+        <string>Max</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="depthclipSlider">
+       <property name="maximum">
+        <number>199</number>
+       </property>
+       <property name="value">
+        <number>199</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="maxDepth">
+       <property name="text">
+        <string>10000</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="vertLine2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
      <item>
       <widget class="QPushButton" name="storeButton">
        <property name="text">
@@ -364,216 +232,234 @@
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="Line" name="line_2">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="loadButton">
-       <property name="text">
-        <string>Load</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="saveButton">
-       <property name="text">
-        <string>Save</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="saveAllButton">
-       <property name="text">
-        <string>Save All</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="formatBox">
-       <item>
-        <property name="text">
-         <string>.png</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>.exr</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>.ply</string>
-        </property>
-       </item>
-      </widget>
-     </item>
     </layout>
    </widget>
-   <widget class="QSpinBox" name="spinBoxStorage">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>570</y>
-      <width>60</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="maximum">
-     <number>0</number>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="alignButton">
-    <property name="geometry">
-     <rect>
-      <x>872</x>
-      <y>450</y>
-      <width>98</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Align</string>
-    </property>
-   </widget>
-   <widget class="QWidget" name="gridLayoutWidget">
+   <widget class="QGroupBox" name="exportGroupBox">
     <property name="geometry">
      <rect>
       <x>680</x>
-      <y>190</y>
-      <width>291</width>
-      <height>251</height>
+      <y>480</y>
+      <width>281</width>
+      <height>111</height>
      </rect>
     </property>
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="8" column="0">
-      <widget class="QLabel" name="goodMatchLabel">
-       <property name="text">
-        <string>Feature Rejection Threshold</string>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="1">
-      <widget class="QLineEdit" name="acceptanceEdit">
-       <property name="text">
-        <string>10</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="1">
-      <widget class="QLineEdit" name="goodMatchEdit">
-       <property name="text">
-        <string>0.8</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="alignLabel">
-       <property name="font">
-        <font>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>Alignment</string>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="0">
-      <widget class="QLabel" name="nosamplesLabel">
-       <property name="text">
-        <string>RANSAC Sample Size</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="noFeatLabel">
-       <property name="text">
-        <string>SIFT Number of Features</string>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="0">
-      <widget class="QLabel" name="acceptanceLabel">
-       <property name="text">
-        <string>Acceptance Threshold</string>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="1">
-      <widget class="QLineEdit" name="nosamplesEdit">
-       <property name="text">
-        <string>10000</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="1">
-      <widget class="QLineEdit" name="edgeThresholdEdit">
-       <property name="text">
-        <string>20</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>SIFT Number of Octaves</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QLineEdit" name="noFeatEdit">
-       <property name="text">
-        <string>500</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0">
-      <widget class="QLabel" name="pointThresholdLabel">
-       <property name="text">
-        <string>SIFT Point Threshold</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="1">
-      <widget class="QLineEdit" name="pointThresholdEdit">
-       <property name="text">
-        <string>0.1</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="0">
-      <widget class="QLabel" name="edgeThresholdLabel">
-       <property name="text">
-        <string>SIFT Edge Threshold</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="QLineEdit" name="noOctavesEdit">
-       <property name="text">
-        <string>5</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <property name="title">
+     <string>Export</string>
+    </property>
+    <property name="flat">
+     <bool>true</bool>
+    </property>
+    <widget class="QWidget" name="horizontalLayoutWidget_6">
+     <property name="geometry">
+      <rect>
+       <x>2</x>
+       <y>30</y>
+       <width>271</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="triangulationControl">
+      <item>
+       <widget class="QCheckBox" name="triangulateCheckBox">
+        <property name="text">
+         <string>Triangulate</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="labelTriangulation">
+        <property name="text">
+         <string>Threshold</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="triEdit">
+        <property name="text">
+         <string>10</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </widget>
-   <widget class="QPushButton" name="alignAllButton">
+   <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
-      <x>770</x>
-      <y>450</y>
-      <width>98</width>
-      <height>27</height>
+      <x>680</x>
+      <y>30</y>
+      <width>291</width>
+      <height>441</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Align All</string>
+    <property name="title">
+     <string>Alignment</string>
     </property>
+    <widget class="QWidget" name="gridLayoutWidget_2">
+     <property name="geometry">
+      <rect>
+       <x>2</x>
+       <y>30</y>
+       <width>281</width>
+       <height>227</height>
+      </rect>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="pointThresholdEdit">
+        <property name="text">
+         <string>0.1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="goodMatchLabel">
+        <property name="text">
+         <string>Feature Rejection Threshold</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>SIFT Number of Octaves</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="nosamplesLabel">
+        <property name="text">
+         <string>RANSAC Sample Size</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="noFeatLabel">
+        <property name="text">
+         <string>SIFT Number of Features</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="edgeThresholdLabel">
+        <property name="text">
+         <string>SIFT Edge Threshold</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="noFeatEdit">
+        <property name="text">
+         <string>500</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="noOctavesEdit">
+        <property name="text">
+         <string>5</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="pointThresholdLabel">
+        <property name="text">
+         <string>SIFT Point Threshold</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="acceptanceLabel">
+        <property name="text">
+         <string>Acceptance Threshold</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="edgeThresholdEdit">
+        <property name="text">
+         <string>20</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QLineEdit" name="goodMatchEdit">
+        <property name="text">
+         <string>0.8</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QLineEdit" name="nosamplesEdit">
+        <property name="text">
+         <string>10000</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QLineEdit" name="acceptanceEdit">
+        <property name="text">
+         <string>10</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QPushButton" name="alignButton">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>270</y>
+       <width>71</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Align</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="alignAllButton">
+     <property name="geometry">
+      <rect>
+       <x>212</x>
+       <y>270</y>
+       <width>71</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Align All</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="centerCheckBox">
+     <property name="geometry">
+      <rect>
+       <x>114</x>
+       <y>273</y>
+       <width>101</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Center CS</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -589,6 +475,9 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSave_all"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
@@ -626,6 +515,21 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="actionSave_all">
+   <property name="text">
+    <string>Save all</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="text">
+    <string>Open</string>
    </property>
   </action>
  </widget>
