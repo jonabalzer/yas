@@ -44,6 +44,7 @@ private:
     GLdouble m_F[16];
 
     void translate(float dx, float dy, float dz);
+    void rotate(const float* axis, float angle);
 
 protected:
 
@@ -51,6 +52,7 @@ protected:
     //virtual void mouseReleaseEvent(QMouseEvent*);
     //virtual void mouseMoveEvent(QMouseEvent*);
     virtual void wheelEvent(QWheelEvent* event);
+    virtual void keyPressEvent(QKeyEvent* event);
 
 };
 

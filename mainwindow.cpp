@@ -339,7 +339,7 @@ bool  MainWindow::save_as_ply(size_t index, QString fn) {
 void MainWindow::on_actionUpdateClipDepth_triggered()
 {
 
-     m_zmax = (double)ui->depthclipSlider->sliderPosition()*(6000.0/99.0);
+    m_zmax = (double)ui->depthclipSlider->sliderPosition()*(6000.0/99.0);
 
     stringstream ss;
     size_t zmax = (size_t)m_zmax;
