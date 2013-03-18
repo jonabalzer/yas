@@ -18,12 +18,12 @@ using namespace cv;
 
 CCam::CCam() {
 
-	m_size[0] = 0;
-	m_size[1] = 0;
-	m_f[0] = 0;
-	m_f[1] = 0;
-	m_c[0] = 0;
-	m_c[1] = 0;
+    m_size[0] = 640;
+    m_size[1] = 480;
+    m_f[0] = 500;
+    m_f[1] = 500;
+    m_c[0] = 319.5;
+    m_c[1] = 239.5;
 
 	for(size_t i=0;i<5;i++)
 		m_k[i]=0;
@@ -35,6 +35,26 @@ CCam::CCam() {
 	m_Finv = m_F;
 
 }
+
+CCam::CCam(const vector<size_t>& size, const vector<float>& f, const vector<float>& c, const float& alpha, const vector<float>& k, const Mat& F):
+    m_alpha(alpha),
+    m_F(F) {
+
+    m_size[0] = size[0];
+    m_size[1] = size[1];
+    m_f[0] = f[0];
+    m_f[1] =f[1];
+    m_c[0] = c[0];
+    m_c[1] = c[1];
+
+    for(size_t i=0;i<5;i++)
+        m_k[i]=k[i];
+
+    m_Finv = m_F.inv();
+
+}
+
+
 
 ostream& operator<< (ostream& os, const CCam& x) {
 
@@ -260,4 +280,33 @@ Vec3f CCam::UnProjectLocal(const Vec2i& u) const {
     return xc;
 
 }
+
+CDepthCam::CDepthCam():
+    CCam(),
+    m_d(),
+    m_D(),
+    m_a () {
+
+}
+
+CDepthCam::CDepthCam(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a):
+    CCam(size,f,c,alpha,k,F),
+    m_D(D) {
+
+    m_d[0] = d[0];
+    m_d[1] = d[1];
+    m_a[0] = a[0];
+    m_a[1] = a[1];
+
+}
+
+float CDepthCam::DisparityToDepth(size_t i, size_t j, float d) {
+
+    float D = m_D.at<float>(i,j);
+
+    return d + D*exp(m_a[0]-m_a[1]*d);
+
+}
+
+
 

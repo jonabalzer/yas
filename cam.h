@@ -10,6 +10,9 @@
 
 #include <stdlib.h>
 #include <opencv2/opencv.hpp>
+#include <vector>
+
+class CDepthColorSensor;
 
 /*! \brief camera model
  *
@@ -18,10 +21,17 @@
  */
 class CCam {
 
+    friend class CDepthColorSensor;
+
 public:
+
+
 
 	//! Constructor.
 	CCam();
+
+    //! Parametrized constructor.
+    CCam(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F);
 
 	/*! \brief Projects a point into the image plane.
 	 *
@@ -68,8 +78,6 @@ public:
 	//! Writes the camera parameters to a stream.
 	friend std::ostream& operator << (std::ostream& os, const CCam& x);
 
-
-
 protected:
 
     size_t m_size[2];			//!< pixel size
@@ -82,5 +90,28 @@ protected:
 
 };
 
+class CDepthCam:public CCam {
+
+    friend class CDepthColorSensor;
+
+public:
+
+    //! Standard constructor.
+    CDepthCam();
+
+    //! Parametrized constructor.
+    CDepthCam(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a);
+
+    //! Converts the disparity from the depth sensor into a metric depth.
+    float DisparityToDepth(size_t i, size_t j, float d);
+
+private:
+
+    float m_d[2];               //! disparity inversion parameters
+    cv::Mat m_D;                //! spatial distortion pattern
+    float m_a[2];           //! distance weights of distortion pattern
+
+
+};
 
 #endif /* CAM_H_ */

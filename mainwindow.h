@@ -12,6 +12,7 @@
 #include "viewerwindow.h"
 #include "alignwindow.h"
 #include "psensors.h"
+#include "dsensor.h"
 
 using namespace cv;
 using namespace Imf;
@@ -82,7 +83,8 @@ private:
     Ui::MainWindow *ui;
 
     // video capture
-    CPrimeSensors m_sensors;
+    //CPrimeSensors m_sensors;
+    CDepthColorSensor m_sensors;
     QTimer m_timer;
 
     // current data

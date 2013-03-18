@@ -1,7 +1,6 @@
 #ifndef PSENSORS_H
 #define PSENSORS_H
 
-#include <map>
 #include <OpenNI.h>
 #include "opencv2/opencv.hpp"
 

@@ -19,7 +19,8 @@ SOURCES += main.cpp\
         calignransac.cpp \
         cplaneransac.cpp \
         psensors.cpp \
-    cam.cpp
+    cam.cpp \
+    dsensor.cpp
 
 HEADERS  += mainwindow.h \
             viewerwindow.h \
@@ -28,7 +29,8 @@ HEADERS  += mainwindow.h \
             calignransac.h \
             cplaneransac.h \
             psensors.h \
-    cam.h
+    cam.h \
+    dsensor.h
 
 FORMS    += mainwindow.ui \
             viewerwindow.ui \

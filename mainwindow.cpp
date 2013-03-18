@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_rgb_storage(),
     m_depth_storage(),
     m_trafo_storage(),
-    m_zmax(6000),
+    m_zmax(2047),
     m_viewer(new ViewerWindow),
     m_alignment(new AlignWindow)
 {
@@ -39,8 +39,44 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),this,SLOT(updata_static_view(Mat&,Mat&)));
     connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),m_viewer,SLOT(on_current_image_changed(Mat&,Mat&)));
 
-    if(m_sensors.OpenPrimeSenseModule())
+    if(m_sensors.OpenDevice(0))
         QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
+
+
+    // hard coded params
+    vector<size_t> srgb, sd;
+    vector<float> frgb, fd, crgb, cd, krgb, kd, dd, da;
+    srgb.push_back(640);
+    srgb.push_back(480);
+    frgb.push_back(530.51);
+    frgb.push_back(532.84);
+    crgb.push_back(324.43);
+    crgb.push_back(242.91);
+    krgb.push_back(0.0013);
+    krgb.push_back(0.1106);
+    krgb.push_back(0.0051);
+    krgb.push_back(0.0079);
+    krgb.push_back(-0.6042);
+
+    m_sensors.ConfigureRGB(srgb,frgb,crgb,0,krgb,Mat::eye(4,4,CV_32FC1));
+
+    sd.push_back(640);
+    sd.push_back(480);
+    fd.push_back(555.88);
+    fd.push_back(551.13);
+    cd.push_back(307.08);
+    cd.push_back(207.54);
+    kd.push_back(0);
+    kd.push_back(0);
+    kd.push_back(0);
+    kd.push_back(0);
+    kd.push_back(0);
+    dd.push_back(4.36);
+    dd.push_back(-0.003233);
+    da.push_back(1.8857);
+    da.push_back(0.0039);
+
+    m_sensors.ConfigureDepth(sd,fd,cd,0,kd,Mat::eye(4,4,CV_32FC1),dd,Mat::zeros(4,4,CV_32FC1),da);
 
 }
 
@@ -209,7 +245,7 @@ bool MainWindow::save_mesh_as_ply(size_t index, QString fn) {
 
 bool MainWindow::save_as_pgm(size_t index, QString fn) {
 
-    return imwrite(fn.toStdString().c_str(),m_depth_storage[index]);
+    return !imwrite(fn.toStdString().c_str(),m_depth_storage[index]);
 
 }
 
@@ -217,7 +253,7 @@ void MainWindow::on_actionUpdateClipDepth_triggered()
 {
 
     int slidermax = ui->depthclipSlider->maximum();
-    m_zmax = (double)ui->depthclipSlider->sliderPosition()*(10000.0/(float)slidermax);
+    m_zmax = (double)ui->depthclipSlider->sliderPosition()*(2047.0/(float)slidermax);
 
     stringstream ss;
     ss << (size_t)m_zmax;
@@ -360,8 +396,14 @@ void MainWindow::on_alignButton_clicked()
     goodfeatures = ui->goodMatchEdit->text().toDouble();
     nosamples = (size_t)ui->nosamplesEdit->text().toInt();
     acceptthreshold = ui->acceptanceEdit->text().toDouble();
-    vector<float> f = m_sensors.GetFocalLengths();
-    vector<float> c = m_sensors.GetPrincipalPoint();
+    vector<float> f;// = m_sensors.GetFocalLengths();
+    vector<float> c;// = m_sensors.GetPrincipalPoint();
+
+    f.push_back(500);
+    f.push_back(500);
+    c.push_back(320);
+    c.push_back(240);
+
 
     // create ransac object
     CAlignRansac alignment(f[0],f[1],c[0],c[1]);
@@ -496,7 +538,6 @@ void MainWindow::update_live_view() {
     Mat depthrgb;
     cvtColor(depthf, depthrgb, CV_GRAY2BGR);
 
-    //QImage imgdd(depthf.data,depthf.cols,depthf.rows,QImage::Format_Indexed8);
     QImage imgdd(depthrgb.data,depthf.cols,depthf.rows,QImage::Format_RGB888);
 
     double variance = ui->triEdit->text().toDouble();
@@ -511,7 +552,7 @@ void MainWindow::update_live_view() {
             zq[2] = (double)img.at<unsigned short>(i,j+1);
             zq[3] = (double)img.at<unsigned short>(i+1,j+1);
 
-            if(zq[0]>m_zmax)
+            if(zq[0]>=m_zmax)
                 imgdd.setPixel(j,i,qRgb(0,0,0));
             else if(zq[0]<m_zmax && zq[1]<m_zmax && zq[2]<m_zmax && zq[3]<m_zmax) {
 
@@ -540,16 +581,7 @@ void MainWindow::updata_static_view(Mat& rgb, Mat& depth) {
     QImage cimg(rgb.data,rgb.cols,rgb.rows,QImage::Format_RGB888);
     ui->labeRGBStorage->setPixmap(QPixmap::fromImage(cimg));
 
-    //Mat depthf  (Size(640,480),CV_8UC1); // exchange this with member function
-    //depth.convertTo(depthf, CV_8UC1, 255.0/6000.0);
-
-    //Mat depthrgb;
-    //cvtColor(depthf, depthrgb, CV_GRAY2BGR);
-    //QImage imgdd(depthrgb.data,depthf.cols,depthf.rows,QImage::Format_RGB888);
-
     QImage imgdd(depth.cols,depth.rows,QImage::Format_RGB888);
-
-    double variance = ui->triEdit->text().toDouble();
 
     for(size_t i=0; i<(size_t)depth.rows-1; i++) {
 
@@ -557,7 +589,7 @@ void MainWindow::updata_static_view(Mat& rgb, Mat& depth) {
 
             float z = (float)depth.at<unsigned short>(i,j);
 
-            if(z>m_zmax || z==0)
+            if(z>=m_zmax || z==0)
                 imgdd.setPixel(j,i,qRgb(0,0,0));
             else {
 
@@ -710,8 +742,14 @@ void MainWindow::get_pcl(size_t index, vector<Point3f>& vertices, vector<Vec3b>&
                  F.at<float>(2,0)==0 && F.at<float>(2,1)==0 && F.at<float>(2,2)==1 && F.at<float>(2,3)==0;
 
     // get camera intrinsics
-    vector<float> f = m_sensors.GetFocalLengths();
-    vector<float> c = m_sensors.GetPrincipalPoint();
+    vector<float> f;// = m_sensors.GetFocalLengths();
+    vector<float> c;// = m_sensors.GetPrincipalPoint();
+
+    f.push_back(500);
+    f.push_back(500);
+    c.push_back(320);
+    c.push_back(240);
+
 
     // allocate space for temporary variable
     vector<Point3f> xarray;
@@ -766,8 +804,14 @@ void MainWindow::get_mesh(size_t index, vector<Point3f>& vertices, vector<Vec3b>
                  F.at<float>(2,0)==0 && F.at<float>(2,1)==0 && F.at<float>(2,2)==1 && F.at<float>(2,3)==0;
 
     // get camera intrinsics
-    vector<float> f = m_sensors.GetFocalLengths();
-    vector<float> c = m_sensors.GetPrincipalPoint();
+    vector<float> f;// = m_sensors.GetFocalLengths();
+    vector<float> c;// = m_sensors.GetPrincipalPoint();
+
+    f.push_back(500);
+    f.push_back(500);
+    c.push_back(320);
+    c.push_back(240);
+
 
     // allocate space for temporary variable
     vector<Point3f> xarray;
@@ -972,7 +1016,7 @@ void MainWindow::on_actionSave_all_triggered()
 
     QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",
-                               tr("*.png;;*.exr;;*.ply"));
+                               tr("*.png;;*.exr;;*.ply;;*.pgm"));
 
     int format = 0;
 
@@ -982,6 +1026,8 @@ void MainWindow::on_actionSave_all_triggered()
         format = 1;
     else if (filename.endsWith(".ply"))
         format = 2;
+    else if(filename.endsWith(".pgm"))
+        format = 3;
     else
         return;
 
@@ -1033,6 +1079,14 @@ void MainWindow::on_actionSave_all_triggered()
             break;
 
         }
+        case 3:
+        {
+
+            error = save_as_pgm(i,QString((prefix+string(".pgm")).c_str()));
+
+            break;
+
+        }
 
         }
 
@@ -1080,8 +1134,15 @@ void MainWindow::on_alignAllButton_clicked()
         goodfeatures = ui->goodMatchEdit->text().toDouble();
         nosamples = (size_t)ui->nosamplesEdit->text().toInt();
         acceptthreshold = ui->acceptanceEdit->text().toDouble();
-        vector<float> f = m_sensors.GetFocalLengths();
-        vector<float> c = m_sensors.GetPrincipalPoint();
+        vector<float> f;// = m_sensors.GetFocalLengths();
+        vector<float> c;// = m_sensors.GetPrincipalPoint();
+
+        f.push_back(500);
+        f.push_back(500);
+        c.push_back(320);
+        c.push_back(240);
+
+
 
         // create ransac object
         CAlignRansac alignment(f[0],f[1],c[0],c[1]);

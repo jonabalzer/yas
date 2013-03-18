@@ -207,7 +207,7 @@
      <item>
       <widget class="QLabel" name="maxDepth">
        <property name="text">
-        <string>10000</string>
+        <string>2047</string>
        </property>
       </widget>
      </item>
