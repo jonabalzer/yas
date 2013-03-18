@@ -27,9 +27,8 @@ Mat CAlignRansac::GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& dep
     detector(rgb0,Mat(),kp0,desc0);
     detector(rgb1,Mat(),kp1,desc1);
 
-
     // matching
-    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-L1");
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
     vector<vector<DMatch> > matches;
     matcher->knnMatch(desc0,desc1,matches,2);
 
