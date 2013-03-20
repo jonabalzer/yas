@@ -18,8 +18,8 @@ using namespace cv;
 
 CCam::CCam() {
 
-    m_size[0] = 1280;
-    m_size[1] = 1024;
+    m_size[0] = 640;
+    m_size[1] = 480;
     m_f[0] = 500;
     m_f[1] = 500;
     m_c[0] = 319.5;
@@ -300,8 +300,8 @@ CDepthCam::CDepthCam():
     m_D(),
     m_a () {
 
-    m_size[0] = 640;
-    m_size[1] = 480;
+    //m_size[0] = 640;
+    //m_size[1] = 480;
 
 }
 
@@ -309,8 +309,8 @@ CDepthCam::CDepthCam(const std::vector<size_t>& size, const std::vector<float>& 
     CCam(size,f,c,alpha,k,F),
     m_D(D) {
 
-    m_size[0] = 640;
-    m_size[1] = 480;
+    //m_size[0] = 640;
+    //m_size[1] = 480;
     m_d[0] = d[0];
     m_d[1] = d[1];
     m_a[0] = a[0];
@@ -328,10 +328,4 @@ float CDepthCam::DisparityToDepth(size_t i, size_t j, float d) {
 
     return 1.0/(m_d[0]+dc*m_d[1]);
 }
-
-//void CDepthCam::SetMaxDisparity() {
-
-//    m_max_d = ((1/Z_MIN_MM)-m_d[0])/m_d[1];
-
-//}
 

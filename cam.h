@@ -110,12 +110,8 @@ public:
 private:
 
     float m_d[2];               //! disparity inversion parameters
-    //float m_max_d;              //! maximum disparity, depends on #m_d
     cv::Mat m_D;                //! spatial distortion pattern
     float m_a[2];               //! distance weights of distortion pattern
-
-    //! Calculates the maximum disparity.
-    //void SetMaxDisparity();
 
 };
 

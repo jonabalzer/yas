@@ -33,7 +33,7 @@ CAlignRansac::CAlignRansac(vector<Vec3f>& x0, vector<Vec3f>&x1):
 //    detector(rgb1,Mat(),kp1,desc1);
 
 //    // matching
-//    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForcel");
+//    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
 //    vector<vector<DMatch> > matches;
 //    matcher->knnMatch(desc0,desc1,matches,2);
 
@@ -215,7 +215,7 @@ Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, size_t& ninliers, Q
         inds.push_back(rand()%m_x0.size());
 
         // make sure the indices are all different
-        if(!(inds[0]==inds[1] && inds[1]==inds[2])) {
+        if(!(inds[0]==inds[1] && inds[1]==inds[2] && inds[0]==inds[2])) {
 
             // calculate hypothesis
             EstimateMotion(inds,result);

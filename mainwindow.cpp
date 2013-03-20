@@ -45,59 +45,56 @@ MainWindow::MainWindow(QWidget *parent) :
     // hard coded params
     vector<size_t> srgb, sd;
     vector<float> frgb, fd, crgb, cd, krgb, kd, dd, da;
-    srgb.push_back(1280);
-    srgb.push_back(1024);
-    frgb.push_back(2*533.63);
-    frgb.push_back(2*534.98);
-    crgb.push_back(2*312.33);
-    crgb.push_back(2*238.36);
-    krgb.push_back(0.0433);
-    krgb.push_back(-0.2370);
-    krgb.push_back(0.0010);
-    krgb.push_back(-0.0014);
-    krgb.push_back(0.2236);
+    srgb.push_back(640);
+    srgb.push_back(480);
+    frgb.push_back(1070.42/2);
+    frgb.push_back(1071.9/2);
+    crgb.push_back(635.66/2);
+    crgb.push_back(525.34/2);
+    krgb.push_back(0.0347);
+    krgb.push_back(-0.2663);
+    krgb.push_back(0.0078);
+    krgb.push_back(0.0023);
+    krgb.push_back(0.3559);
 
     Mat F = Mat::eye(4,4,CV_32FC1);
-    F.at<float>(0,0)= 0.99986;
-    F.at<float>(0,1)= -0.01567;
-    F.at<float>(0,2)= 0.00607;
-    F.at<float>(0,3)= -0.02696;
-    F.at<float>(1,0)= 0.01567;
-    F.at<float>(1,1)= 0.99988;
-    F.at<float>(1,2)= 0.00054;
-    F.at<float>(1,3)= -0.00501;
-    F.at<float>(2,0)= -0.00608;
-    F.at<float>(2,1)= -0.00045;
-    F.at<float>(2,2)= 0.99998;
-    F.at<float>(2,3)= 0.00961;
+    F.at<float>(0,0)= 0.99981;
+    F.at<float>(0,1)= -0.01381;
+    F.at<float>(0,2)=  -0.01411;
+    F.at<float>(0,3)= -0.03522;
+    F.at<float>(1,0)= 0.01334;
+    F.at<float>(1,1)= 0.99937;
+    F.at<float>(1,2)= -0.0328;
+    F.at<float>(1,3)= -0.00999;
+    F.at<float>(2,0)= 0.01455;
+    F.at<float>(2,1)= 0.03267;
+    F.at<float>(2,2)= 0.99936;
+    F.at<float>(2,3)= -0.00707;
 
     m_sensor.ConfigureRGB(srgb,frgb,crgb,0,krgb,F);
 
     sd.push_back(640);
     sd.push_back(480);
-    fd.push_back(562.11);
-    fd.push_back(557.34);
-    cd.push_back(315.40);
-    cd.push_back(237.46);
+    fd.push_back(578.03);
+    fd.push_back(569.53);
+    cd.push_back(300.43);
+    cd.push_back(222.58);
     kd.push_back(0);
     kd.push_back(0);
     kd.push_back(0);
     kd.push_back(0);
     kd.push_back(0);
-    dd.push_back(4.13);
-    dd.push_back(-0.003059);
+    dd.push_back(3.98);
+    dd.push_back(-0.002910);
     da.push_back(1.7640);
     da.push_back(0.0307);
 
     m_sensor.ConfigureDepth(sd,fd,cd,0,kd,Mat::eye(4,4,CV_32FC1),dd,Mat::zeros(sd[1],sd[0],CV_32FC1),da);
 
-
-
     float minz = 0.3;
     float maxz = 1.5; // get from driver, remove member m_zmax (convert from slider position)
     int maxd = (int)((1/maxz-dd[0])/dd[1]);
     int mind = (int)((1/minz-dd[0])/dd[1]);
-
 
     ui->depthclipSlider->setMinimum(mind);
     ui->depthclipSlider->setMaximum(maxd);
@@ -163,7 +160,6 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
 
     Array2D<Rgba> out(m_rgb_storage[index].rows,m_rgb_storage[index].cols);
 
-    cout << m_depth_storage[index].rows << endl;
     for(size_t i=0; i<(size_t)m_rgb_storage[index].rows; i++) {
 
         for(size_t j=0; j<(size_t)m_rgb_storage[index].cols; j++) {
@@ -182,6 +178,10 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
         }
 
     }
+
+    //Header header(m_rgb.cols,m_rgb.rows);
+    //header.insert ("comments", StringAttribute ("written by ucla vision lab kinect scan"));
+    //header.insert ("cameraTransform", M44fAttribute (cameraTransform));
 
     RgbaOutputFile file(fn.toStdString().c_str(),m_rgb.cols,m_rgb.rows, WRITE_RGBA);
     file.setFrameBuffer (&out[0][0],1,m_rgb.cols);
@@ -418,29 +418,9 @@ void MainWindow::on_alignButton_clicked()
     m_alignment->activateWindow();
     m_alignment->raise();
 
-    // get parameters
-//    size_t nfeat, noct, ninliers, nosamples, nmatches;
-//    double pthresh, ethresh, goodfeatures, acceptthreshold;
-//    nfeat = ui->noFeatEdit->text().toInt();
-//    noct = ui->noOctavesEdit->text().toInt();
-//    pthresh = ui->pointThresholdEdit->text().toDouble();
-//    ethresh = ui->edgeThresholdEdit->text().toDouble();
-//    goodfeatures = ui->goodMatchEdit->text().toDouble();
-//    nosamples = (size_t)ui->nosamplesEdit->text().toInt();
-//    acceptthreshold = ui->acceptanceEdit->text().toDouble();
-//    vector<float> f;// = m_sensors.GetFocalLengths();
-//    vector<float> c;// = m_sensors.GetPrincipalPoint();
-
-
     // warp to depth image plane
     Mat rgb0 = m_sensor.WarpRGBToDepth(m_depth_storage[index-1],m_rgb_storage[index-1]);
     Mat rgb1 = m_sensor.WarpRGBToDepth(m_depth_storage[index],m_rgb_storage[index]);
-
-    imwrite("test.png",rgb0);
-    imwrite("test1.png",rgb1);
-//    Mat rgb0 = m_rgb_storage[index-1];//m_sensors.WarpRGBToDepth(m_depth_storage[index-1],m_rgb_storage[index-1]);
-//    Mat rgb1 = m_rgb_storage[index];//m_sensors.WarpRGBToDepth(m_depth_storage[index],m_rgb_storage[index]);
-
 
     // init non-free module
     initModule_nonfree();
@@ -482,13 +462,13 @@ void MainWindow::on_alignButton_clicked()
 
             // if both points have depth, compute their 3d location
             if(m_depth_storage[index-1].at<unsigned short>((size_t)u0.y,(size_t)u0.x)<maxd
-               && m_depth_storage[index].at<unsigned short>((size_t)u0.y,(size_t)u0.x)<maxd
+               && m_depth_storage[index].at<unsigned short>((size_t)u1.y,(size_t)u1.x)<maxd
                && m_depth_storage[index-1].at<unsigned short>((size_t)u0.y,(size_t)u0.x)>mind
-               && m_depth_storage[index].at<unsigned short>((size_t)u0.y,(size_t)u0.x)>mind) {
+               && m_depth_storage[index].at<unsigned short>((size_t)u1.y,(size_t)u1.x)>mind) {
 
                 good_matches.push_back(matches[i][0]);
                 x0.push_back(m_sensor.GetPoint((size_t)u0.y,(size_t)u0.x,m_depth_storage[index-1]));
-                x1.push_back(m_sensor.GetPoint((size_t)u0.y,(size_t)u0.x,m_depth_storage[index]));
+                x1.push_back(m_sensor.GetPoint((size_t)u1.y,(size_t)u1.x,m_depth_storage[index]));
 
             }
 
@@ -523,12 +503,12 @@ void MainWindow::on_alignButton_clicked()
                                    ninliers,
                                    this);
 
-
     // bring alignment vis back
     m_alignment->raise();
 
     // store transformation
     m_trafo_storage[index] = F;
+
 
     // show inlier/outlier ratio
     double ratio = (double)ninliers/(double)good_matches.size();
@@ -845,7 +825,7 @@ void MainWindow::get_pcl(size_t index, vector<Point3f>& vertices, vector<Vec3b>&
     bool isfid = F.at<float>(0,0)==1 && F.at<float>(0,1)==0 && F.at<float>(0,2)==0 && F.at<float>(0,3)==0 &&
                  F.at<float>(1,0)==0 && F.at<float>(1,1)==1 && F.at<float>(1,2)==0 && F.at<float>(1,3)==0 &&
                  F.at<float>(2,0)==0 && F.at<float>(2,1)==0 && F.at<float>(2,2)==1 && F.at<float>(2,3)==0;
-
+cout << Fsr << endl;
     // allocate space for temporary variable
     vector<Point3f> xarray;
     Point3f x;
@@ -1187,78 +1167,128 @@ void MainWindow::on_triangulateCheckBox_stateChanged(int arg1)
 void MainWindow::on_alignAllButton_clicked()
 {
 
-//    if(m_rgb_storage.size()<2)
-//        return;
+    if(m_rgb_storage.size()<2)
+        return;
 
-//    m_timer.stop();
+    m_timer.stop();
 
-//    // show window
-//    m_alignment->show();
-//    m_alignment->activateWindow();
-//    m_alignment->raise();
+    // show window
+    m_alignment->show();
+    m_alignment->activateWindow();
+    m_alignment->raise();
 
-//    for(size_t i=0; i<m_rgb_storage.size()-1; i++) {
+    // init non-free module
+    initModule_nonfree();
 
-//        // get parameters
-//        size_t nfeat, noct, ninliers, nosamples, nmatches;
-//        double pthresh, ethresh, goodfeatures, acceptthreshold;
-//        nfeat = ui->noFeatEdit->text().toInt();
-//        noct = ui->noOctavesEdit->text().toInt();
-//        pthresh = ui->pointThresholdEdit->text().toDouble();
-//        ethresh = ui->edgeThresholdEdit->text().toDouble();
-//        goodfeatures = ui->goodMatchEdit->text().toDouble();
-//        nosamples = (size_t)ui->nosamplesEdit->text().toInt();
-//        acceptthreshold = ui->acceptanceEdit->text().toDouble();
-//        vector<float> f;// = m_sensors.GetFocalLengths();
-//        vector<float> c;// = m_sensors.GetPrincipalPoint();
+    // create SIFT object
+    SIFT detector(ui->noFeatEdit->text().toInt(),
+                  ui->noOctavesEdit->text().toInt(),
+                  ui->pointThresholdEdit->text().toDouble(),
+                  ui->edgeThresholdEdit->text().toDouble(),
+                  0.5);
 
-//        f.push_back(500);
-//        f.push_back(500);
-//        c.push_back(320);
-//        c.push_back(240);
 
-//        // create ransac object
-//        CAlignRansac alignment(f[0],f[1],c[0],c[1]);
+    for(size_t index=1; index<m_rgb_storage.size(); index++) {
 
-//        Mat vis = alignment.GenerateHypotheses(m_rgb_storage[i],
-//                                               m_rgb_storage[i+1],
-//                                               m_depth_storage[i],
-//                                               m_depth_storage[i+1],
-//                                               nfeat,
-//                                               noct,
-//                                               pthresh,
-//                                               ethresh,
-//                                               goodfeatures,
-//                                               nmatches);
+        // warp to depth image plane
+        Mat rgb0 = m_sensor.WarpRGBToDepth(m_depth_storage[index-1],m_rgb_storage[index-1]);
+        Mat rgb1 = m_sensor.WarpRGBToDepth(m_depth_storage[index],m_rgb_storage[index]);
 
-//        QImage cvis(vis.data,vis.cols,vis.rows,QImage::Format_RGB888);
-//        m_alignment->show_image(cvis);
-//        m_alignment->repaint();
-//        m_alignment->raise();
+        // detect and compute descriptors
+        vector<KeyPoint> kp0, kp1;
+        Mat desc0, desc1;
+        detector(rgb0,Mat(),kp0,desc0);
+        detector(rgb1,Mat(),kp1,desc1);
 
-//        // optimize
-//        Mat F = alignment.RunConcensus(nosamples,acceptthreshold,ninliers,this);
+        // matching
+        Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
+        vector<vector<DMatch> > matches;
+        matcher->knnMatch(desc0,desc1,matches,2);
 
-//        // store transformation
-//        m_trafo_storage[i+1] = F;
+        // compute 3d points
+        vector<DMatch> good_matches;
+        vector<Vec3f> x0, x1;
 
-//        // show inlier/outlier ratio
-//        double ratio = (double)ninliers/(double)nmatches;
-//        ratio *= 100;
-//        stringstream ss;
-//        ss << "The inlier ratio is " << ratio << "\%.";
-//        ui->statusBar->showMessage(ss.str().c_str());
+        int maxd = ui->depthclipSlider->maximum();
+        int mind = ui->depthclipSlider->minimum();
 
-//        // wait for a second
-//        QTimer timer;
-//        timer.setSingleShot(true);
-//        timer.setInterval(1000);
-//        timer.start();
+        for (size_t i = 0; i<matches.size(); i++) {
 
-//    }
+            // check if match is good
+            if(matches[i][0].distance/matches[i][1].distance<ui->goodMatchEdit->text().toDouble()) {
 
-//    // if checked, estimate the world coordinate system
-//    if(ui->centerCheckBox->isChecked())
-//        m_trafo_storage[0] = estimate_world_frame();
+                // get both locations
+                Point2f u0, u1;
+                u0 = kp0[matches[i][0].queryIdx].pt;
+                u1 = kp1[matches[i][0].trainIdx].pt;
+
+                // if both points have depth, compute their 3d location
+                if(m_depth_storage[index-1].at<unsigned short>((size_t)u0.y,(size_t)u0.x)<maxd
+                   && m_depth_storage[index].at<unsigned short>((size_t)u1.y,(size_t)u1.x)<maxd
+                   && m_depth_storage[index-1].at<unsigned short>((size_t)u0.y,(size_t)u0.x)>mind
+                   && m_depth_storage[index].at<unsigned short>((size_t)u1.y,(size_t)u1.x)>mind) {
+
+                    good_matches.push_back(matches[i][0]);
+                    x0.push_back(m_sensor.GetPoint((size_t)u0.y,(size_t)u0.x,m_depth_storage[index-1]));
+                    x1.push_back(m_sensor.GetPoint((size_t)u1.y,(size_t)u1.x,m_depth_storage[index]));
+
+                }
+
+            }
+
+        }
+
+        // create of good matches visualization
+        Mat img_matches;
+        drawMatches(rgb0,
+                    kp0,
+                    rgb1,
+                    kp1,
+                    good_matches,
+                    img_matches,
+                    Scalar::all(-1),
+                    Scalar::all(-1),
+                    vector<char>(),
+                    DrawMatchesFlags::DEFAULT);
+
+        QImage vis(img_matches.data,img_matches.cols,img_matches.rows,QImage::Format_RGB888);
+        m_alignment->show_image(vis);
+        m_alignment->repaint();
+
+        // create ransac object
+        CAlignRansac alignment(x0,x1);
+
+        // optimize
+        size_t ninliers = 0;
+        Mat F = alignment.RunConcensus(ui->nosamplesEdit->text().toInt(),
+                                       ui->acceptanceEdit->text().toDouble(),
+                                       ninliers,
+                                       this);
+
+        // bring alignment vis back
+        m_alignment->raise();
+
+        // store transformation
+        m_trafo_storage[index] = F;
+
+
+        // show inlier/outlier ratio
+        double ratio = (double)ninliers/(double)good_matches.size();
+        ratio *= 100;
+        stringstream ss;
+        ss << "The inlier ratio is " << ratio << "\%.";
+        ui->statusBar->showMessage(ss.str().c_str());
+
+        // wait for a second
+        QTimer timer;
+        timer.setSingleShot(true);
+        timer.setInterval(1000);
+        timer.start();
+
+    }
+
+    // if checked, estimate the world coordinate system
+    if(ui->centerCheckBox->isChecked())
+        m_trafo_storage[0] = estimate_world_frame();
 
 }
