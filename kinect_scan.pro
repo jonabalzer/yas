@@ -30,7 +30,7 @@ FORMS    += mainwindow.ui \
 
 unix:!symbian: {
 
-LIBS += -L/usr/local/lib/ -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_features2d -lopencv_nonfree -lHalf -lIlmImf -lGLU -lglut
+LIBS += -L/usr/local/lib/ -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_features2d -lopencv_nonfree -lHalf -lIlmImf
 
 INCLUDEPATH += /usr/local/include
 INCLUDEPATH += /usr/include/OpenEXR
@@ -39,7 +39,7 @@ INCLUDEPATH += /usr/include/OpenEXR
 
 mac:!symbian: {
 
-    LIBS += -L/usr/local/lib/ -L/opt/local/lib/ -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_features2d -lopencv_nonfree -lHalf -lIlmImf -lGLU -lglut
+    LIBS += -L/usr/local/lib/ -L/opt/local/lib/ -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_features2d -lopencv_nonfree -lHalf -lIlmImf
 
     INCLUDEPATH += /usr/local/include
     INCLUDEPATH += /usr/include/OpenEXR

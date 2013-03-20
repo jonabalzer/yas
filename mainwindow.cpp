@@ -223,6 +223,8 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
     file.setFrameBuffer (&out[0][0],1,m_rgb.cols);
     file.writePixels (m_rgb.rows);
 
+
+
     return 0;
 
 }
