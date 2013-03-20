@@ -77,13 +77,9 @@ void PCViewer::paintGL() {
         return;
 
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-   //glMatrixMode(GL_MODELVIEW);
-   glMatrixMode(GL_MODELVIEW);
+   glMatrixMode( GL_MODELVIEW );
    glLoadMatrixd(m_F);
 
-   glPushMatrix();
-   glLoadIdentity();
 
    glPointSize(2);
 
@@ -115,9 +111,6 @@ void PCViewer::paintGL() {
 
 
    glEnd();
-
-
-   glPopMatrix();
 
 }
 
@@ -156,6 +149,12 @@ void PCViewer::translate(float dx, float dy, float dz) {
 
 }
 
+void rotate(const float* axis, float angle) {
+
+
+
+}
+
 void PCViewer::wheelEvent(QWheelEvent* event)
 {
 
@@ -166,3 +165,12 @@ void PCViewer::wheelEvent(QWheelEvent* event)
   event->accept();
 }
 
+void PCViewer::keyPressEvent(QKeyEvent* event) {
+
+    translate(10,0,50);
+    //paintGL();
+    updateGL();
+
+    this->update();
+    cout << "trans" << endl;
+}
