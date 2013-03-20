@@ -12,6 +12,8 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 
+#define Z_MIN_MM 300
+
 class CDepthColorSensor;
 
 /*! \brief camera model
@@ -108,9 +110,12 @@ public:
 private:
 
     float m_d[2];               //! disparity inversion parameters
+    //float m_max_d;              //! maximum disparity, depends on #m_d
     cv::Mat m_D;                //! spatial distortion pattern
-    float m_a[2];           //! distance weights of distortion pattern
+    float m_a[2];               //! distance weights of distortion pattern
 
+    //! Calculates the maximum disparity.
+    //void SetMaxDisparity();
 
 };
 

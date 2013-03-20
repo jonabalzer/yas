@@ -1,7 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-
 #include <QMainWindow>
 #include <QTimer>
 #include <QKeyEvent>
@@ -11,7 +10,6 @@
 #include <boost/circular_buffer.hpp>
 #include "viewerwindow.h"
 #include "alignwindow.h"
-#include "psensors.h"
 #include "dsensor.h"
 
 using namespace cv;
@@ -63,7 +61,7 @@ private slots:
 
     void on_clearButton_clicked();
 
-    void updata_static_view(Mat& rgb, Mat& depth);
+    void update_static_view(Mat& rgb, Mat& depth);
 
     void on_actionAbout_triggered();
 
@@ -83,8 +81,7 @@ private:
     Ui::MainWindow *ui;
 
     // video capture
-    //CPrimeSensors m_sensors;
-    CDepthColorSensor m_sensors;
+    CDepthColorSensor m_sensor;
     QTimer m_timer;
 
     // current data
@@ -95,9 +92,6 @@ private:
     vector<Mat> m_rgb_storage;          //!< stored rgb images
     vector<Mat> m_depth_storage;        //!< stored depth images
     vector<Mat> m_trafo_storage;        //!< stored transformations between them
-
-    // maximum depth
-    double m_zmax;
 
     // windows for tools
     ViewerWindow* m_viewer;

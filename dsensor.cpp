@@ -97,7 +97,7 @@ bool CDepthColorSensor::OpenDevice(int i) {
        return 1;
 
    // standard settings
-   VideoMode mode = m_rgb_stream.getVideoMode();
+   VideoMode mode(m_rgb_stream.getVideoMode());
    mode.setResolution(m_rgb_cam.m_size[0],m_rgb_cam.m_size[1]);
    m_rgb_stream.setVideoMode(mode);
    m_rgb_stream.setMirroringEnabled(false);
@@ -106,10 +106,10 @@ bool CDepthColorSensor::OpenDevice(int i) {
    cam->setAutoExposureEnabled(false);
    cam->setAutoWhiteBalanceEnabled(false);
 
-   mode = m_depth_stream.getVideoMode();
-   mode.setResolution(m_depth_cam.m_size[0],m_depth_cam.m_size[1]);
-   mode.setPixelFormat(PIXEL_FORMAT_SHIFT_9_2);
-   m_depth_stream.setVideoMode(mode);
+   VideoMode dmode(m_depth_stream.getVideoMode());
+   dmode.setResolution(m_depth_cam.m_size[0],m_depth_cam.m_size[1]);
+   dmode.setPixelFormat(PIXEL_FORMAT_SHIFT_9_2);
+   m_depth_stream.setVideoMode(dmode);
    m_depth_stream.setMirroringEnabled(false);
 
    if(m_rgb_stream.start()!= STATUS_OK) {
@@ -158,7 +158,7 @@ Mat CDepthColorSensor::GetRGB() {
     VideoFrameRef frame;
 
     if(m_rgb_stream.readFrame(&frame)!=STATUS_OK)
-        return Mat::zeros(m_rgb_cam.m_size[1],m_rgb_cam.m_size[0],CV_32FC1);
+        return Mat::zeros(m_rgb_cam.m_size[1],m_rgb_cam.m_size[0],CV_8UC3);
 
     return Mat(frame.getHeight(),frame.getWidth(),CV_8UC3,(unsigned char*)frame.getData());
 
@@ -169,7 +169,7 @@ Mat CDepthColorSensor::GetDepth() {
     VideoFrameRef frame;
 
     if(m_depth_stream.readFrame(&frame)!=STATUS_OK)
-        return Mat::zeros(m_rgb_cam.m_size[1],m_rgb_cam.m_size[0],CV_32FC1);
+        return Mat::zeros(m_depth_cam.m_size[1],m_depth_cam.m_size[0],CV_16UC1);
 
     return Mat(frame.getHeight(),frame.getWidth(),CV_16UC1,(unsigned short*)frame.getData());
 
@@ -179,6 +179,8 @@ bool CDepthColorSensor::Get(cv::Mat& rgb, cv::Mat& depth) {
 
     rgb = GetRGB();
     depth = GetDepth();
+
+    return 0;
 
 }
 
@@ -192,7 +194,7 @@ void CDepthColorSensor::ConfigureRGB(const std::vector<size_t>& size, const std:
     m_rgb_cam.m_size[0] = size[0];
     m_rgb_cam.m_size[1] = size[1];
     m_rgb_cam.m_f[0] = f[0];
-    m_rgb_cam.m_f[1] =f[1];
+    m_rgb_cam.m_f[1] = f[1];
     m_rgb_cam.m_c[0] = c[0];
     m_rgb_cam.m_c[1] = c[1];
     m_rgb_cam.m_alpha = alpha;
@@ -207,11 +209,10 @@ void CDepthColorSensor::ConfigureRGB(const std::vector<size_t>& size, const std:
 
 void CDepthColorSensor::ConfigureDepth(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a) {
 
-
     m_depth_cam.m_size[0] = size[0];
     m_depth_cam.m_size[1] = size[1];
     m_depth_cam.m_f[0] = f[0];
-    m_depth_cam.m_f[1] =f[1];
+    m_depth_cam.m_f[1] = f[1];
     m_depth_cam.m_c[0] = c[0];
     m_depth_cam.m_c[1] = c[1];
     m_depth_cam.m_alpha = alpha;
@@ -227,6 +228,93 @@ void CDepthColorSensor::ConfigureDepth(const std::vector<size_t>& size, const st
     m_depth_cam.m_a[0] = a[0];
     m_depth_cam.m_a[1] = a[1];
 
+    //m_depth_cam.SetMaxDisparity();
+
 }
 
+cv::Point3f CDepthColorSensor::GetPoint(size_t i, size_t j, const cv::Mat& disp) {
+
+    float d = (float)disp.at<unsigned short>(i,j);
+
+    float z = m_depth_cam.DisparityToDepth(i,j,d);
+
+    Point2i u(j,i);
+
+    Vec3f xc = m_depth_cam.UnProjectLocal(u);
+
+    Point3f x = xc*z;
+
+    return x;
+
+}
+
+Vec3b CDepthColorSensor::GetColor(cv::Point3f x, const cv::Mat& rgb) {
+
+     // project it to rgb image plane
+    Vec2f uc = m_rgb_cam.Project(x);
+
+    // round
+    int irgb = (int)floor(uc[1]);
+    int jrgb = (int)floor(uc[0]);
+
+    Vec3b result;
+    if(irgb<0 || irgb>=rgb.cols || jrgb<0 || jrgb>=rgb.cols) {
+
+
+        result *= 0;
+        return result;
+
+    }
+
+    // interpolate
+//    float vd = uc[1] - irgb;
+//    float ud = uc[0] - jrgb;
+
+//    Vec3f I00, I01, I10, I11, I0, I1;
+//    I00 = (Vec3f)rgb.at<Vec3b>(irgb,jrgb);
+//    I01 = (Vec3f)rgb.at<Vec3b>(irgb,jrgb+1);
+//    I10 = (Vec3f)rgb.at<Vec3b>(irgb+1,jrgb);
+//    I11 = (Vec3f)rgb.at<Vec3b>(irgb+1,jrgb+1);
+//    I0 = I00*(1-ud) + I01*ud;
+//    I1 = I10*(1-ud) + I11*ud;
+
+    result = rgb.at<Vec3b>(irgb,jrgb);
+    //result = (Vec3b)(I0*(1-vd) + I1*vd);
+
+    return result;
+
+}
+
+Mat CDepthColorSensor::WarpRGBToDepth(const cv::Mat& disp, const cv::Mat& rgb) {
+
+    Mat result = Mat(disp.rows,disp.cols,CV_8UC3);
+
+    for(size_t i=0; i<disp.rows; i++) {
+
+        for(size_t j=0; j<disp.cols; j++) {
+
+            float d = disp.at<unsigned short>(i,j);
+            float z = m_depth_cam.DisparityToDepth(i,j,d);
+
+            Point2i u(j,i);
+
+            Vec3f xc = m_depth_cam.UnProjectLocal(u);
+
+            Point3f x = xc*z;
+
+            result.at<Vec3b>(i,j) = GetColor(x,rgb);
+
+        }
+
+    }
+
+    return result;
+
+}
+
+float CDepthColorSensor::DisparityToDepth(int d) {
+
+     return 1.0/(m_depth_cam.m_d[0]+d*m_depth_cam.m_d[1]);
+
+}
 

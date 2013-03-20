@@ -18,8 +18,8 @@ using namespace cv;
 
 CCam::CCam() {
 
-    m_size[0] = 640;
-    m_size[1] = 480;
+    m_size[0] = 1280;
+    m_size[1] = 1024;
     m_f[0] = 500;
     m_f[1] = 500;
     m_c[0] = 319.5;
@@ -183,15 +183,21 @@ Vec2f CCam::Project(const Vec3f& x) const {
 
 	// transform into camera coordinate system
     Vec3f xc;
+    xc *= 0;
+
     for(size_t i=0; i<3; i++) {
 
         for(size_t j=0; j<3; j++) {
 
-            xc[i] = m_F.at<float>(i,j)*x[j] + m_F.at<float>(i,3);
+            xc[i] += m_F.at<float>(i,j)*x[j];
 
         }
 
     }
+
+    xc[0] = xc[0] + m_F.at<float>(0,3);
+    xc[1] = xc[1] + m_F.at<float>(1,3);
+    xc[2] = xc[2] + m_F.at<float>(2,3);
 
     return ProjectLocal(xc);
 }
@@ -239,15 +245,22 @@ Vec3f CCam::UnProject(const Vec2i& u) const {
 
     xc = UnProjectLocal(u);
 
+    x *= 0;
+
     for(size_t i=0; i<3; i++) {
 
         for(size_t j=0; j<3; j++) {
 
-            x[i] = m_Finv.at<float>(i,j)*xc[j] + m_Finv.at<float>(i,3);
+            x[i] += m_Finv.at<float>(i,j)*xc[j];
 
         }
 
     }
+
+    x[0] = x[0] + m_Finv.at<float>(0,3);
+    x[1] = x[1] + m_Finv.at<float>(1,3);
+    x[2] = x[2] + m_Finv.at<float>(2,3);
+
 
     return x;
 
@@ -287,16 +300,23 @@ CDepthCam::CDepthCam():
     m_D(),
     m_a () {
 
+    m_size[0] = 640;
+    m_size[1] = 480;
+
 }
 
 CDepthCam::CDepthCam(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a):
     CCam(size,f,c,alpha,k,F),
     m_D(D) {
 
+    m_size[0] = 640;
+    m_size[1] = 480;
     m_d[0] = d[0];
     m_d[1] = d[1];
     m_a[0] = a[0];
     m_a[1] = a[1];
+
+    //SetMaxDisparity();
 
 }
 
@@ -304,9 +324,14 @@ float CDepthCam::DisparityToDepth(size_t i, size_t j, float d) {
 
     float D = m_D.at<float>(i,j);
 
-    return d + D*exp(m_a[0]-m_a[1]*d);
+    float dc = d + D*exp(m_a[0]-m_a[1]*d);
 
+    return 1.0/(m_d[0]+dc*m_d[1]);
 }
 
+//void CDepthCam::SetMaxDisparity() {
 
+//    m_max_d = ((1/Z_MIN_MM)-m_d[0])/m_d[1];
+
+//}
 

@@ -49,6 +49,18 @@ public:
     //! Sets parameters of the depth sensor.
     void ConfigureDepth(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a);
 
+    //! Converts disparity into 3d point in depth cam coordinates.
+    cv::Point3f GetPoint(size_t i, size_t j, const cv::Mat& disp);
+
+    //! Gets the color at a point in world (depth) coordinates.
+    cv::Vec3b GetColor(cv::Point3f x, const cv::Mat& rgb);
+
+    //! Warps an RGB image to the image plane of the depth sensor.
+    cv::Mat WarpRGBToDepth(const cv::Mat& disp, const cv::Mat& rgb);
+
+    //! Access to maximum disparity.
+    float DisparityToDepth(int d);
+
 private:
 
     openni::Device m_device;                                   //! OpenNI device
