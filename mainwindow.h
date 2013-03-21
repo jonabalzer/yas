@@ -4,15 +4,18 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QKeyEvent>
+
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include <ImfStandardAttributes.h>
 #include <ImfAttribute.h>
+
 #include "opencv2/opencv.hpp"
 #include <boost/circular_buffer.hpp>
-#include "viewerwindow.h"
+
 #include "alignwindow.h"
 #include "dsensor.h"
+#include "glwidget.h"
 
 using namespace cv;
 using namespace Imf;
@@ -35,6 +38,7 @@ public:
 signals:
 
     void current_image_changed(Mat& rgb, Mat& depth);
+    void current_pcl_changed(const std::vector<cv::Point3f>& points, const std::vector<cv::Vec3b>& colors);
 
 public slots:
 
@@ -96,8 +100,8 @@ private:
     vector<Mat> m_trafo_storage;        //!< stored transformations between them
 
     // windows for tools
-    ViewerWindow* m_viewer;
     AlignWindow* m_alignment;
+    QGLViewerWidget* m_glview;
 
     // save routines
     bool save_pcl_as_ply(size_t index, QString fn);

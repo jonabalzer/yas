@@ -13,24 +13,22 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-        viewerwindow.cpp \
         pcviewer.cpp \
         alignwindow.cpp \
         calignransac.cpp \
         cplaneransac.cpp \
-        psensors.cpp \
     cam.cpp \
-    dsensor.cpp
+    dsensor.cpp \
+    glwidget.cpp
 
 HEADERS  += mainwindow.h \
-            viewerwindow.h \
             pcviewer.h \
             alignwindow.h \
             calignransac.h \
             cplaneransac.h \
-            psensors.h \
     cam.h \
-    dsensor.h
+    dsensor.h \
+    glwidget.h
 
 FORMS    += mainwindow.ui \
             viewerwindow.ui \

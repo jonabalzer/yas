@@ -26,8 +26,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_rgb_storage(),
     m_depth_storage(),
     m_trafo_storage(),
-    m_viewer(new ViewerWindow),
-    m_alignment(new AlignWindow)
+    m_alignment(new AlignWindow),
+    m_glview(new QGLViewerWidget())
 {
     ui->setupUi(this);
 
@@ -37,8 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
     connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),this,SLOT(update_static_view(Mat&,Mat&)));
-    connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),m_viewer,SLOT(on_current_image_changed(Mat&,Mat&)));
-
+    connect(this,SIGNAL(current_pcl_changed(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)),m_glview,SLOT(set_pcl(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)));
     if(m_sensor.OpenDevice(0))
         QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
 
@@ -47,15 +46,15 @@ MainWindow::MainWindow(QWidget *parent) :
     vector<float> frgb, fd, crgb, cd, krgb, kd, dd, da;
     srgb.push_back(640);
     srgb.push_back(480);
-    frgb.push_back(1070.42/2);
-    frgb.push_back(1071.9/2);
-    crgb.push_back(635.66/2);
-    crgb.push_back(525.34/2);
-    krgb.push_back(0.0347);
-    krgb.push_back(-0.2663);
-    krgb.push_back(0.0078);
-    krgb.push_back(0.0023);
-    krgb.push_back(0.3559);
+    frgb.push_back(535.6277);
+    frgb.push_back(536.4863);
+    crgb.push_back(315.4509);
+    crgb.push_back(243.0371);
+    krgb.push_back(0.0387);
+    krgb.push_back(-0.1257);
+    krgb.push_back(0.0052);
+    krgb.push_back(-1.1877e-04);
+    krgb.push_back(0);
 
     Mat F = Mat::eye(4,4,CV_32FC1);
     F.at<float>(0,0)= 0.99981;
@@ -84,15 +83,15 @@ MainWindow::MainWindow(QWidget *parent) :
     kd.push_back(0);
     kd.push_back(0);
     kd.push_back(0);
-    dd.push_back(3.98);
-    dd.push_back(-0.002910);
+    dd.push_back(3.3683);
+    dd.push_back(-0.0028);
     da.push_back(1.7640);
     da.push_back(0.0307);
 
     m_sensor.ConfigureDepth(sd,fd,cd,0,kd,Mat::eye(4,4,CV_32FC1),dd,Mat::zeros(sd[1],sd[0],CV_32FC1),da);
 
     float minz = 0.3;
-    float maxz = 1.5; // get from driver, remove member m_zmax (convert from slider position)
+    float maxz = 1.3; // get from driver, remove member m_zmax (convert from slider position)
     int maxd = (int)((1/maxz-dd[0])/dd[1]);
     int mind = (int)((1/minz-dd[0])/dd[1]);
 
@@ -344,10 +343,11 @@ Mat MainWindow::get_depth_from_buffer() {
 
 void MainWindow::on_action3D_View_triggered()
 {
-   m_viewer->show();
-   m_viewer->raise();
-   m_viewer->activateWindow();
+   //m_viewer->show();
+   //m_viewer->raise();
+   //m_viewer->activateWindow();
 
+    m_glview->show();
 
 }
 
@@ -732,20 +732,32 @@ Mat MainWindow::estimate_world_frame() {
 
     }
 
+    // compute normal by SVD
     Mat Sigma, U, Vt;
     SVD::compute(T, Sigma, U, Vt);
-    Vec3f n, ex;
+    Vec3f ez;
 
-    for(size_t j=0; j<3; j++) {
+    for(size_t j=0; j<3; j++)
+        ez[j] = Vt.at<float>(2,j);
 
-        n[j] = Vt.at<float>(2,j);
-        ex[j] = T.at<float>(0,j);       // connection to first cam position
+
+    // find the first non-zero vector in T
+    Vec3f ex;
+    for(size_t i=0; i<(size_t)T.rows; i++) {
+
+        for(size_t j=0; j<3; j++)
+            ex[j] = T.at<float>(i,j);
+
+        if(cv::norm(ex)>0)
+            break;
+
     }
 
-    // normalize ez, FIXME: no necessary because of SVD props, check if all frames are set!
-    Vec3f ez = n *= (1/cv::norm(n));
+    // check if non-zero vector was found
+    if(cv::norm(ex)==0)
+        return F;
 
-    // make ex and n normal
+    // if yes, make it orthogonal to ez and normalize
     ex = ex - ez*(ex[0]*ez[0] + ex[1]*ez[1] + ex[2]*ez[2]);
     ex *= (1/cv::norm(ex));
 
@@ -764,7 +776,7 @@ Mat MainWindow::estimate_world_frame() {
     Fw.at<float>(1,1) = ez[2]*ex[0] - ez[0]*ex[2];
     Fw.at<float>(2,1) = ez[0]*ex[1] - ez[1]*ex[0];
 
-    // invert
+    // invert, this will be pre-multiplied to m_trafo_storage[0]
     Mat Fwinv = Fw.inv();
 
     // get point cloud of first view, FIXME: set from zmax
