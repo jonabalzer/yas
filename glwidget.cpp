@@ -14,6 +14,7 @@ QGLViewerWidget::QGLViewerWidget(QWidget* _parent)
     setAcceptDrops(true);
     setCursor(Qt::PointingHandCursor);
 
+    this->setWindowTitle("3D View");
 }
 
 QGLViewerWidget::~QGLViewerWidget() {}
@@ -23,6 +24,7 @@ void QGLViewerWidget::initializeGL() {
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glDisable(GL_DITHER);
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_COLOR_MATERIAL);
 
   // set lights
   GLfloat pos1[] = { 0.1,  0.1, -0.02, 0.0};
@@ -53,7 +55,7 @@ void QGLViewerWidget::initializeGL() {
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   glGetDoublev(GL_MODELVIEW_MATRIX, m_modelview_matrix);
-  set_scene_pos(Vec3f(0.0, 0.0, 0.0),10.0);
+  set_scene_pos(Vec3f(0.0, 0.0, 0.5),1.0);
 
 }
 
@@ -80,7 +82,7 @@ QGLViewerWidget::paintGL()
 
   for(size_t i=0; i<m_points.size(); i++) {
 
-      glColor3b(m_colors[i][0],m_colors[i][1],m_colors[i][2]);
+      glColor3b(m_colors[i][2],m_colors[i][1],m_colors[i][0]);
       glVertex3f(m_points[i].x,m_points[i].y,m_points[i].z);
 
   }
@@ -94,6 +96,7 @@ void QGLViewerWidget::set_pcl(const std::vector<cv::Point3f>& points, const std:
     m_points = points;
     m_colors = colors;
 
+    updateGL();
     // also update the scene_pos here, or from outside with a rough estimate: cente-> central pixel point, etc
 
 }
@@ -294,7 +297,7 @@ void QGLViewerWidget::update_projection_matrix() {
   glLoadIdentity();
 //  gluPerspective(45.0, (GLfloat) width() / (GLfloat) height(),
 //         0.01*radius_, 100.0*radius_);
-  glOrtho(-500,500,-500,500, 1, 500); // FIXME: no glut
+  glOrtho(-1,1,-1,1, 1, 3); // FIXME: no glut
 
   glGetDoublev( GL_PROJECTION_MATRIX, m_projection_matrix);
   glMatrixMode( GL_MODELVIEW );

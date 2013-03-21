@@ -16,6 +16,7 @@
 #include "alignwindow.h"
 #include "dsensor.h"
 #include "glwidget.h"
+#include "params.h"
 
 using namespace cv;
 using namespace Imf;
@@ -23,6 +24,7 @@ using namespace Imath;
 
 namespace Ui {
 class MainWindow;
+class Params;
 }
 
 class MainWindow : public QMainWindow
@@ -81,6 +83,8 @@ private slots:
 
     void on_alignAllButton_clicked();
 
+    void on_actionPreferences_triggered();
+
 private:
 
     // ui
@@ -102,6 +106,7 @@ private:
     // windows for tools
     AlignWindow* m_alignment;
     QGLViewerWidget* m_glview;
+    Params* m_params;
 
     // save routines
     bool save_pcl_as_ply(size_t index, QString fn);

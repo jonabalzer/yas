@@ -19,7 +19,8 @@ SOURCES += main.cpp\
         cplaneransac.cpp \
     cam.cpp \
     dsensor.cpp \
-    glwidget.cpp
+    glwidget.cpp \
+    params.cpp
 
 HEADERS  += mainwindow.h \
             pcviewer.h \
@@ -28,11 +29,12 @@ HEADERS  += mainwindow.h \
             cplaneransac.h \
     cam.h \
     dsensor.h \
-    glwidget.h
+    glwidget.h \
+    params.h
 
 FORMS    += mainwindow.ui \
-            viewerwindow.ui \
-            alignwindow.ui
+            alignwindow.ui \
+    params.ui
 
 unix:!symbian: {
 

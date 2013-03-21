@@ -297,8 +297,13 @@ Vec3f CCam::UnProjectLocal(const Vec2i& u) const {
 CDepthCam::CDepthCam():
     CCam(),
     m_d(),
-    m_D(),
+    m_D(480,640,CV_32FC1),
     m_a () {
+
+    m_d[0] = 4;
+    m_d[1] = -0.003;
+    m_a[0] = 0;
+    m_a[1] = 0;
 
     //m_size[0] = 640;
     //m_size[1] = 480;

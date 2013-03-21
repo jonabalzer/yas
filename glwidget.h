@@ -27,7 +27,7 @@ public:
   /* Sets the center and size of the whole scene.
      The _center is used as fixpoint for rotations and for adjusting
      the camera/viewer (see view_all()). */
-  void set_scene_pos( const cv::Vec3f& _center, float _radius);
+  void set_scene_pos(const cv::Vec3f& center, float radius);
 
   /* view the whole scene: the eye point is moved far enough from the
      center so that the whole scene is visible. */

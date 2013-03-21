@@ -27,7 +27,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_depth_storage(),
     m_trafo_storage(),
     m_alignment(new AlignWindow),
-    m_glview(new QGLViewerWidget())
+    m_glview(new QGLViewerWidget()),
+    m_params(new Params(&m_sensor))
 {
     ui->setupUi(this);
 
@@ -103,12 +104,16 @@ MainWindow::MainWindow(QWidget *parent) :
     label.setNum(maxz,'f',2);
     ui->maxDepth->setText(label);
 
+
 }
 
 MainWindow::~MainWindow()
 {
-    delete ui;
+
+    delete m_params;
+    delete m_glview;
     delete m_alignment;
+    delete ui;
 }
 
 bool MainWindow::on_stepButton_clicked()
@@ -396,6 +401,20 @@ void MainWindow::on_spinBoxStorage_valueChanged(int arg1)
 
         // show images
         emit current_image_changed(m_rgb_storage[arg1-1],m_depth_storage[arg1-1]);
+
+        if(!m_glview->isHidden()) {
+
+            Mat F = transform_to_first_image(arg1-1);
+            vector<Point3f> points;
+            vector<Vec3b> colors;
+
+            float zmax = m_sensor.DisparityToDepth(ui->depthclipSlider->sliderPosition());
+
+            get_pcl(arg1-1,points,colors,zmax,F);
+
+            emit current_pcl_changed(points,colors);
+
+        }
 
     }
 
@@ -1305,4 +1324,9 @@ void MainWindow::on_alignAllButton_clicked()
     if(ui->centerCheckBox->isChecked())
         m_trafo_storage[0] = estimate_world_frame();
 
+}
+
+void MainWindow::on_actionPreferences_triggered()
+{
+    m_params->show();
 }
