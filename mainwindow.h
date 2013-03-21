@@ -24,7 +24,7 @@ using namespace Imath;
 
 namespace Ui {
 class MainWindow;
-class Params;
+//class Params;
 }
 
 class MainWindow : public QMainWindow
@@ -36,6 +36,7 @@ public:
     ~MainWindow();
 
     size_t storage_size() { return m_rgb_storage.size(); };
+
 
 signals:
 
@@ -78,8 +79,6 @@ private slots:
     void on_actionOpen_triggered();
 
     void on_actionSave_all_triggered();
-
-    void on_triangulateCheckBox_stateChanged(int arg1);
 
     void on_alignAllButton_clicked();
 

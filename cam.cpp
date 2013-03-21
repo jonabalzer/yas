@@ -300,28 +300,25 @@ CDepthCam::CDepthCam():
     m_D(480,640,CV_32FC1),
     m_a () {
 
+    m_range[0] = 0.3;
+    m_range[1] = 1.3;
     m_d[0] = 4;
     m_d[1] = -0.003;
     m_a[0] = 0;
     m_a[1] = 0;
 
-    //m_size[0] = 640;
-    //m_size[1] = 480;
-
 }
 
-CDepthCam::CDepthCam(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a):
+CDepthCam::CDepthCam(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& range, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a):
     CCam(size,f,c,alpha,k,F),
     m_D(D) {
 
-    //m_size[0] = 640;
-    //m_size[1] = 480;
+    m_range[0] = range[0];
+    m_range[1] = range[1];
     m_d[0] = d[0];
     m_d[1] = d[1];
     m_a[0] = a[0];
     m_a[1] = a[1];
-
-    //SetMaxDisparity();
 
 }
 

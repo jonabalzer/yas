@@ -82,7 +82,7 @@ QGLViewerWidget::paintGL()
 
   for(size_t i=0; i<m_points.size(); i++) {
 
-      glColor3b(m_colors[i][2],m_colors[i][1],m_colors[i][0]);
+      glColor3b(m_colors[i][0],m_colors[i][1],m_colors[i][2]);
       glVertex3f(m_points[i].x,m_points[i].y,m_points[i].z);
 
   }

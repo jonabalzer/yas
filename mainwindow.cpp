@@ -30,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_glview(new QGLViewerWidget()),
     m_params(new Params(&m_sensor))
 {
+
     ui->setupUi(this);
 
     ui->labelDepth->setScaledContents(true);
@@ -39,76 +40,28 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
     connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),this,SLOT(update_static_view(Mat&,Mat&)));
     connect(this,SIGNAL(current_pcl_changed(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)),m_glview,SLOT(set_pcl(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)));
+
+    // load sensor
+    m_params->configure_sensor(&m_sensor);
+
+    // get min/max disparity to set up slider
+    size_t dmin, dmax;
+    m_sensor.GetDisparityRange(dmin,dmax);
+    ui->depthclipSlider->setMinimum(dmin);
+    ui->depthclipSlider->setMaximum(dmax);
+    ui->depthclipSlider->setSliderPosition(dmax);
+
+    float zmax = m_sensor.DisparityToDepth(dmax);
+    QString label;
+    label.setNum(zmax,'f',2);
+    ui->maxDepth->setText(label);
+
     if(m_sensor.OpenDevice(0))
         QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
 
-    // hard coded params
-    vector<size_t> srgb, sd;
-    vector<float> frgb, fd, crgb, cd, krgb, kd, dd, da;
-    srgb.push_back(640);
-    srgb.push_back(480);
-    frgb.push_back(535.6277);
-    frgb.push_back(536.4863);
-    crgb.push_back(315.4509);
-    crgb.push_back(243.0371);
-    krgb.push_back(0.0387);
-    krgb.push_back(-0.1257);
-    krgb.push_back(0.0052);
-    krgb.push_back(-1.1877e-04);
-    krgb.push_back(0);
-
-    Mat F = Mat::eye(4,4,CV_32FC1);
-    F.at<float>(0,0)= 0.99981;
-    F.at<float>(0,1)= -0.01381;
-    F.at<float>(0,2)=  -0.01411;
-    F.at<float>(0,3)= -0.03522;
-    F.at<float>(1,0)= 0.01334;
-    F.at<float>(1,1)= 0.99937;
-    F.at<float>(1,2)= -0.0328;
-    F.at<float>(1,3)= -0.00999;
-    F.at<float>(2,0)= 0.01455;
-    F.at<float>(2,1)= 0.03267;
-    F.at<float>(2,2)= 0.99936;
-    F.at<float>(2,3)= -0.00707;
-
-    m_sensor.ConfigureRGB(srgb,frgb,crgb,0,krgb,F);
-
-    sd.push_back(640);
-    sd.push_back(480);
-    fd.push_back(578.03);
-    fd.push_back(569.53);
-    cd.push_back(300.43);
-    cd.push_back(222.58);
-    kd.push_back(0);
-    kd.push_back(0);
-    kd.push_back(0);
-    kd.push_back(0);
-    kd.push_back(0);
-    dd.push_back(3.3683);
-    dd.push_back(-0.0028);
-    da.push_back(1.7640);
-    da.push_back(0.0307);
-
-    m_sensor.ConfigureDepth(sd,fd,cd,0,kd,Mat::eye(4,4,CV_32FC1),dd,Mat::zeros(sd[1],sd[0],CV_32FC1),da);
-
-    float minz = 0.3;
-    float maxz = 1.3; // get from driver, remove member m_zmax (convert from slider position)
-    int maxd = (int)((1/maxz-dd[0])/dd[1]);
-    int mind = (int)((1/minz-dd[0])/dd[1]);
-
-    ui->depthclipSlider->setMinimum(mind);
-    ui->depthclipSlider->setMaximum(maxd);
-    ui->depthclipSlider->setSliderPosition(maxd);
-
-    QString label;
-    label.setNum(maxz,'f',2);
-    ui->maxDepth->setText(label);
-
-
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
 
     delete m_params;
     delete m_glview;
@@ -439,19 +392,20 @@ void MainWindow::on_alignButton_clicked()
     m_alignment->activateWindow();
     m_alignment->raise();
 
-    // warp to depth image plane
-    Mat rgb0 = m_sensor.WarpRGBToDepth(m_depth_storage[index-1],m_rgb_storage[index-1]);
-    Mat rgb1 = m_sensor.WarpRGBToDepth(m_depth_storage[index],m_rgb_storage[index]);
+    // get params
+    size_t nfeat, noctaves, nsamples;
+    double pthresh, ethresh, ratio, athresh;
+    m_params->get_alignment_parameters(nfeat,noctaves,pthresh,ethresh,ratio,nsamples,athresh);
 
     // init non-free module
     initModule_nonfree();
 
     // create SIFT object
-    SIFT detector(ui->noFeatEdit->text().toInt(),
-                  ui->noOctavesEdit->text().toInt(),
-                  ui->pointThresholdEdit->text().toDouble(),
-                  ui->edgeThresholdEdit->text().toDouble(),
-                  0.5);
+    SIFT detector(nfeat,noctaves,pthresh,ethresh,0.5);
+
+    // warp to depth image plane
+    Mat rgb0 = m_sensor.WarpRGBToDepth(m_depth_storage[index-1],m_rgb_storage[index-1]);
+    Mat rgb1 = m_sensor.WarpRGBToDepth(m_depth_storage[index],m_rgb_storage[index]);
 
     // detect and compute descriptors
     vector<KeyPoint> kp0, kp1;
@@ -474,7 +428,7 @@ void MainWindow::on_alignButton_clicked()
     for (size_t i = 0; i<matches.size(); i++) {
 
         // check if match is good
-        if(matches[i][0].distance/matches[i][1].distance<ui->goodMatchEdit->text().toDouble()) {
+        if(matches[i][0].distance/matches[i][1].distance<ratio) {
 
             // get both locations
             Point2f u0, u1;
@@ -519,10 +473,7 @@ void MainWindow::on_alignButton_clicked()
 
     // optimize
     size_t ninliers = 0;
-    Mat F = alignment.RunConcensus(ui->nosamplesEdit->text().toInt(),
-                                   ui->acceptanceEdit->text().toDouble(),
-                                   ninliers,
-                                   this);
+    Mat F = alignment.RunConcensus(nsamples,athresh,ninliers,this);
 
     // bring alignment vis back
     m_alignment->raise();
@@ -532,12 +483,11 @@ void MainWindow::on_alignButton_clicked()
 
 
     // show inlier/outlier ratio
-    double ratio = (double)ninliers/(double)good_matches.size();
-    ratio *= 100;
+    double ioratio = (double)ninliers/(double)good_matches.size();
+    ioratio *= 100;
     stringstream ss;
-    ss << "The inlier ratio is " << ratio << "\%.";
+    ss << "The inlier ratio is " << ioratio << "\%.";
     ui->statusBar->showMessage(ss.str().c_str());
-
 
 }
 
@@ -642,7 +592,7 @@ void MainWindow::update_live_view() {
 
     QImage imgdd(depthrgb.data,depthf.cols,depthf.rows,QImage::Format_RGB888);
 
-    double variance = ui->triEdit->text().toDouble();
+    float variance = m_params->get_triangulation_threshold();
 
     for(size_t i=0; i<(size_t)img.rows-1; i++) {
 
@@ -858,7 +808,7 @@ void MainWindow::get_pcl(size_t index, vector<Point3f>& vertices, vector<Vec3b>&
     bool isfid = F.at<float>(0,0)==1 && F.at<float>(0,1)==0 && F.at<float>(0,2)==0 && F.at<float>(0,3)==0 &&
                  F.at<float>(1,0)==0 && F.at<float>(1,1)==1 && F.at<float>(1,2)==0 && F.at<float>(1,3)==0 &&
                  F.at<float>(2,0)==0 && F.at<float>(2,1)==0 && F.at<float>(2,2)==1 && F.at<float>(2,3)==0;
-cout << Fsr << endl;
+
     // allocate space for temporary variable
     vector<Point3f> xarray;
     Point3f x;
@@ -870,7 +820,7 @@ cout << Fsr << endl;
         for(size_t j=0; j<(size_t)m_depth_storage[index].cols; j++) {
 
             // only do something disparity is unsaturated
-            if(m_depth_storage[index].at<unsigned short>(i,j)<1200) {
+            if(m_depth_storage[index].at<unsigned short>(i,j)<=ui->depthclipSlider->maximum()) {
 
                 x = m_sensor.GetPoint(i,j,m_depth_storage[index]);
                 xarray[0] = x;
@@ -922,7 +872,7 @@ void MainWindow::get_mesh(size_t index, vector<Point3f>& vertices, vector<Vec3b>
             float z = (float)m_depth_storage[index].at<unsigned short>(i,j);
 
             // only do something disparity is unsaturated
-            if(m_depth_storage[index].at<unsigned short>(i,j)!=1300) {
+            if(m_depth_storage[index].at<unsigned short>(i,j)<=ui->depthclipSlider->maximum()) {
 
                 x = m_sensor.GetPoint(i,j,m_depth_storage[index]);
                 xarray[0] = x;
@@ -953,7 +903,8 @@ void MainWindow::get_mesh(size_t index, vector<Point3f>& vertices, vector<Vec3b>
 
     // now iterate through index hash
     map<size_t,float>::iterator ittl, ittr, itbr, itbl;
-    float variance = ui->triEdit->text().toFloat();
+
+    float variance = m_params->get_triangulation_threshold();
 
     for(ittl=depthhash.begin(); ittl!=depthhash.end(); ittl++) {
 
@@ -1021,7 +972,7 @@ void MainWindow::on_actionSave_triggered()
         error = save_as_exr(index,filename);
     else if (filename.endsWith(".ply")) {
 
-        if(ui->triangulateCheckBox->isChecked())
+        if(m_params->triangulate())
             error = save_mesh_as_ply(index,filename);
         else
             error = save_pcl_as_ply(index,filename);
@@ -1159,7 +1110,7 @@ void MainWindow::on_actionSave_all_triggered()
 
             QString fn = QString((prefix+string(".ply")).c_str());
 
-            if(ui->triangulateCheckBox->isChecked())
+            if(m_params->triangulate())
                 error = save_mesh_as_ply(i,fn);
             else
                 error = save_pcl_as_ply(i,fn);
@@ -1187,16 +1138,6 @@ void MainWindow::on_actionSave_all_triggered()
 
 }
 
-void MainWindow::on_triangulateCheckBox_stateChanged(int arg1)
-{
-
-    if(arg1==0)
-        ui->triEdit->setEnabled(false);
-    else
-        ui->triEdit->setEnabled(true);
-
-}
-
 void MainWindow::on_alignAllButton_clicked()
 {
 
@@ -1210,16 +1151,16 @@ void MainWindow::on_alignAllButton_clicked()
     m_alignment->activateWindow();
     m_alignment->raise();
 
+    // get params
+    size_t nfeat, noctaves, nsamples;
+    double pthresh, ethresh, ratio, athresh;
+    m_params->get_alignment_parameters(nfeat,noctaves,pthresh,ethresh,ratio,nsamples,athresh);
+
     // init non-free module
     initModule_nonfree();
 
     // create SIFT object
-    SIFT detector(ui->noFeatEdit->text().toInt(),
-                  ui->noOctavesEdit->text().toInt(),
-                  ui->pointThresholdEdit->text().toDouble(),
-                  ui->edgeThresholdEdit->text().toDouble(),
-                  0.5);
-
+    SIFT detector(nfeat,noctaves,pthresh,ethresh,0.5);
 
     for(size_t index=1; index<m_rgb_storage.size(); index++) {
 
@@ -1248,7 +1189,7 @@ void MainWindow::on_alignAllButton_clicked()
         for (size_t i = 0; i<matches.size(); i++) {
 
             // check if match is good
-            if(matches[i][0].distance/matches[i][1].distance<ui->goodMatchEdit->text().toDouble()) {
+            if(matches[i][0].distance/matches[i][1].distance<ratio) {
 
                 // get both locations
                 Point2f u0, u1;
@@ -1293,10 +1234,7 @@ void MainWindow::on_alignAllButton_clicked()
 
         // optimize
         size_t ninliers = 0;
-        Mat F = alignment.RunConcensus(ui->nosamplesEdit->text().toInt(),
-                                       ui->acceptanceEdit->text().toDouble(),
-                                       ninliers,
-                                       this);
+        Mat F = alignment.RunConcensus(nsamples,athresh,ninliers,this);
 
         // bring alignment vis back
         m_alignment->raise();
@@ -1306,22 +1244,19 @@ void MainWindow::on_alignAllButton_clicked()
 
 
         // show inlier/outlier ratio
-        double ratio = (double)ninliers/(double)good_matches.size();
-        ratio *= 100;
+        double ioratio = (double)ninliers/(double)good_matches.size();
+        ioratio *= 100;
         stringstream ss;
-        ss << "The inlier ratio is " << ratio << "\%.";
+        ss << "The inlier ratio is " << ioratio << "\%.";
         ui->statusBar->showMessage(ss.str().c_str());
-
-        // wait for a second
-        QTimer timer;
-        timer.setSingleShot(true);
-        timer.setInterval(1000);
-        timer.start();
 
     }
 
+    // close alignment window (hide?)
+    m_alignment->hide();
+
     // if checked, estimate the world coordinate system
-    if(ui->centerCheckBox->isChecked())
+    if(m_params->center_wc())
         m_trafo_storage[0] = estimate_world_frame();
 
 }

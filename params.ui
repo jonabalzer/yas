@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>601</width>
-    <height>438</height>
+    <height>450</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,11 +19,11 @@
      <x>10</x>
      <y>10</y>
      <width>581</width>
-     <height>391</height>
+     <height>401</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="sensorTab">
     <attribute name="title">
@@ -33,7 +33,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>180</y>
+       <y>194</y>
        <width>251</width>
        <height>161</height>
       </rect>
@@ -47,35 +47,14 @@
         <x>8</x>
         <y>30</y>
         <width>231</width>
-        <height>95</height>
+        <height>128</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="depthLayout">
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="cuEdit">
+       <item row="3" column="0">
+        <widget class="QLabel" name="dispLabel">
          <property name="text">
-          <string>319.5</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="fLabel">
-         <property name="text">
-          <string>Focal lenghts</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QLineEdit" name="fuEdit">
-         <property name="text">
-          <string>500</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="fvEdit">
-         <property name="text">
-          <string>500</string>
+          <string>Disparity map</string>
          </property>
         </widget>
        </item>
@@ -86,31 +65,73 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="2">
+        <widget class="QLineEdit" name="fuEdit">
+         <property name="text">
+          <string>566.62</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="fvEdit">
+         <property name="text">
+          <string>572.59</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="cuEdit">
+         <property name="text">
+          <string>309.45</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="QLineEdit" name="c1Edit">
+         <property name="text">
+          <string>-0.00297</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="fLabel">
+         <property name="text">
+          <string>Focal lenghts</string>
+         </property>
+        </widget>
+       </item>
        <item row="1" column="2">
         <widget class="QLineEdit" name="cvEdit">
          <property name="text">
-          <string>239.5</string>
+          <string>237.20</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="c0Edit">
+         <property name="text">
+          <string>4.04</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0">
-        <widget class="QLabel" name="dispLabel">
+        <widget class="QLabel" name="rLabel">
          <property name="text">
-          <string>Disparity map</string>
+          <string>Range</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QLineEdit" name="c0Edit">
+        <widget class="QLineEdit" name="zminEdit">
          <property name="text">
-          <string>4</string>
+          <string>0.3</string>
          </property>
         </widget>
        </item>
        <item row="2" column="2">
-        <widget class="QLineEdit" name="c1Edit">
+        <widget class="QLineEdit" name="zmaxEdit">
          <property name="text">
-          <string>-0.003</string>
+          <string>1.4</string>
          </property>
         </widget>
        </item>
@@ -135,17 +156,10 @@
         <x>0</x>
         <y>30</y>
         <width>292</width>
-        <height>306</height>
+        <height>311</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="rgbLayout">
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="cuRgbEdit">
-         <property name="text">
-          <string>319.5</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="fRgbLabel">
          <property name="text">
@@ -153,59 +167,38 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="cRgbLabel">
-         <property name="text">
-          <string>Principal point</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="k0Edit">
-         <property name="text">
-          <string>0</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QLineEdit" name="txEdit">
-         <property name="text">
-          <string>0</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="transLabel">
-         <property name="text">
-          <string>Translation</string>
-         </property>
-        </widget>
-       </item>
        <item row="4" column="2">
         <widget class="QLineEdit" name="k3Edit">
          <property name="text">
-          <string>0</string>
+          <string>-0.0002</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="2">
-        <widget class="QLineEdit" name="k1Edit">
+       <item row="9" column="2">
+        <widget class="QLineEdit" name="r32Edit">
          <property name="text">
-          <string>0</string>
+          <string>0.02320</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="distLabel">
+       <item row="7" column="3">
+        <widget class="QLineEdit" name="r13Edit">
          <property name="text">
-          <string>Distortion</string>
+          <string>-0.00277</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="cuRgbEdit">
+         <property name="text">
+          <string>315.30</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
         <widget class="QLineEdit" name="fuRgbEdit">
          <property name="text">
-          <string>500</string>
+          <string>533.15</string>
          </property>
         </widget>
        </item>
@@ -219,28 +212,56 @@
        <item row="9" column="3">
         <widget class="QLineEdit" name="r33Edit">
          <property name="text">
-          <string>1</string>
+          <string>0.99973</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="QLineEdit" name="k1Edit">
+         <property name="text">
+          <string>-0.3772</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="2">
+        <widget class="QLineEdit" name="r22Edit">
+         <property name="text">
+          <string>0.99968</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="3">
+        <widget class="QLineEdit" name="r23Edit">
+         <property name="text">
+          <string>-0.02323</string>
          </property>
         </widget>
        </item>
        <item row="0" column="2">
         <widget class="QLineEdit" name="fvRgbEdit">
          <property name="text">
-          <string>500</string>
+          <string>534.51</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="2">
-        <widget class="QLineEdit" name="cvRgbEdit">
+       <item row="6" column="0">
+        <widget class="QLabel" name="transLabel">
          <property name="text">
-          <string>239.5</string>
+          <string>Translation</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="3">
-        <widget class="QLineEdit" name="k4Edit">
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="k0Edit">
          <property name="text">
-          <string>0</string>
+          <string>0.0728</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="cRgbLabel">
+         <property name="text">
+          <string>Principal point</string>
          </property>
         </widget>
        </item>
@@ -251,10 +272,24 @@
          </property>
         </widget>
        </item>
+       <item row="9" column="1">
+        <widget class="QLineEdit" name="r31Edit">
+         <property name="text">
+          <string>0.00300</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="extrinsicsLabel">
+         <property name="text">
+          <string>Extrinsics</string>
+         </property>
+        </widget>
+       </item>
        <item row="4" column="1">
         <widget class="QLineEdit" name="k2Edit">
          <property name="text">
-          <string>0</string>
+          <string>0.0060</string>
          </property>
         </widget>
        </item>
@@ -265,80 +300,66 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="3">
-        <widget class="QLineEdit" name="tzEdit">
+       <item row="6" column="1">
+        <widget class="QLineEdit" name="txEdit">
          <property name="text">
-          <string>0</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="2">
-        <widget class="QLineEdit" name="tyEdit">
-         <property name="text">
-          <string>0</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QLineEdit" name="r11Edit">
-         <property name="text">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="2">
-        <widget class="QLineEdit" name="r12Edit">
-         <property name="text">
-          <string>0</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="2">
-        <widget class="QLineEdit" name="r32Edit">
-         <property name="text">
-          <string>0</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="3">
-        <widget class="QLineEdit" name="r13Edit">
-         <property name="text">
-          <string>0</string>
+          <string>-0.02891</string>
          </property>
         </widget>
        </item>
        <item row="8" column="1">
         <widget class="QLineEdit" name="r21Edit">
          <property name="text">
-          <string>0</string>
+          <string>0.00970</string>
          </property>
         </widget>
        </item>
-       <item row="8" column="2">
-        <widget class="QLineEdit" name="r22Edit">
+       <item row="7" column="1">
+        <widget class="QLineEdit" name="r11Edit">
          <property name="text">
-          <string>1</string>
+          <string>0.99995</string>
          </property>
         </widget>
        </item>
-       <item row="8" column="3">
-        <widget class="QLineEdit" name="r23Edit">
+       <item row="7" column="2">
+        <widget class="QLineEdit" name="r12Edit">
          <property name="text">
-          <string>0</string>
+          <string>-0.00976</string>
          </property>
         </widget>
        </item>
-       <item row="9" column="1">
-        <widget class="QLineEdit" name="r31Edit">
+       <item row="6" column="2">
+        <widget class="QLineEdit" name="tyEdit">
          <property name="text">
-          <string>0</string>
+          <string>-0.00341</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="extrinsicsLabel">
+       <item row="3" column="3">
+        <widget class="QLineEdit" name="k4Edit">
          <property name="text">
-          <string>Extrinsics</string>
+          <string> 0.4652</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="distLabel">
+         <property name="text">
+          <string>Distortion</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="3">
+        <widget class="QLineEdit" name="tzEdit">
+         <property name="text">
+          <string>0.00140</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QLineEdit" name="cvRgbEdit">
+         <property name="text">
+          <string>245.98</string>
          </property>
         </widget>
        </item>
@@ -351,7 +372,7 @@
        <x>10</x>
        <y>10</y>
        <width>241</width>
-       <height>131</height>
+       <height>181</height>
       </rect>
      </property>
      <property name="title">
@@ -361,7 +382,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>80</y>
+        <y>60</y>
         <width>201</width>
         <height>41</height>
        </rect>
@@ -387,7 +408,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>50</y>
+        <y>30</y>
         <width>201</width>
         <height>27</height>
        </rect>
@@ -589,8 +610,8 @@
   <widget class="QPushButton" name="okButton">
    <property name="geometry">
     <rect>
-     <x>492</x>
-     <y>405</y>
+     <x>493</x>
+     <y>417</y>
      <width>98</width>
      <height>27</height>
     </rect>
@@ -615,6 +636,22 @@
     <hint type="destinationlabel">
      <x>294</x>
      <y>218</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>triangulateCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>triEdit</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>86</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>263</x>
+     <y>76</y>
     </hint>
    </hints>
   </connection>

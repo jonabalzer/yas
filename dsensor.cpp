@@ -207,7 +207,7 @@ void CDepthColorSensor::ConfigureRGB(const std::vector<size_t>& size, const std:
 
 }
 
-void CDepthColorSensor::ConfigureDepth(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a) {
+void CDepthColorSensor::ConfigureDepth(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& range,const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a) {
 
     m_depth_cam.m_size[0] = size[0];
     m_depth_cam.m_size[1] = size[1];
@@ -222,13 +222,13 @@ void CDepthColorSensor::ConfigureDepth(const std::vector<size_t>& size, const st
 
     m_depth_cam.m_F = F;
     m_depth_cam.m_Finv = F.inv();
+    m_depth_cam.m_range[0] = range[0];
+    m_depth_cam.m_range[1] = range[1];
     m_depth_cam.m_d[0] = d[0];
     m_depth_cam.m_d[1] = d[1];
     m_depth_cam.m_D = D;
     m_depth_cam.m_a[0] = a[0];
     m_depth_cam.m_a[1] = a[1];
-
-    //m_depth_cam.SetMaxDisparity();
 
 }
 
@@ -315,6 +315,13 @@ Mat CDepthColorSensor::WarpRGBToDepth(const cv::Mat& disp, const cv::Mat& rgb) {
 float CDepthColorSensor::DisparityToDepth(int d) {
 
      return 1.0/(m_depth_cam.m_d[0]+d*m_depth_cam.m_d[1]);
+
+}
+
+void CDepthColorSensor::GetDisparityRange(size_t& min, size_t& max) {
+
+    min = (size_t)((1/m_depth_cam.m_range[0]-m_depth_cam.m_d[0])/m_depth_cam.m_d[1]);
+    max = (size_t)((1/m_depth_cam.m_range[1]-m_depth_cam.m_d[0])/m_depth_cam.m_d[1]);
 
 }
 

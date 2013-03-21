@@ -102,13 +102,14 @@ public:
     CDepthCam();
 
     //! Parametrized constructor.
-    CDepthCam(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a);
+    CDepthCam(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& range, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a);
 
     //! Converts the disparity from the depth sensor into a metric depth.
     float DisparityToDepth(size_t i, size_t j, float d);
 
 private:
 
+    float m_range[2];           //! depth range
     float m_d[2];               //! disparity inversion parameters
     cv::Mat m_D;                //! spatial distortion pattern
     float m_a[2];               //! distance weights of distortion pattern

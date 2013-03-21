@@ -16,11 +16,24 @@ public:
     explicit Params(CDepthColorSensor* psensor, QWidget *parent = 0);
     ~Params();
 
-    Ui::Params* ui;
+    void configure_sensor(CDepthColorSensor* sensor);
+
+    void get_alignment_parameters(size_t& nfeat, size_t& noctaves, double& pthresh, double& ethresh, double& ratio, size_t& nsamples, double& athresh);
+
+    bool center_wc();
+
+    float get_triangulation_threshold();
+
+    bool triangulate();
+
+private slots:
+
 
 private:
 
-    CDepthColorSensor* m_psensor;
+
+    Ui::Params* ui;
+
 
     void init();
 

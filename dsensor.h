@@ -47,7 +47,7 @@ public:
     void ConfigureRGB(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F);
 
     //! Sets parameters of the depth sensor.
-    void ConfigureDepth(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a);
+    void ConfigureDepth(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F, const std::vector<float>& range, const std::vector<float>& d, const cv::Mat& D, const std::vector<float>& a);
 
     //! Converts disparity into 3d point in depth cam coordinates.
     cv::Point3f GetPoint(size_t i, size_t j, const cv::Mat& disp);
@@ -60,6 +60,9 @@ public:
 
     //! Access to maximum disparity.
     float DisparityToDepth(int d);
+
+    //! Gets disparity range.
+    void GetDisparityRange(size_t& min, size_t& max);
 
 private:
 

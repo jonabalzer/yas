@@ -7,95 +7,6 @@ CAlignRansac::CAlignRansac(vector<Vec3f>& x0, vector<Vec3f>&x1):
     m_x0(x0),
     m_x1(x1) {}
 
-//CAlignRansac::CAlignRansac(float fu, float fv, float cu, float cv):
-//    m_x0(),
-//    m_x1() {
-
-//    m_f[0] = fu;
-//    m_f[1] = fv;
-//    m_c[0] = cu;
-//    m_c[1] = cv;
-
-//}
-
-//Mat CAlignRansac::GenerateHypotheses(Mat& rgb0, Mat& rgb1, Mat& depth0, Mat& depth1, size_t nfeat, size_t noct, double pthresh, double ethresh, double threshold, size_t& nmatches) {
-
-//    // init non-free module
-//    initModule_nonfree();
-
-//    // create SIFT object
-//    SIFT detector(nfeat,noct,pthresh,ethresh,0.5);
-
-//    // detect and compute descriptors
-//    vector<KeyPoint> kp0, kp1;
-//    Mat desc0, desc1;
-//    detector(rgb0,Mat(),kp0,desc0);
-//    detector(rgb1,Mat(),kp1,desc1);
-
-//    // matching
-//    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
-//    vector<vector<DMatch> > matches;
-//    matcher->knnMatch(desc0,desc1,matches,2);
-
-//    // compute 3d points
-//    vector<DMatch> good_matches;
-//    for (size_t i = 0; i<matches.size(); i++) {
-
-//        // check if match is good
-//        if(matches[i][0].distance/matches[i][1].distance<threshold) {
-
-//            // get both locations
-//            Point2f u0, u1;
-//            u0 = kp0[matches[i][0].queryIdx].pt;
-//            u1 = kp1[matches[i][0].trainIdx].pt;
-
-//            // get depth values
-//            float z0, z1;
-//            z0 = (float)depth0.at<unsigned short>((size_t)u0.y,(size_t)u0.x);
-//            z1 = (float)depth1.at<unsigned short>((size_t)u1.y,(size_t)u1.x);
-
-//            // if both points have depth, compute their 3d location
-//            if(z0>0 && z1>0) {
-
-//                Vec3f x0, x1;
-//                x0[0] = (z0/m_f[0])*(u0.x-m_c[0]);
-//                x0[1] = (z0/m_f[1])*(u0.y-m_c[1]);
-//                x0[2] = z0;
-//                x1[0] = (z1/m_f[0])*(u1.x-m_c[0]);
-//                x1[1] = (z1/m_f[1])*(u1.y-m_c[1]);
-//                x1[2] = z1;
-
-//                m_x0.push_back(x0);
-//                m_x1.push_back(x1);
-//                good_matches.push_back(matches[i][0]);
-
-//            }
-
-//        }
-
-//    }
-
-//    // save number of matches for statistics
-//    nmatches = good_matches.size();
-
-//    // create of good matches visualization
-//    Mat img_matches;
-//    drawMatches(rgb0,
-//                kp0,
-//                rgb1,
-//                kp1,
-//                good_matches,
-//                img_matches,
-//                Scalar::all(-1),
-//                Scalar::all(-1),
-//                vector<char>(),
-//                DrawMatchesFlags::DEFAULT);
-
-//    return img_matches;
-
-//}
-
-
 bool CAlignRansac::EstimateMotion(vector<size_t> inds, Mat& F) {
 
     // compute barycenters
@@ -236,7 +147,6 @@ Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, size_t& ninliers, Q
     }
 
     progress.setValue(nosamples);
-
 
     // estimate motion with the inlier set
     EstimateMotion(ilmax,result);
