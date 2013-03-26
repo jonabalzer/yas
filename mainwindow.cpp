@@ -32,10 +32,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     ui->setupUi(this);
-
     ui->labelDepth->setScaledContents(true);
     ui->labelRGB->setScaledContents(true);
     this->setFixedSize(this->width(),this->height());
+    ui->spinBoxStorage->setFocusPolicy(Qt::NoFocus);
 
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
     connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),this,SLOT(update_static_view(Mat&,Mat&)));
