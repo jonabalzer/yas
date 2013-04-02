@@ -84,6 +84,8 @@ private slots:
 
     void on_actionPreferences_triggered();
 
+    void on_recordButton_clicked(bool checked);
+
 private:
 
     // ui
@@ -113,6 +115,7 @@ private:
     bool save_as_png(size_t index, QString fn);
     bool save_as_pgm(size_t index, QString fn);
     bool save_as_exr(size_t index, QString fn);
+    bool save_trafo(size_t index, QString fn);
 
     // helper routine
     unsigned short get_smoothed_depth(size_t i, size_t j);

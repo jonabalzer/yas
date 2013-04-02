@@ -58,6 +58,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     if(m_sensor.OpenDevice(0))
         QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
+    else
+        CDepthColorSensor::ShowAvailableSensors();
+
+
 
 }
 
@@ -115,6 +119,13 @@ bool MainWindow::save_as_png(size_t index, QString fn) {
 
 bool MainWindow::save_as_exr(size_t index, QString fn) {
 
+    bool warp = m_params->warp_to_rgb();
+
+    Mat wdepth;
+
+    if(warp)
+        wdepth = m_sensor.WarpDepthToRGB(m_depth_storage[index],m_rgb_storage[index]);
+
     Array2D<Rgba> out(m_rgb_storage[index].rows,m_rgb_storage[index].cols);
 
     for(size_t i=0; i<(size_t)m_rgb_storage[index].rows; i++) {
@@ -126,9 +137,14 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
             val.g = half(m_rgb_storage[index].at<Vec3b>(i,j)[1]);
             val.b = half(m_rgb_storage[index].at<Vec3b>(i,j)[2]);
 
-            unsigned short d = m_depth_storage[index].at<unsigned short>(i,j);
+            if(!warp) {
 
-            val.a = half(d);
+                unsigned short d = m_depth_storage[index].at<unsigned short>(i,j);
+                val.a = half(d);
+
+            }
+            else
+                val.a = wdepth.at<float>(i,j);
 
             out[i][j] = val;
 
@@ -145,6 +161,27 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
     file.writePixels (m_rgb.rows);
 
 
+
+    return 0;
+
+}
+
+bool MainWindow::save_trafo(size_t index, QString fn) {
+
+    ofstream out(fn.toStdString().c_str());
+
+    if(!out)
+        return 1;
+
+
+    CCam cam = m_sensor.GetRGBCam();
+    Mat& F = cam.GetExtrinsics();
+
+    F = transform_to_first_image(index);
+
+    out << cam << endl;
+
+    out.close();
 
     return 0;
 
@@ -509,7 +546,31 @@ Mat MainWindow::transform_to_first_image(size_t index){
 
 void MainWindow::keyPressEvent(QKeyEvent* event) {
 
+    //cout << event->key() << endl;
+
     switch(event->key()) {
+
+    case 16777268:
+
+        if(!ui->recordButton->isChecked()) {
+
+            ui->recordButton->setChecked(true);
+            on_recordButton_clicked(true);
+
+        }
+
+        break;
+
+    case 16777216:
+
+        if(ui->recordButton->isChecked()) {
+
+            ui->recordButton->setChecked(false);
+            on_recordButton_clicked(false);
+
+        }
+
+        break;
 
     case 16777239:  // remote with logitech
 
@@ -962,7 +1023,7 @@ void MainWindow::on_actionSave_triggered()
 
     QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",
-                               tr("*.png;;*.exr;;*.ply;;*.pgm"));
+                               tr("*.png;;*.exr;;*.ply;;*.pgm;;*.txt"));
 
     bool error = false;
 
@@ -970,6 +1031,8 @@ void MainWindow::on_actionSave_triggered()
         error = save_as_png(index,filename);
     else if(filename.endsWith(".exr"))
         error = save_as_exr(index,filename);
+    else if(filename.endsWith(".txt"))
+        error = save_trafo(index,filename);
     else if (filename.endsWith(".ply")) {
 
         if(m_params->triangulate())
@@ -1067,6 +1130,8 @@ void MainWindow::on_actionSave_all_triggered()
         format = 2;
     else if(filename.endsWith(".pgm"))
         format = 3;
+    else if(filename.endsWith(".txt"))
+        format = 4;
     else
         return;
 
@@ -1122,6 +1187,15 @@ void MainWindow::on_actionSave_all_triggered()
         {
 
             error = save_as_pgm(i,QString((prefix+string(".pgm")).c_str()));
+
+            break;
+
+        }
+
+        case 4:
+        {
+
+            error = save_trafo(i,QString((prefix+string(".txt")).c_str()));
 
             break;
 
@@ -1261,7 +1335,61 @@ void MainWindow::on_alignAllButton_clicked()
 
 }
 
-void MainWindow::on_actionPreferences_triggered()
-{
+void MainWindow::on_actionPreferences_triggered() {
+
     m_params->show();
+
+}
+
+void MainWindow::on_recordButton_clicked(bool checked) {
+
+    if(checked) {
+
+        //m_timer.stop();
+
+//        QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
+//                                                        ".",
+//                                                        tr("*.oni"));
+
+//        if(filename.isEmpty()) {
+
+//            ui->recordButton->setChecked(false);
+//            ui->recordButton->setText("Record");
+
+//            return;
+//        }
+
+
+        stringstream no;
+        no.fill('0');
+        no.width(8);
+        no << rand();
+
+        //string filename = string("/home/jbalzer/Dump/")+no.str()+string(".oni");
+        string filename = string("/home/jbalzer/Dump/raw.oni"); //+no.str()+string(".oni");
+
+        m_timer.start();
+
+        //bool error = m_sensor.StartRecording(filename.toStdString().c_str());
+        bool error = m_sensor.StartRecording(filename.c_str());
+
+
+        if(error) {
+
+            ui->statusBar->showMessage("Could not start capture.");
+            ui->recordButton->setChecked(false);
+
+        }
+        else
+            ui->recordButton->setText("Stop");
+
+    }
+    else {  // recording in progress
+
+        ui->recordButton->setText("Record");
+        m_sensor.StopRecording();
+        return;
+
+    }
+
 }

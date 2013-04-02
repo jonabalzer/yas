@@ -26,6 +26,8 @@ public:
 
     bool triangulate();
 
+    bool warp_to_rgb();
+
 private slots:
 
 

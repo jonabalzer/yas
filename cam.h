@@ -43,6 +43,9 @@ public:
 	 */
     cv::Vec2f Project(const cv::Vec3f& x) const;
 
+    //! Transforms a point into the local coordinate system.
+    cv::Vec3f TransformTo(const cv::Vec3f& x) const;
+
 	/*! \brief Projects a point into the image plane without using the extrinsics.
 	 *
 	 * \param[in] xc point in camera coordinates
@@ -79,6 +82,9 @@ public:
 
 	//! Writes the camera parameters to a stream.
 	friend std::ostream& operator << (std::ostream& os, const CCam& x);
+
+    //! Access to trafo.
+    cv::Mat& GetExtrinsics() { return m_F; };
 
 protected:
 

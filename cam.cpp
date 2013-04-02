@@ -182,6 +182,28 @@ bool CCam::OpenFromFile(const char* filename) {
 Vec2f CCam::Project(const Vec3f& x) const {
 
 	// transform into camera coordinate system
+    Vec3f xc = TransformTo(x);
+//    xc *= 0;
+
+//    for(size_t i=0; i<3; i++) {
+
+//        for(size_t j=0; j<3; j++) {
+
+//            xc[i] += m_F.at<float>(i,j)*x[j];
+
+//        }
+
+//    }
+
+//    xc[0] = xc[0] + m_F.at<float>(0,3);
+//    xc[1] = xc[1] + m_F.at<float>(1,3);
+//    xc[2] = xc[2] + m_F.at<float>(2,3);
+
+    return ProjectLocal(xc);
+}
+
+Vec3f CCam::TransformTo(const cv::Vec3f& x) const {
+
     Vec3f xc;
     xc *= 0;
 
@@ -199,8 +221,10 @@ Vec2f CCam::Project(const Vec3f& x) const {
     xc[1] = xc[1] + m_F.at<float>(1,3);
     xc[2] = xc[2] + m_F.at<float>(2,3);
 
-    return ProjectLocal(xc);
+    return xc;
+
 }
+
 
 
 Vec2f CCam::ProjectLocal(const Vec3f& xc) const {

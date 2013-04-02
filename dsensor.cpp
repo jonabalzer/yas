@@ -25,6 +25,47 @@ map<int,string> CDepthColorSensor::ShowAvailableSensors() {
         cout << "USB Product ID: " << devicelist[i].getUsbProductId() << endl;
         cout << "USB Vendor ID: " << devicelist[i].getUsbVendorId() << endl;
 
+        Device dev;
+        dev.open(devicelist[i].getUri());
+
+
+        const Array<VideoMode>& modes = dev.getSensorInfo(SENSOR_COLOR)->getSupportedVideoModes();
+
+        for(size_t j=0; j<modes.getSize(); j++) {
+
+            cout << "Pixel format:";
+
+            switch(modes[j].getPixelFormat()) {
+
+            case PIXEL_FORMAT_RGB888:
+                cout << "RGB888" << endl;
+                break;
+            case PIXEL_FORMAT_YUV422:
+                cout << "YUV422" << endl;
+                break;
+            case PIXEL_FORMAT_GRAY8:
+                cout << "GRAY8" << endl;
+                break;
+            case PIXEL_FORMAT_GRAY16:
+                cout << "GRAY16" << endl;
+                break;
+            case PIXEL_FORMAT_JPEG:
+                cout << "JPEG" << endl;
+                break;
+            default:
+                break;
+
+            }
+
+            cout << "FPS: " << modes[j].getFps() << endl;
+            cout << "Resolution: " << modes[j].getResolutionX() << "x" << modes[j].getResolutionY() << endl;
+            cout << "---" << endl;
+
+        }
+
+        dev.close();
+
+
     }
 
     OpenNI::shutdown();
@@ -38,9 +79,12 @@ CDepthColorSensor::CDepthColorSensor():
     m_rgb_cam(),
     m_rgb_stream(),
     m_depth_cam(),
-    m_depth_stream() {
+    m_depth_stream(),
+    m_recorder() {
 
     OpenNI::initialize();
+
+
 
 }
 
@@ -49,9 +93,14 @@ CDepthColorSensor::CDepthColorSensor(CCam rgb, CDepthCam depth):
     m_rgb_cam(rgb),
     m_rgb_stream(),
     m_depth_cam(depth),
-    m_depth_stream() {
+    m_depth_stream(),
+    m_recorder() {
 
     OpenNI::initialize();
+
+    // attach streams to recorder (maybe do this later)
+    m_recorder.attach(m_rgb_stream);
+    m_recorder.attach(m_depth_stream);
 
 }
 
@@ -62,7 +111,7 @@ bool CDepthColorSensor::OpenDevice(int i) {
 
     if(i>=devicelist.getSize()) {
         cout << "Device no. " << i << " not found." << endl;
-        return false;
+        return 1;
 
     }
 
@@ -125,6 +174,8 @@ bool CDepthColorSensor::OpenDevice(int i) {
       return 1;
 
   }
+
+
 
   return 0;
 
@@ -254,12 +305,11 @@ Vec3b CDepthColorSensor::GetColor(cv::Point3f x, const cv::Mat& rgb) {
     Vec2f uc = m_rgb_cam.Project(x);
 
     // round
-    int irgb = (int)floor(uc[1]);
-    int jrgb = (int)floor(uc[0]);
+    int irgb = (int)floor(uc[1]+0.5);
+    int jrgb = (int)floor(uc[0]+0.5);
 
     Vec3b result;
     if(irgb<0 || irgb>=rgb.cols || jrgb<0 || jrgb>=rgb.cols) {
-
 
         result *= 0;
         return result;
@@ -312,6 +362,44 @@ Mat CDepthColorSensor::WarpRGBToDepth(const cv::Mat& disp, const cv::Mat& rgb) {
 
 }
 
+cv::Mat CDepthColorSensor::WarpDepthToRGB(const cv::Mat& disp, const cv::Mat& rgb) {
+
+   Mat result = Mat(rgb.rows,rgb.cols,CV_32FC1);
+   result *= 0;
+
+   for(size_t i=0; i<disp.rows; i++) {
+
+       for(size_t j=0; j<disp.cols; j++) {
+
+           float d = disp.at<unsigned short>(i,j);
+           float z = m_depth_cam.DisparityToDepth(i,j,d);
+
+           Point2i u(j,i);
+
+           Vec3f xc = m_depth_cam.UnProjectLocal(u);
+           xc = xc*z;
+
+           // transform to rgb cam coordinates
+           Vec3f xcr = m_rgb_cam.TransformTo(xc);
+
+           // project and round to nearest point
+           Vec2f uc = m_rgb_cam.ProjectLocal(xcr);
+           int irgb = (int)floor(uc[1]+0.5);
+           int jrgb = (int)floor(uc[0]+0.5);
+
+           if(irgb>=0 && irgb<m_rgb_cam.m_size[1] && jrgb>=0 && jrgb<m_rgb_cam.m_size[0] && z>m_depth_cam.m_range[0] && z<m_depth_cam.m_range[1])
+               result.at<float>(irgb,jrgb) = xcr[2];
+           else
+               result.at<float>(irgb,jrgb) = 0;
+
+       }
+
+   }
+
+   return result;
+
+}
+
 float CDepthColorSensor::DisparityToDepth(int d) {
 
      return 1.0/(m_depth_cam.m_d[0]+d*m_depth_cam.m_d[1]);
@@ -325,3 +413,47 @@ void CDepthColorSensor::GetDisparityRange(size_t& min, size_t& max) {
 
 }
 
+
+bool CDepthColorSensor::StartRecording(const char* filename) {
+
+    if(!IsSane()) {
+
+        cout << "ERROR: Could not open device." << endl;
+        return 1;
+
+    }
+
+    m_recorder.create(filename);
+
+    // attach streams to recorder (maybe do this later)
+    m_recorder.attach(m_rgb_stream);
+    m_recorder.attach(m_depth_stream);
+
+    if(!m_recorder.isValid()) {
+
+        cout << "Recorder not valid." << endl;
+        return 1;
+
+    }
+
+    m_recorder.start();
+
+    if(!m_recorder.isValid()) {
+
+        cout << "Could not start capture." << endl;
+        return 1;
+
+    }
+
+    return 0;
+
+}
+
+bool CDepthColorSensor::StopRecording() {
+
+    m_recorder.stop();
+    m_recorder.destroy();
+
+    return 0;
+
+}

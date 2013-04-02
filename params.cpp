@@ -114,4 +114,10 @@ bool Params::triangulate() {
 }
 
 
+bool Params::warp_to_rgb() {
+
+    return ui->saveDepthCheckBox->isChecked() && ui->alignRGBCheckBox->isChecked();
+
+}
+
 

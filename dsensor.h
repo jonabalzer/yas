@@ -58,11 +58,26 @@ public:
     //! Warps an RGB image to the image plane of the depth sensor.
     cv::Mat WarpRGBToDepth(const cv::Mat& disp, const cv::Mat& rgb);
 
+    /*! \brief Warps a depth image to the image plane of the RGB sensor.
+     *
+     * \details This is a HACK. Needs to be done with spline interpolation.
+     */
+    cv::Mat WarpDepthToRGB(const cv::Mat& disp, const cv::Mat& rgb);
+
     //! Access to maximum disparity.
     float DisparityToDepth(int d);
 
     //! Gets disparity range.
     void GetDisparityRange(size_t& min, size_t& max);
+
+    //! Start dumping streams into a ONI file.
+    bool StartRecording(const char* filename);
+
+    //! Stop file dump.
+    bool StopRecording();
+
+    //! Access to camera.
+    CCam GetRGBCam() { return m_rgb_cam; };
 
 private:
 
@@ -71,6 +86,8 @@ private:
     openni::VideoStream m_rgb_stream;                          //! OpenNI image stream
     CDepthCam m_depth_cam;
     openni::VideoStream m_depth_stream;                        //! OpenNI depth stream
+    openni::Recorder m_recorder;                               //! a recorder
+
 
     // protect from copying
     CDepthColorSensor(const CDepthColorSensor& sensor);
