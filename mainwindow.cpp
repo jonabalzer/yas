@@ -144,7 +144,7 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
 
             }
             else
-                val.a = wdepth.at<float>(i,j);
+                val.a = half(wdepth.at<float>(i,j));
 
             out[i][j] = val;
 
@@ -156,9 +156,9 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
     //header.insert ("comments", StringAttribute ("written by ucla vision lab kinect scan"));
     //header.insert ("cameraTransform", M44fAttribute (cameraTransform));
 
-    RgbaOutputFile file(fn.toStdString().c_str(),m_rgb.cols,m_rgb.rows, WRITE_RGBA);
-    file.setFrameBuffer (&out[0][0],1,m_rgb.cols);
-    file.writePixels (m_rgb.rows);
+    RgbaOutputFile file(fn.toStdString().c_str(),m_rgb_storage[index].cols,m_rgb_storage[index].rows, WRITE_RGBA);
+    file.setFrameBuffer (&out[0][0],1,m_rgb_storage[index].cols);
+    file.writePixels (m_rgb_storage[index].rows);
 
 
 
