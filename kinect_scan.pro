@@ -64,7 +64,6 @@ mac:!symbian: {
     LIBS += -L$$PWD/../OpenNI-2.1.0/Redist \
             -L$$PWD/../OpenNI-2.1.0/Redist/OpenNI2/Drivers \
             -L/usr/local/lib/ \
-            -L/opt/local/lib/ \
             -lopencv_core \
             -lopencv_highgui \
             -lopencv_video \
@@ -78,9 +77,8 @@ mac:!symbian: {
             -lPS1080
 
     INCLUDEPATH += /usr/local/include
-    INCLUDEPATH += /usr/include/OpenEXR
+    INCLUDEPATH += /usr/local/include/OpenEXR
     INCLUDEPATH += /opt/local/include
-    INCLUDEPATH += /opt/local/include/OpenEXR
     INCLUDEPATH += $$PWD/../OpenNI-2.1.0/Include
 
 
