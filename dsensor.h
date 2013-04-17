@@ -1,15 +1,12 @@
 #ifndef DSENSOR_H
 #define DSENSOR_H
 
-
 #include <OpenNI.h>
 #include <opencv2/opencv.hpp>
 #include "cam.h"
 #include <map>
 
 class CDepthColorSensor {
-
-
 
 public:
 
