@@ -660,14 +660,17 @@ void MainWindow::update_live_view() {
         for(size_t j=0; j<(size_t)img.cols-1; j++) {
 
             float zq[4];
-            zq[0] = (float)img.at<unsigned short>(i,j);
-            zq[1] = (float)img.at<unsigned short>(i+1,j);
-            zq[2] = (float)img.at<unsigned short>(i,j+1);
-            zq[3] = (float)img.at<unsigned short>(i+1,j+1);
+            zq[0] = m_sensor.DisparityToDepth(img.at<unsigned short>(i,j));
+            zq[1] = m_sensor.DisparityToDepth((float)img.at<unsigned short>(i+1,j));
+            zq[2] = m_sensor.DisparityToDepth((float)img.at<unsigned short>(i,j+1));
+            zq[3] = m_sensor.DisparityToDepth((float)img.at<unsigned short>(i+1,j+1));
 
-            if(zq[0]>dmax || zq[0]<dmin)
+            if(img.at<unsigned short>(i,j)>dmax || img.at<unsigned short>(i,j)<dmin)
                 imgdd.setPixel(j,i,qRgb(0,0,0));
-            else if(zq[0]<dmax && zq[1]<dmax && zq[2]<dmax && zq[3]<dmax) {
+            else if(img.at<unsigned short>(i,j)<dmax &&
+                    img.at<unsigned short>(i+1,j)<dmax
+                    && img.at<unsigned short>(i,j+1)<dmax
+                    && img.at<unsigned short>(i+1,j+1)<dmax) {
 
                 float mean = 0.25*(zq[0] + zq[1] + zq[2] + zq[3]);
 
@@ -930,7 +933,8 @@ void MainWindow::get_mesh(size_t index, vector<Point3f>& vertices, vector<Vec3b>
 
         for(size_t j=0; j<(size_t)m_depth_storage[index].cols; j++) {
 
-            float z = (float)m_depth_storage[index].at<unsigned short>(i,j);
+            unsigned short d = m_depth_storage[index].at<unsigned short>(i,j);
+            float z = m_sensor.DisparityToDepth(d);
 
             // only do something disparity is unsaturated
             if(m_depth_storage[index].at<unsigned short>(i,j)<=ui->depthclipSlider->maximum()) {
@@ -1118,7 +1122,7 @@ void MainWindow::on_actionSave_all_triggered()
 
     QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",
-                               tr("*.png;;*.exr;;*.ply;;*.pgm"));
+                               tr("*.png;;*.exr;;*.ply;;*.pgm;;*.txt"));
 
     int format = 0;
 
@@ -1311,6 +1315,8 @@ void MainWindow::on_alignAllButton_clicked()
         Mat F = alignment.RunConcensus(nsamples,athresh,ninliers,this);
 
         // bring alignment vis back
+        m_alignment->show();
+        m_alignment->activateWindow();
         m_alignment->raise();
 
         // store transformation

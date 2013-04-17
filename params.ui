@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="sensorTab">
     <attribute name="title">
@@ -611,7 +611,7 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>10</string>
+          <string>0.01</string>
          </property>
         </widget>
        </item>
