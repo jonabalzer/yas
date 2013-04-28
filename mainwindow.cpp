@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_sensor(),
     m_timer(this),
     m_rgb(),
-    m_depth_buffer(10),
+    m_depth_buffer(3),
     m_rgb_storage(),
     m_depth_storage(),
     m_trafo_storage(),
@@ -47,11 +47,11 @@ MainWindow::MainWindow(QWidget *parent) :
     // get min/max disparity to set up slider
     size_t dmin, dmax;
     m_sensor.GetDisparityRange(dmin,dmax);
-    ui->depthclipSlider->setMinimum(dmin);
-    ui->depthclipSlider->setMaximum(dmax);
-    ui->depthclipSlider->setSliderPosition(dmax);
+    ui->depthclipSlider->setMinimum(dmax);      // the slider refers to depth
+    ui->depthclipSlider->setMaximum(dmin);
+    ui->depthclipSlider->setSliderPosition(dmin);
 
-    float zmax = m_sensor.DisparityToDepth(dmax);
+    float zmax = m_sensor.DisparityToDepth(dmin);
     QString label;
     label.setNum(zmax,'f',2);
     ui->maxDepth->setText(label);
@@ -61,8 +61,6 @@ MainWindow::MainWindow(QWidget *parent) :
     else
         CDepthColorSensor::ShowAvailableSensors();
 
-
-
 }
 
 MainWindow::~MainWindow() {
@@ -71,6 +69,7 @@ MainWindow::~MainWindow() {
     delete m_glview;
     delete m_alignment;
     delete ui;
+
 }
 
 bool MainWindow::on_stepButton_clicked()
@@ -160,8 +159,6 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
     file.setFrameBuffer (&out[0][0],1,m_rgb_storage[index].cols);
     file.writePixels (m_rgb_storage[index].rows);
 
-
-
     return 0;
 
 }
@@ -172,7 +169,6 @@ bool MainWindow::save_trafo(size_t index, QString fn) {
 
     if(!out)
         return 1;
-
 
     CCam cam = m_sensor.GetRGBCam();
     Mat& F = cam.GetExtrinsics();
@@ -276,6 +272,17 @@ bool MainWindow::save_as_pgm(size_t index, QString fn) {
     params.push_back(CV_IMWRITE_PXM_BINARY);
     params.push_back(1);
 
+
+    // save ring buffer test-wise
+    for(size_t i=0; i<m_depth_buffer.size(); i++) {
+        stringstream ss;
+        ss << i << endl;
+
+        imwrite((string("/home/jbalzer/Dump/depth")+ss.str()+".pgm").c_str(),m_depth_buffer[i],params);
+
+
+    }
+
     return !imwrite(fn.toStdString().c_str(),m_depth_storage[index],params);
 
 }
@@ -283,8 +290,8 @@ bool MainWindow::save_as_pgm(size_t index, QString fn) {
 void MainWindow::on_actionUpdateClipDepth_triggered()
 {
 
-    int dmax = ui->depthclipSlider->sliderPosition();
-    float zmax = m_sensor.DisparityToDepth(dmax);
+    int d = ui->depthclipSlider->sliderPosition();
+    float zmax = m_sensor.DisparityToDepth(d);
 
     QString label;
     label.setNum(zmax,'f',2);
@@ -645,7 +652,7 @@ void MainWindow::update_live_view() {
     ui->labelRGB->setPixmap(QPixmap::fromImage(cimg));
 
     Mat img = m_depth_buffer.back();
-    Mat depthf  (Size(640,480),CV_8UC1); // exchange this with member function
+    Mat depthf  (Size(640,480),CV_8UC1);
     img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
 
     Mat depthrgb;
@@ -653,7 +660,7 @@ void MainWindow::update_live_view() {
 
     QImage imgdd(depthrgb.data,depthf.cols,depthf.rows,QImage::Format_RGB888);
 
-    float variance = m_params->get_triangulation_threshold();
+    float variance = m_params->get_triangulation_threshold(); // w.r.t. depth
 
     for(size_t i=0; i<(size_t)img.rows-1; i++) {
 
@@ -683,6 +690,8 @@ void MainWindow::update_live_view() {
                     imgdd.setPixel(j,i,qRgb(255,0,0));
 
             }
+            else
+                imgdd.setPixel(j,i,qRgb(0,0,0));
 
         }
 
@@ -709,7 +718,7 @@ void MainWindow::update_static_view(Mat& rgb, Mat& depth) {
 
             float z = (float)depth.at<unsigned short>(i,j);
 
-            if(z>=dmax || z<=dmin)
+            if(z>=dmax || z<=dmin)      // this is actually disparity
                 imgdd.setPixel(j,i,qRgb(0,0,0));
             else {
 
@@ -1322,7 +1331,6 @@ void MainWindow::on_alignAllButton_clicked()
         // store transformation
         m_trafo_storage[index] = F;
 
-
         // show inlier/outlier ratio
         double ioratio = (double)ninliers/(double)good_matches.size();
         ioratio *= 100;
@@ -1351,34 +1359,33 @@ void MainWindow::on_recordButton_clicked(bool checked) {
 
     if(checked) {
 
-        //m_timer.stop();
+        m_timer.stop();
 
-//        QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
-//                                                        ".",
-//                                                        tr("*.oni"));
+        QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
+                                                        ".",
+                                                        tr("*.oni"));
 
-//        if(filename.isEmpty()) {
+        if(filename.isEmpty()) {
 
-//            ui->recordButton->setChecked(false);
-//            ui->recordButton->setText("Record");
+            ui->recordButton->setChecked(false);
+            ui->recordButton->setText("Record");
 
-//            return;
-//        }
+            return;
+        }
 
 
-        stringstream no;
-        no.fill('0');
-        no.width(8);
-        no << rand();
+        //stringstream no;
+        //no.fill('0');
+        //no.width(8);
+        //no << rand();
 
         //string filename = string("/home/jbalzer/Dump/")+no.str()+string(".oni");
-        string filename = string("/home/jbalzer/Dump/raw.oni"); //+no.str()+string(".oni");
+        //string filename = string("/home/jbalzer/Dump/raw.oni"); //+no.str()+string(".oni");
 
         m_timer.start();
 
-        //bool error = m_sensor.StartRecording(filename.toStdString().c_str());
-        bool error = m_sensor.StartRecording(filename.c_str());
-
+        bool error = m_sensor.StartRecording(filename.toStdString().c_str());
+        //bool error = m_sensor.StartRecording(filename.c_str());
 
         if(error) {
 

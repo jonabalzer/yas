@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="sensorTab">
     <attribute name="title">
@@ -124,7 +124,7 @@
        <item row="2" column="1">
         <widget class="QLineEdit" name="zminEdit">
          <property name="text">
-          <string>0.3</string>
+          <string>0.2</string>
          </property>
         </widget>
        </item>
@@ -581,7 +581,7 @@
           <string>Triangulate</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>

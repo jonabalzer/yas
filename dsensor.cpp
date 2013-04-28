@@ -408,8 +408,8 @@ float CDepthColorSensor::DisparityToDepth(int d) {
 
 void CDepthColorSensor::GetDisparityRange(size_t& min, size_t& max) {
 
-    min = (size_t)((1/m_depth_cam.m_range[0]-m_depth_cam.m_d[0])/m_depth_cam.m_d[1]);
-    max = (size_t)((1/m_depth_cam.m_range[1]-m_depth_cam.m_d[0])/m_depth_cam.m_d[1]);
+    min = (size_t)((1/m_depth_cam.m_range[1]-m_depth_cam.m_d[0])/m_depth_cam.m_d[1]);
+    max = (size_t)((1/m_depth_cam.m_range[0]-m_depth_cam.m_d[0])/m_depth_cam.m_d[1]);
 
 }
 
