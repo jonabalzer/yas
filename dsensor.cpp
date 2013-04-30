@@ -6,7 +6,6 @@ using namespace cv;
 
 map<int,string> CDepthColorSensor::ShowAvailableSensors() {
 
-
     map<int,string> result;
 
     OpenNI::initialize();
@@ -27,7 +26,6 @@ map<int,string> CDepthColorSensor::ShowAvailableSensors() {
 
         Device dev;
         dev.open(devicelist[i].getUri());
-
 
         const Array<VideoMode>& modes = dev.getSensorInfo(SENSOR_COLOR)->getSupportedVideoModes();
 
@@ -283,7 +281,7 @@ void CDepthColorSensor::ConfigureDepth(const std::vector<size_t>& size, const st
 
 }
 
-cv::Point3f CDepthColorSensor::GetPoint(size_t i, size_t j, const cv::Mat& disp) {
+Point3f CDepthColorSensor::GetPoint(size_t i, size_t j, const cv::Mat& disp) {
 
     float d = (float)disp.at<unsigned short>(i,j);
 
@@ -298,6 +296,42 @@ cv::Point3f CDepthColorSensor::GetPoint(size_t i, size_t j, const cv::Mat& disp)
     return x;
 
 }
+
+Vec3f CDepthColorSensor::GetNormal(size_t i, size_t j, const Mat& disp) {
+
+    Vec3f result;
+    result *= 0;
+
+    if(i==0 || j==0 || i==disp.rows-1 || j==disp.cols-1)
+        return result;
+
+    float z[5];
+    z[0] = m_depth_cam.DisparityToDepth(i-1,j,(float)disp.at<unsigned short>(i-1,j));
+    z[1] = m_depth_cam.DisparityToDepth(i+1,j,(float)disp.at<unsigned short>(i+1,j));
+    z[2] = m_depth_cam.DisparityToDepth(i,j-1,(float)disp.at<unsigned short>(i,j-j));
+    z[3] = m_depth_cam.DisparityToDepth(i,j+1,(float)disp.at<unsigned short>(i,j+1));
+    z[4] = m_depth_cam.DisparityToDepth(i,j+1,(float)disp.at<unsigned short>(i,j));
+
+//    if(z[0]>0 && z[1]>0 && z[2]>0 && z[3]>0 && z[4]>0) {
+
+        result[0] = 0; //-0.5*(z[3]-z[2])*(m_depth_cam.m_f[0]/z[4]);   // -dzdx
+        result[1] = 0; //-0.5*(z[1]-z[0])*(m_depth_cam.m_f[1]/z[4]);   // -dzdy
+        result[2] = 1;
+
+ //   }
+
+
+
+    //float nn = cv::norm(result);
+
+    //if(nn)
+    //    result /= nn;
+
+    return result;
+
+}
+
+
 
 Vec3b CDepthColorSensor::GetColor(cv::Point3f x, const cv::Mat& rgb) {
 

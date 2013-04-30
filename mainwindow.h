@@ -135,6 +135,8 @@ private:
      */
     void get_pcl(size_t index, vector<Point3f>& vertices, vector<Vec3b>& colors, float maxr = 10000, Mat F = Mat::eye(4,4,CV_32FC1));
 
+    void get_oriented_pcl(size_t index, vector<Point3f>& vertices, vector<Point3f>& normals, vector<Vec3b>& colors, float maxr = 10000, Mat F = Mat::eye(4,4,CV_32FC1));
+
     /*! \brief Converts an image in the storage into a colored 3d mesh.
      * \param[in] index number of stored depth image
      * \param[out] vertices point cloud in 3d

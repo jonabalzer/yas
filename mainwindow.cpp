@@ -188,11 +188,12 @@ bool MainWindow::save_pcl_as_ply(size_t index, QString fn) {
     // get transformation to first frame, if it exists
     Mat F = transform_to_first_image(index);
     vector<Point3f> points;
+    vector<Point3f> normals;
     vector<Vec3b> colors;
 
     float zmax = m_sensor.DisparityToDepth(ui->depthclipSlider->sliderPosition());
 
-    get_pcl(index,points,colors,zmax,F);
+    get_oriented_pcl(index,points,normals,colors,zmax,F);
 
     ofstream out(fn.toStdString().c_str());
 
@@ -206,13 +207,16 @@ bool MainWindow::save_pcl_as_ply(size_t index, QString fn) {
     out << "property float32 x" << endl;
     out << "property float32 y" << endl;
     out << "property float32 z" << endl;
+    out << "property float32 nx" << endl;
+    out << "property float32 ny" << endl;
+    out << "property float32 nz" << endl;
     out << "property uchar red" << endl;
     out << "property uchar green" << endl;
     out << "property uchar blue" << endl;
     out << "end_header" << endl;
 
     for(size_t i=0; i<points.size(); i++)
-        out << points[i].x << " " << points[i].y << " " << points[i].z << " " << (unsigned int)colors[i][0] << " " << (unsigned int)colors[i][1] << " " << (unsigned int)colors[i][2] << endl;
+        out << points[i].x << " " << points[i].y << " " << points[i].z << " " << normals[i].x << " " << normals[i].y << " " << normals[i].z << " " << (unsigned int)colors[i][0] << " " << (unsigned int)colors[i][1] << " " << (unsigned int)colors[i][2] << endl;
 
     out.close();
 
@@ -919,6 +923,74 @@ void MainWindow::get_pcl(size_t index, vector<Point3f>& vertices, vector<Vec3b>&
     }
 
 }
+
+void MainWindow::get_oriented_pcl(size_t index, vector<Point3f>& vertices, vector<Point3f>& normals, vector<Vec3b>& colors, float maxr, Mat F) {
+
+    // prepare transformation
+    Mat Fsr = F(Range(0,3),Range(0,4));
+    bool isfid = F.at<float>(0,0)==1 && F.at<float>(0,1)==0 && F.at<float>(0,2)==0 && F.at<float>(0,3)==0 &&
+                 F.at<float>(1,0)==0 && F.at<float>(1,1)==1 && F.at<float>(1,2)==0 && F.at<float>(1,3)==0 &&
+                 F.at<float>(2,0)==0 && F.at<float>(2,1)==0 && F.at<float>(2,2)==1 && F.at<float>(2,3)==0;
+
+    // rotation for normal
+    Mat R = Fsr.clone();
+    R.at<float>(0,3) = 0;
+    R.at<float>(1,3) = 0;
+    R.at<float>(2,3) = 0;
+
+    // allocate space for temporary variable
+    vector<Point3f> xarray;
+    Point3f x;
+    xarray.push_back(x);
+    vector<Point3f> narray;
+    Point3f n;
+    narray.push_back(n);
+
+    // collect points
+    for(size_t i=0; i<(size_t)m_depth_storage[index].rows; i++) {
+
+        for(size_t j=0; j<(size_t)m_depth_storage[index].cols; j++) {
+
+            // only do something disparity is unsaturated
+            if(m_depth_storage[index].at<unsigned short>(i,j)<=ui->depthclipSlider->maximum()) {
+
+                x = m_sensor.GetPoint(i,j,m_depth_storage[index]);
+                xarray[0] = x;
+
+                // transform if F is not the idendity
+                if(!isfid)
+                    cv::transform(xarray,xarray,Fsr);
+
+                // check distance condition
+                if(cv::norm(xarray[0])<maxr) {
+
+                    // transform normal
+                    narray[0] = m_sensor.GetNormal(i,j,m_depth_storage[index]);
+
+                    if(!isfid)
+                        cv::transform(narray,narray,R);
+
+                    //if(cv::norm(narray[0])>0) {
+
+                        vertices.push_back(xarray[0]);
+                        normals.push_back(narray[0]);
+
+                        Vec3b color = m_sensor.GetColor(x,m_rgb_storage[index]);
+                        colors.push_back(color);
+
+
+                    //}
+
+                }
+
+            }
+
+        }
+
+    }
+
+}
+
 
 void MainWindow::get_mesh(size_t index, vector<Point3f>& vertices, vector<Vec3b>& colors, vector<Vec4i>& faces, float maxr, Mat F) {
 

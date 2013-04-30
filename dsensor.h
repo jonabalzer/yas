@@ -49,6 +49,9 @@ public:
     //! Converts disparity into 3d point in depth cam coordinates.
     cv::Point3f GetPoint(size_t i, size_t j, const cv::Mat& disp);
 
+    //! Converts disparity into 3d point in depth cam coordinates.
+    cv::Vec3f GetNormal(size_t i, size_t j, const cv::Mat& disp);
+
     //! Gets the color at a point in world (depth) coordinates.
     cv::Vec3b GetColor(cv::Point3f x, const cv::Mat& rgb);
 
