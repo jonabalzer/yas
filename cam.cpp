@@ -353,5 +353,6 @@ float CDepthCam::DisparityToDepth(size_t i, size_t j, float d) {
     float dc = d + D*exp(m_a[0]-m_a[1]*d);
 
     return 1.0/(m_d[0]+dc*m_d[1]);
+
 }
 

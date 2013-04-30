@@ -299,6 +299,7 @@ Point3f CDepthColorSensor::GetPoint(size_t i, size_t j, const cv::Mat& disp) {
 
 Vec3f CDepthColorSensor::GetNormal(size_t i, size_t j, const Mat& disp) {
 
+    // FIXME: this is slow (convert disparity to depth only once per pixel)
     Vec3f result;
     result *= 0;
 
@@ -308,24 +309,22 @@ Vec3f CDepthColorSensor::GetNormal(size_t i, size_t j, const Mat& disp) {
     float z[5];
     z[0] = m_depth_cam.DisparityToDepth(i-1,j,(float)disp.at<unsigned short>(i-1,j));
     z[1] = m_depth_cam.DisparityToDepth(i+1,j,(float)disp.at<unsigned short>(i+1,j));
-    z[2] = m_depth_cam.DisparityToDepth(i,j-1,(float)disp.at<unsigned short>(i,j-j));
+    z[2] = m_depth_cam.DisparityToDepth(i,j-1,(float)disp.at<unsigned short>(i,j-1));
     z[3] = m_depth_cam.DisparityToDepth(i,j+1,(float)disp.at<unsigned short>(i,j+1));
     z[4] = m_depth_cam.DisparityToDepth(i,j+1,(float)disp.at<unsigned short>(i,j));
 
-//    if(z[0]>0 && z[1]>0 && z[2]>0 && z[3]>0 && z[4]>0) {
+     if(z[0]>0 && z[1]>0 && z[2]>0 && z[3]>0 && z[4]>0) {
 
-        result[0] = 0; //-0.5*(z[3]-z[2])*(m_depth_cam.m_f[0]/z[4]);   // -dzdx
-        result[1] = 0; //-0.5*(z[1]-z[0])*(m_depth_cam.m_f[1]/z[4]);   // -dzdy
-        result[2] = 1;
+        result[0] = 0.5*(z[3]-z[2])*(m_depth_cam.m_f[0]/z[4]);   // -dzdx
+        result[1] = 0.5*(z[1]-z[0])*(m_depth_cam.m_f[1]/z[4]);   // -dzdy
+        result[2] = -1;
 
- //   }
+    }
 
+    float nn = cv::norm(result);
 
-
-    //float nn = cv::norm(result);
-
-    //if(nn)
-    //    result /= nn;
+    if(nn)
+        result /= nn;
 
     return result;
 

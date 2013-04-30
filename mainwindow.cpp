@@ -276,17 +276,6 @@ bool MainWindow::save_as_pgm(size_t index, QString fn) {
     params.push_back(CV_IMWRITE_PXM_BINARY);
     params.push_back(1);
 
-
-    // save ring buffer test-wise
-    for(size_t i=0; i<m_depth_buffer.size(); i++) {
-        stringstream ss;
-        ss << i << endl;
-
-        imwrite((string("/home/jbalzer/Dump/depth")+ss.str()+".pgm").c_str(),m_depth_buffer[i],params);
-
-
-    }
-
     return !imwrite(fn.toStdString().c_str(),m_depth_storage[index],params);
 
 }
@@ -970,7 +959,7 @@ void MainWindow::get_oriented_pcl(size_t index, vector<Point3f>& vertices, vecto
                     if(!isfid)
                         cv::transform(narray,narray,R);
 
-                    //if(cv::norm(narray[0])>0) {
+                    if(cv::norm(narray[0])>0) {
 
                         vertices.push_back(xarray[0]);
                         normals.push_back(narray[0]);
@@ -978,8 +967,7 @@ void MainWindow::get_oriented_pcl(size_t index, vector<Point3f>& vertices, vecto
                         Vec3b color = m_sensor.GetColor(x,m_rgb_storage[index]);
                         colors.push_back(color);
 
-
-                    //}
+                    }
 
                 }
 
