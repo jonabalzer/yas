@@ -90,116 +90,72 @@ ostream& operator<< (ostream& os, const CCam& x) {
 
 }
 
-bool CCam::SaveToFile(const char* filename) {
+istream& operator >> (istream& is, CCam& x) {
 
-	ofstream out(filename);
+    string linebuffer;
 
-	if(!out) {
+    getline(is,linebuffer);
 
-		cout << "ERROR: Could not open file " << filename << "." << endl;
-		return 1;
+    is >> x.m_size[0];
+    is >> x.m_size[1];
+    is.get();
 
-	 }
+    getline(is,linebuffer);
 
-	out << *this;
+    is >> x.m_f[0];
+    is >> x.m_f[1];
+    is.get();
 
-	out.close();
+    getline(is,linebuffer);
 
-	return 0;
+    is >> x.m_c[0];
+    is >> x.m_c[1];
+    is.get();
 
-}
+    getline(is,linebuffer);
 
+    is >> x.m_k[0];
+    is >> x.m_k[1];
+    is >> x.m_k[2];
+    is >> x.m_k[3];
+    is >> x.m_k[4];
+    is.get();
 
-bool CCam::OpenFromFile(const char* filename) {
+    getline(is,linebuffer);
 
-	ifstream in(filename);
+    is >> x.m_alpha;
+    is.get();
 
-	if(!in) {
-
-		cout << "ERROR: Could not open " << filename << "." << endl;
-		return 1;
-
-	 }
-
-
-	string linebuffer;
-
-	getline(in,linebuffer);
-
-	in >> m_size[0];
-	in >> m_size[1];
-	in.get();
-
-	getline(in,linebuffer);
-
-	in >> m_f[0];
-	in >> m_f[1];
-	in.get();
-
-	getline(in,linebuffer);
-
-	in >> m_c[0];
-	in >> m_c[1];
-	in.get();
-
-	getline(in,linebuffer);
-
-	in >> m_k[0];
-	in >> m_k[1];
-	in >> m_k[2];
-	in >> m_k[3];
-	in >> m_k[4];
-	in.get();
-
-	getline(in,linebuffer);
-
-	in >> m_alpha;
-	in.get();
-
-	getline(in,linebuffer);
+    getline(is,linebuffer);
 
     for(size_t i=0; i<4; i++) {
 
         for(size_t j=0; j<4; j++) {
 
-            in >> m_F.at<float>(i,j);
+            is >> x.m_F.at<float>(i,j);
 
         }
 
-        in.get();
+        if(i<3)
+            is.get();
 
     }
 
-	in.close();
+    x.m_Finv = x.m_F.inv();
 
-    m_Finv = m_F.inv();
-
-	return 0;
+    return is;
 
 }
+
 
 
 Vec2f CCam::Project(const Vec3f& x) const {
 
 	// transform into camera coordinate system
     Vec3f xc = TransformTo(x);
-//    xc *= 0;
-
-//    for(size_t i=0; i<3; i++) {
-
-//        for(size_t j=0; j<3; j++) {
-
-//            xc[i] += m_F.at<float>(i,j)*x[j];
-
-//        }
-
-//    }
-
-//    xc[0] = xc[0] + m_F.at<float>(0,3);
-//    xc[1] = xc[1] + m_F.at<float>(1,3);
-//    xc[2] = xc[2] + m_F.at<float>(2,3);
 
     return ProjectLocal(xc);
+
 }
 
 Vec3f CCam::TransformTo(const cv::Vec3f& x) const {
@@ -356,3 +312,119 @@ float CDepthCam::DisparityToDepth(size_t i, size_t j, float d) {
 
 }
 
+
+ostream& operator << (ostream& os, const CDepthCam& x) {
+
+    os << "# dims" << endl;
+    os << x.m_size[0] << " " << x.m_size[1] << endl;
+    os << "# focal lengths" << endl;
+    os << x.m_f[0] << " " << x.m_f[1] << endl;
+    os << "# principle point" << endl;
+    os << x.m_c[0] << " " << x.m_c[1] << endl;
+    os << "# radial distortion coefficients" << endl;
+    os << x.m_k[0] << " " << x.m_k[1] << " " << x.m_k[2] << " " << x.m_k[3] << " " << x.m_k[4] << endl;
+    os << "# skew coefficient" << endl;
+    os << x.m_alpha << endl;
+    os << "# range" << endl;
+    os << x.m_range[0] << " " << x.m_range[1] << endl;
+    os << "# disparity-to-depth conversion coefficients" << endl;
+    os << x.m_d[0] << " " << x.m_d[1] << endl;
+    os << "# radial depth error correction coefficients" << endl;
+    os << x.m_a[0] << " " << x.m_a[1] << endl;
+    os << "# frame world -> cam" << endl;
+
+    for(size_t i=0; i<4; i++) {
+
+        for(size_t j=0; j<4; j++) {
+
+            os << x.m_F.at<float>(i,j);
+
+            if(j<3)
+                os << " ";
+
+        }
+
+        if(i<3)
+            os << endl;
+
+    }
+
+    return os;
+
+}
+
+istream& operator >> (istream& is, CDepthCam& x) {
+
+    string linebuffer;
+
+    getline(is,linebuffer);
+
+    is >> x.m_size[0];
+    is >> x.m_size[1];
+    is.get();
+
+    getline(is,linebuffer);
+
+    is >> x.m_f[0];
+    is >> x.m_f[1];
+    is.get();
+
+    getline(is,linebuffer);
+
+    is >> x.m_c[0];
+    is >> x.m_c[1];
+    is.get();
+
+    getline(is,linebuffer);
+
+    is >> x.m_k[0];
+    is >> x.m_k[1];
+    is >> x.m_k[2];
+    is >> x.m_k[3];
+    is >> x.m_k[4];
+    is.get();
+
+    getline(is,linebuffer);
+
+    is >> x.m_alpha;
+    is.get();
+
+
+    getline(is,linebuffer);
+
+    is >> x.m_range[0];
+    is >> x.m_range[1];
+    is.get();
+
+    getline(is,linebuffer);
+
+    is >> x.m_d[0];
+    is >> x.m_d[1];
+    is.get();
+
+    getline(is,linebuffer);
+
+    is >> x.m_a[0];
+    is >> x.m_a[1];
+    is.get();
+
+    getline(is,linebuffer);
+
+    for(size_t i=0; i<4; i++) {
+
+        for(size_t j=0; j<4; j++) {
+
+            is >> x.m_F.at<float>(i,j);
+
+        }
+
+        if(i<3)
+            is.get();
+
+    }
+
+    x.m_Finv = x.m_F.inv();
+
+    return is;
+
+}

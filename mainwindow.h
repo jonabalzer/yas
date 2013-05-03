@@ -46,7 +46,7 @@ signals:
 public slots:
 
     // overloading to make sure the application quits when main window closes
-    virtual bool close() { on_actionExit_triggered(); };
+    virtual bool close() { on_actionExit_triggered(); }
 
 private slots:
 
@@ -85,6 +85,10 @@ private slots:
     void on_actionPreferences_triggered();
 
     void on_recordButton_clicked(bool checked);
+
+    void configure_sensor(const CCam& rgb, const CDepthCam& depth);
+
+    void on_saveParams_clicked();
 
 private:
 

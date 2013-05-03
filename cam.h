@@ -15,6 +15,7 @@
 #define Z_MIN_MM 300
 
 class CDepthColorSensor;
+class Params;
 
 /*! \brief camera model
  *
@@ -24,10 +25,9 @@ class CDepthColorSensor;
 class CCam {
 
     friend class CDepthColorSensor;
+    friend class Params;
 
 public:
-
-
 
 	//! Constructor.
 	CCam();
@@ -70,21 +70,14 @@ public:
 	 */
     cv::Vec3f UnProjectLocal(const cv::Vec2i& u) const;
 
-	/*! \brief Reads camera parameters from a file.
-	 *
-	 * \param[in] filename file name
-	 *
-	 */
-	bool OpenFromFile(const char* filename);
-
-	//! Writes camera parameters to file.
-	bool SaveToFile(const char* filename);
-
 	//! Writes the camera parameters to a stream.
 	friend std::ostream& operator << (std::ostream& os, const CCam& x);
 
+    //! Reads the camera parameters from a stream.
+    friend std::istream& operator >> (std::istream& is, CCam& x);
+
     //! Access to trafo.
-    cv::Mat& GetExtrinsics() { return m_F; };
+    cv::Mat& GetExtrinsics() { return m_F; }
 
 protected:
 
@@ -101,6 +94,7 @@ protected:
 class CDepthCam:public CCam {
 
     friend class CDepthColorSensor;
+    friend class Params;
 
 public:
 
@@ -112,6 +106,12 @@ public:
 
     //! Converts the disparity from the depth sensor into a metric depth.
     float DisparityToDepth(size_t i, size_t j, float d);
+
+    //! Writes the camera parameters to a stream.
+    friend std::ostream& operator << (std::ostream& os, const CDepthCam& x);
+
+    //! Reads the camera parameters from a stream.
+    friend std::istream& operator >> (std::istream& is, CDepthCam& x);
 
 private:
 

@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_trafo_storage(),
     m_alignment(new AlignWindow),
     m_glview(new QGLViewerWidget()),
-    m_params(new Params(&m_sensor))
+    m_params(new Params())
 {
 
     ui->setupUi(this);
@@ -40,9 +40,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
     connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),this,SLOT(update_static_view(Mat&,Mat&)));
     connect(this,SIGNAL(current_pcl_changed(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)),m_glview,SLOT(set_pcl(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)));
+    connect(m_params,SIGNAL(cam_params_changed(CCam,CDepthCam)),this,SLOT(configure_sensor(CCam,CDepthCam)));
+    connect(m_params,SIGNAL(save_params_clicked()),this,SLOT(on_saveParams_clicked()));
 
-    // load sensor
-    m_params->configure_sensor(&m_sensor);
+    // load sensor data
+    m_params->on_applyButton_clicked();
 
     // get min/max disparity to set up slider
     size_t dmin, dmax;
@@ -69,6 +71,16 @@ MainWindow::~MainWindow() {
     delete m_glview;
     delete m_alignment;
     delete ui;
+
+}
+
+void MainWindow::configure_sensor(const CCam& rgb, const CDepthCam& depth) {
+
+    CCam& rgbold = m_sensor.GetRGBCam();
+    rgbold = rgb;
+
+    CDepthCam& depthold = m_sensor.GetDepthCam();
+    depthold = depth;
 
 }
 
@@ -410,7 +422,6 @@ void MainWindow::on_spinBoxStorage_valueChanged(int arg1)
 
 }
 
-
 void MainWindow::on_alignButton_clicked()
 {
 
@@ -527,7 +538,6 @@ void MainWindow::on_alignButton_clicked()
     ui->statusBar->showMessage(ss.str().c_str());
 
 }
-
 
 Mat MainWindow::transform_to_first_image(size_t index){
 
@@ -1464,5 +1474,21 @@ void MainWindow::on_recordButton_clicked(bool checked) {
         return;
 
     }
+
+}
+
+
+void MainWindow::on_saveParams_clicked() {
+
+    QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),".",tr("*.txt"));
+
+    ofstream out(filename.toStdString().c_str());
+
+    if(!out.is_open())
+        return;
+
+    out << m_sensor;
+
+    out.close();
 
 }

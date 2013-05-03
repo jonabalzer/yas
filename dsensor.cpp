@@ -490,3 +490,22 @@ bool CDepthColorSensor::StopRecording() {
     return 0;
 
 }
+
+ostream& operator << (ostream& os, const CDepthColorSensor& x) {
+
+    os << x.m_rgb_cam << endl;
+    os << x.m_depth_cam;
+
+    return os;
+
+}
+
+istream& operator >> (istream& is, CDepthColorSensor& x) {
+
+    is >> x.m_rgb_cam;
+    is.get();
+    is >> x.m_depth_cam;
+
+    return is;
+
+}

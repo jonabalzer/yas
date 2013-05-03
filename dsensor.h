@@ -17,7 +17,7 @@ public:
     CDepthColorSensor();
 
     //! Destructor.
-    virtual ~CDepthColorSensor() { CloseDevice(); };
+    virtual ~CDepthColorSensor() { CloseDevice(); }
 
     //! Parametrized constructor.
     CDepthColorSensor(CCam rgb, CDepthCam depth);
@@ -77,7 +77,16 @@ public:
     bool StopRecording();
 
     //! Access to camera.
-    CCam GetRGBCam() { return m_rgb_cam; };
+    CCam& GetRGBCam() { return m_rgb_cam; }
+
+    //! Access to depth camera.
+    CDepthCam& GetDepthCam() { return m_depth_cam; }
+
+    //! Write sensor configuration to a stream.
+    friend std::ostream& operator << (std::ostream& os, const CDepthColorSensor& x);
+
+    //! Reads sensor configuration from a stream.
+    friend std::istream& operator >> (std::istream& is, CDepthColorSensor& x);
 
 private:
 
