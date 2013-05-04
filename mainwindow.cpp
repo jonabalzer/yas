@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "calignransac.h"
 #include "cplaneransac.h"
+#include "icp.h"
 
 #include <sstream>
 #include <fstream>
@@ -46,10 +47,10 @@ MainWindow::MainWindow(QWidget *parent) :
     // load sensor data
     m_params->on_applyButton_clicked();
 
-    // get min/max disparity to set up slider
+    // get min/max disparity (!) to set up slider
     size_t dmin, dmax;
     m_sensor.GetDisparityRange(dmin,dmax);
-    ui->depthclipSlider->setMinimum(dmax);      // the slider refers to depth
+    ui->depthclipSlider->setMinimum(dmax);      // the slider refers to depth!
     ui->depthclipSlider->setMaximum(dmin);
     ui->depthclipSlider->setSliderPosition(dmin);
 
@@ -529,13 +530,17 @@ void MainWindow::on_alignButton_clicked()
     // store transformation
     m_trafo_storage[index] = F;
 
-
     // show inlier/outlier ratio
     double ioratio = (double)ninliers/(double)good_matches.size();
     ioratio *= 100;
     stringstream ss;
     ss << "The inlier ratio is " << ioratio << "\%.";
     ui->statusBar->showMessage(ss.str().c_str());
+
+    // refine by icp
+    cout <<   m_trafo_storage[index] << endl;
+    refine_alignement(index);
+    cout <<   m_trafo_storage[index] << endl;
 
 }
 
@@ -806,74 +811,71 @@ Mat MainWindow::estimate_world_frame() {
     ex = ex - ez*(ex[0]*ez[0] + ex[1]*ez[1] + ex[2]*ez[2]);
     ex *= (1/cv::norm(ex));
 
-    // fill in frame from world to cam 0
-    Mat Fw = Mat::eye(4,4,CV_32FC1);
+    // fill in frame from world 1 to cam 0
+    Mat Fw1 = Mat::eye(4,4,CV_32FC1);
     for(size_t i=0; i<3; i++) {
 
-        Fw.at<float>(i,0) = ex[i];
-        Fw.at<float>(i,2) = ez[i];
-        Fw.at<float>(i,3) = mean[i];
+        Fw1.at<float>(i,0) = ex[i];
+        Fw1.at<float>(i,2) = ez[i];
+        Fw1.at<float>(i,3) = mean[i];
 
     }
 
     // ey by cross product
-    Fw.at<float>(0,1) = ez[1]*ex[2] - ez[2]*ex[1];
-    Fw.at<float>(1,1) = ez[2]*ex[0] - ez[0]*ex[2];
-    Fw.at<float>(2,1) = ez[0]*ex[1] - ez[1]*ex[0];
+    Fw1.at<float>(0,1) = ez[1]*ex[2] - ez[2]*ex[1];
+    Fw1.at<float>(1,1) = ez[2]*ex[0] - ez[0]*ex[2];
+    Fw1.at<float>(2,1) = ez[0]*ex[1] - ez[1]*ex[0];
 
     // invert, this will be pre-multiplied to m_trafo_storage[0]
-    Mat Fwinv = Fw.inv();
+    Mat Fw1inv = Fw1.inv();
 
     // get point cloud of first view, FIXME: set from zmax
-//    float maxr = (float)m_zmax;
-//    vector<Point3f> pcl;
-//    vector<Vec3b> colors;
-//    get_pcl(0,pcl,colors,600,Fwinv);
+    //float maxr = (float)m_zmax;
+    vector<Point3f> pcl;
+    vector<Vec3b> colors;
+    get_pcl(0,pcl,colors,0.5,Fw1inv);
 
-//    CEstimatePlaneRansac pransac(pcl);
-//    size_t ninliers;
-//    Vec4f plane = pransac.RunConsensus(5000,5,ninliers,this);
+    // estimate plane parameters w.r.t. Fw1
+    CEstimatePlaneRansac pransac(pcl);
+    size_t ninliers;
+    Vec4f plane = pransac.RunConsensus(5000,5,ninliers,this);
 
-//    cout << plane[0] << " " << plane[1] << " " << plane[2] << " " << plane[3] << endl;
+    cout << plane[0] << " " << plane[1] << " " << plane[2] << " " << plane[3] << endl;
 
-//    // the normal must be rotated back to cam 0 coordinates, use old variable
-//    for(size_t i=0; i<3; i++) {
+    // build frame from world 2 -> world 1
+    Mat Fw2 = Mat::eye(4,4,CV_32FC1);
 
-//        n[i] = 0;
+    // normal of plane gives news ez axis
+    for(size_t i=0; i<3; i++)
+        ez[i] = plane[i];
 
-//        for(size_t j=0; j<3; j++) {
+    // project origin on plane
+    mean = ez*plane[3];
 
-//            n[i] += Fw.at<float>(i,j)*plane[j];
+    // project (1,0,0) onto plane
+    ex *= 0;
+    ex[0] = 1 - ez[0];
+    cv::normalize(ex);
 
-//        }
+    // set columns 0,1,3 of Fw2
+    for(size_t i=0; i<3; i++) {
 
-//    }
+        Fw2.at<float>(i,0) = ex[i];
+        Fw2.at<float>(i,2) = ez[i];
+        Fw2.at<float>(i,3) = mean[i];
 
-//    // project origin on plane
-//    mean = mean - n*(mean[0]*n[0]+mean[1]*n[1]+mean[2]*n[2]-plane[3]);
+    }
 
-//    // ez is already normal, project ex on plane
-//    ez = n;
-//    ex = ex - ez*(ex[0]*ez[0] + ex[1]*ez[1] + ex[2]*ez[2]);
+    // ey by cross product
+    Fw2.at<float>(0,1) = ez[1]*ex[2] - ez[2]*ex[1];
+    Fw2.at<float>(1,1) = ez[2]*ex[0] - ez[0]*ex[2];
+    Fw2.at<float>(2,1) = ez[0]*ex[1] - ez[1]*ex[0];
 
-//    // update Fw
-//    for(size_t i=0; i<3; i++) {
+    // inverse
+    Mat Fw2inv = Fw2.inv();
 
-//        Fw.at<float>(i,0) = ex[i];
-//        Fw.at<float>(i,2) = ez[i];
-//        Fw.at<float>(i,3) = mean[i];
-
-//    }
-
-//    // ey by cross product
-//    Fw.at<float>(0,1) = ez[1]*ex[2] - ez[2]*ex[1];
-//    Fw.at<float>(1,1) = ez[2]*ex[0] - ez[0]*ex[2];
-//    Fw.at<float>(2,1) = ez[0]*ex[1] - ez[1]*ex[0];
-
-
-
-
-    return Fwinv;
+    // Fwinv = Fw2inv*Fw1inv
+    return Fw2inv*Fw1inv;
 
 }
 
@@ -1492,3 +1494,27 @@ void MainWindow::on_saveParams_clicked() {
     out.close();
 
 }
+
+void MainWindow::refine_alignement(size_t index) {
+
+    // check whether there is something to do
+    if(index==m_rgb_storage.size() || m_rgb_storage.size()<2)
+        return;
+
+    float zmax = m_sensor.DisparityToDepth(ui->depthclipSlider->sliderPosition());
+
+    vector<Point3f> x0, n0, x1, n1;
+    vector<Vec3b> c0, c1;
+
+    get_oriented_pcl(index-1,x0,n0,c0,zmax);     // one-based index, identity trafo
+    get_oriented_pcl(index,x1,n1,c1,zmax);
+    c0.clear();
+    c1.clear();
+
+    CPointToPlaneICP icp(x0,n0,x1,m_trafo_storage[index]);
+    icp.Iterate(5);
+
+    m_trafo_storage[index] = icp.GetResult();
+
+}
+

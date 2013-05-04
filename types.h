@@ -21,32 +21,19 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef CALIGNRANSAC_H
-#define CALIGNRANSAC_H
+#ifndef R4RTYPES_H_
+#define R4RTYPES_H_
 
-#include <QWidget>
-#include "opencv2/opencv.hpp"
+#include "darray.h"
+#include "vecn.h"
 
-using namespace cv;
-using namespace std;
+typedef CDenseVector<double> vec;
+typedef CDenseVector<float> vecf;
+typedef CDenseArray<double> mat;
+typedef CDenseArray<float> matf;
+typedef CVector<double,3> vec3;
+typedef CVector<float,3> vec3f;
+typedef CVector<double,2> vec2;
+typedef CVector<float,2> vec2f;
 
-class CAlignRansac
-{
-public:
-
-    CAlignRansac(vector<Vec3f>& x0, vector<Vec3f>& x1);
-
-    Mat RunConcensus(size_t nosamples, double tol, size_t& ninliers, QWidget* parent = 0);
-
-private:
-
-    bool EstimateMotion(vector<size_t> inds, Mat& F);
-
-    vector<size_t> EvaluateHypothesis(const Mat& F, double tolerance);
-
-    vector<Vec3f>& m_x0;
-    vector<Vec3f>& m_x1;
-
-};
-
-#endif // CALIGNRANSAC_H
+#endif /* TYPES_H_ */

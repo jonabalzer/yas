@@ -1,10 +1,19 @@
 #include "cplaneransac.h"
 #include <QProgressDialog>
+
 #include <fstream>
+#include <random>
+#include <chrono>
+
 using namespace std;
 using namespace cv;
 
 Vec4f CEstimatePlaneRansac::RunConsensus(size_t nsamples, float threshold, size_t& ninliers, QWidget* parent) {
+
+    // init random number generator
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    default_random_engine generator(seed);
+    uniform_int_distribution<size_t> distribution(0,m_x.size()-1);
 
     Vec4f result;
     size_t max = 0;
@@ -23,9 +32,9 @@ Vec4f CEstimatePlaneRansac::RunConsensus(size_t nsamples, float threshold, size_
 
         // draw three random indices of source points
         vector<size_t> inds;
-        inds.push_back(rand()%m_x.size());
-        inds.push_back(rand()%m_x.size());
-        inds.push_back(rand()%m_x.size());
+        inds.push_back(distribution(generator));
+        inds.push_back(distribution(generator));
+        inds.push_back(distribution(generator));
 
         // make sure the indices are all different
         if(!(inds[0]==inds[1] && inds[1]==inds[2])) {
@@ -50,22 +59,29 @@ Vec4f CEstimatePlaneRansac::RunConsensus(size_t nsamples, float threshold, size_
 
     progress.setValue(nsamples);
 
-    // TEMP:
-
-    ofstream out("/home/jbalzer/pcl3.txt");
-
-    for(size_t k=0; k<ilmax.size(); k++)
-        out << m_x[ilmax[k]].x << " " << m_x[ilmax[k]].y << " " << m_x[ilmax[k]].z << endl;
-
-    out.close();
-
-    // estimate motion with the inlier set
-    EstimatePlaneWithInliers(ilmax,result);
-
+    // number of inliers
     ninliers = ilmax.size();
 
-    return result;
+    // if there are too many inliers reduce the number
+    if(ninliers>=1000) {
 
+        unsigned int seed2 = std::chrono::system_clock::now().time_since_epoch().count();
+        default_random_engine generator2(seed2);
+        uniform_int_distribution<size_t> distribution2(0,ninliers-1);
+
+        vector<size_t> ilfinal;
+
+        // pick random samples
+        for(size_t i=0; i<1000; i++)
+            ilfinal.push_back(ilmax[distribution2(generator2)]);
+
+        EstimatePlaneWithInliers(ilfinal,result);
+
+
+    } else
+        EstimatePlaneWithInliers(ilmax,result);
+
+    return result;
 
 }
 
@@ -92,7 +108,7 @@ bool CEstimatePlaneRansac::EstimatePlane(vector<size_t> inds, Vec4f& P) {
 
     n = n*(1.0/nnorm);
 
-    // make sure all hypothises are aligned
+    // make sure all hypotheses are aligned
     if(n[2]<0)
         n *= -1;
 

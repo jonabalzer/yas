@@ -21,32 +21,33 @@
 //
 ////////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef CALIGNRANSAC_H
-#define CALIGNRANSAC_H
+#ifndef R4RPRECOND_H_
+#define R4RPRECOND_H_
 
-#include <QWidget>
-#include "opencv2/opencv.hpp"
+/*! \brief preconditioning of iterative linear solvers
+ *
+ *
+ */
+template<class Matrix,class Vector,class Scalar>
+class CPreconditioner {
 
-using namespace cv;
-using namespace std;
-
-class CAlignRansac
-{
 public:
 
-    CAlignRansac(vector<Vec3f>& x0, vector<Vec3f>& x1);
+	//! Constructor.
+    CPreconditioner(Matrix& A):m_A(A) {}
 
-    Mat RunConcensus(size_t nosamples, double tol, size_t& ninliers, QWidget* parent = 0);
+	//! Performs preconditioning.
+    virtual void Solve(Vector& x, Vector& y) { x = y; }
 
-private:
+protected:
 
-    bool EstimateMotion(vector<size_t> inds, Mat& F);
+	Matrix& m_A;						//!< input matrix, M is member of inherited classes
 
-    vector<size_t> EvaluateHypothesis(const Mat& F, double tolerance);
-
-    vector<Vec3f>& m_x0;
-    vector<Vec3f>& m_x1;
 
 };
 
-#endif // CALIGNRANSAC_H
+
+
+
+
+#endif /* PRECOND_H_ */

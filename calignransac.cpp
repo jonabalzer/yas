@@ -1,7 +1,11 @@
 #include "calignransac.h"
+
 #include <opencv2/nonfree/nonfree.hpp>
+
 #include <QProgressDialog>
 
+#include <random>
+#include <chrono>
 
 CAlignRansac::CAlignRansac(vector<Vec3f>& x0, vector<Vec3f>&x1):
     m_x0(x0),
@@ -104,6 +108,11 @@ vector<size_t> CAlignRansac::EvaluateHypothesis(const Mat& F, double tolerance) 
 
 Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, size_t& ninliers, QWidget* parent) {
 
+    // seed for random number generator
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    default_random_engine generator(seed);
+    uniform_int_distribution<size_t> distribution(0,m_x0.size()-1);
+
     Mat result(4,4,CV_32FC1);
     size_t max = 0;
     vector<size_t> ilmax;
@@ -121,9 +130,9 @@ Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, size_t& ninliers, Q
 
         // draw three random indices of source points
         vector<size_t> inds;
-        inds.push_back(rand()%m_x0.size());
-        inds.push_back(rand()%m_x0.size());
-        inds.push_back(rand()%m_x0.size());
+        inds.push_back(distribution(generator));
+        inds.push_back(distribution(generator));
+        inds.push_back(distribution(generator));
 
         // make sure the indices are all different
         if(!(inds[0]==inds[1] && inds[1]==inds[2] && inds[0]==inds[2])) {
