@@ -62,6 +62,12 @@ bool Params::warp_to_rgb() {
 
 }
 
+unsigned short Params::get_no_icp_steps() {
+
+    return ui->nICPEdit->text().toInt();
+
+}
+
 
 void Params::on_applyButton_clicked()
 {

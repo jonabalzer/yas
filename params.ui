@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="sensorTab">
     <attribute name="title">
@@ -425,7 +425,7 @@
       <rect>
        <x>358</x>
        <y>173</y>
-       <width>241</width>
+       <width>269</width>
        <height>31</height>
       </rect>
      </property>
@@ -458,128 +458,193 @@
     <attribute name="title">
      <string>Alignment</string>
     </attribute>
-    <widget class="QCheckBox" name="centerCheckBox">
+    <widget class="QGroupBox" name="initializationGroupBox">
      <property name="geometry">
       <rect>
-       <x>20</x>
-       <y>290</y>
-       <width>101</width>
-       <height>22</height>
+       <x>10</x>
+       <y>10</y>
+       <width>311</width>
+       <height>341</height>
       </rect>
      </property>
-     <property name="text">
-      <string>Center CS</string>
+     <property name="title">
+      <string>Initialization</string>
      </property>
+     <widget class="QWidget" name="gridLayoutWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>281</width>
+        <height>250</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="noFeatEdit">
+         <property name="text">
+          <string>1000</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="pointThresholdEdit">
+         <property name="text">
+          <string>0.1</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="noOctavesEdit">
+         <property name="text">
+          <string>5</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="noFeatLabel">
+         <property name="text">
+          <string>SIFT Number of Features</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="acceptanceLabel">
+         <property name="text">
+          <string>Acceptance Threshold</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="goodMatchEdit">
+         <property name="text">
+          <string>0.8</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>SIFT Number of Octaves</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="edgeThresholdEdit">
+         <property name="text">
+          <string>10</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="edgeThresholdLabel">
+         <property name="text">
+          <string>SIFT Edge Threshold</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QLineEdit" name="acceptanceEdit">
+         <property name="text">
+          <string>0.01</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="goodMatchLabel">
+         <property name="text">
+          <string>Feature Rejection Threshold</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QLineEdit" name="nosamplesEdit">
+         <property name="text">
+          <string>10000</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="nosamplesLabel">
+         <property name="text">
+          <string>RANSAC Sample Size</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="pointThresholdLabel">
+         <property name="text">
+          <string>SIFT Point Threshold</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
-    <widget class="QWidget" name="gridLayoutWidget_2">
+    <widget class="QGroupBox" name="refGroupBox">
      <property name="geometry">
       <rect>
-       <x>20</x>
-       <y>20</y>
-       <width>281</width>
-       <height>250</height>
+       <x>330</x>
+       <y>10</y>
+       <width>271</width>
+       <height>131</height>
       </rect>
      </property>
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="noFeatEdit">
-        <property name="text">
-         <string>1000</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="pointThresholdEdit">
-        <property name="text">
-         <string>0.1</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="noOctavesEdit">
-        <property name="text">
-         <string>5</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="noFeatLabel">
-        <property name="text">
-         <string>SIFT Number of Features</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="acceptanceLabel">
-        <property name="text">
-         <string>Acceptance Threshold</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QLineEdit" name="goodMatchEdit">
-        <property name="text">
-         <string>0.8</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>SIFT Number of Octaves</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QLineEdit" name="edgeThresholdEdit">
-        <property name="text">
-         <string>10</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="edgeThresholdLabel">
-        <property name="text">
-         <string>SIFT Edge Threshold</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QLineEdit" name="acceptanceEdit">
-        <property name="text">
-         <string>0.01</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="goodMatchLabel">
-        <property name="text">
-         <string>Feature Rejection Threshold</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QLineEdit" name="nosamplesEdit">
-        <property name="text">
-         <string>10000</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="nosamplesLabel">
-        <property name="text">
-         <string>RANSAC Sample Size</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="pointThresholdLabel">
-        <property name="text">
-         <string>SIFT Point Threshold</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <property name="title">
+      <string>Refinement</string>
+     </property>
+     <widget class="QWidget" name="horizontalLayoutWidget_3">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>251</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="nICPStepsLayout">
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Number of ICP steps</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="nICPEdit">
+         <property name="text">
+          <string>5</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="miscGroupBox">
+     <property name="geometry">
+      <rect>
+       <x>330</x>
+       <y>170</y>
+       <width>261</width>
+       <height>80</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Misc</string>
+     </property>
+     <widget class="QCheckBox" name="centerCheckBox">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>101</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Center CS</string>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QWidget" name="ioTab">

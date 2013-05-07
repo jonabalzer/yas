@@ -119,8 +119,10 @@ bool CPointToPlaneICP::UpdateCorrespondences() {
 
     // update
     map<int,int>::iterator it;
+    vec distances(m_corr.size());
+    size_t i = 0;
 
-    for(it=m_corr.begin(); it!=m_corr.end(); it++) {
+    for(it=m_corr.begin(); it!=m_corr.end(); it++, i++) {
 
         vec3f temp = trafo.Transform(&((Vec3f)m_x1[it->first])[0]);
 
@@ -132,14 +134,33 @@ bool CPointToPlaneICP::UpdateCorrespondences() {
         // find closest point
         m_tree->annkSearch(vertex,1,idx,dist,0);
 
+        // store squared distance
+        distances(i) = dist[0];
+
         // inject correspondence
-        if(dist[0]<0.01*0.01)
-            m_corr[it->first] = idx[0];
+        m_corr[it->first] = idx[0];
 
     }
 
     delete [] idx;
     delete [] dist;
+
+    // estimate covariance
+    double mad = distances.MAD();
+    cout << "MAD: " << mad << endl;
+
+    // delete outliers
+    map<int,int> goodmatches;
+
+    i=0;
+    for(it=m_corr.begin(); it!=m_corr.end(); it++, i++) {
+
+        if(distances(i)<1.4826*mad)
+            goodmatches.insert(*it);
+
+    }
+
+    m_corr = goodmatches;
 
     return 0;
 

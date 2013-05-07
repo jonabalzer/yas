@@ -55,6 +55,8 @@ public:
 
     bool warp_to_rgb();
 
+    unsigned short get_no_icp_steps();
+
 signals:
 
     void cam_params_changed(const CCam& rgb, const CDepthCam& depth);

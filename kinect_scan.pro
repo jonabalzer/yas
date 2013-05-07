@@ -8,7 +8,7 @@ QT       += core gui opengl
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-QMAKE_CXXFLAGS += -std=c++11
+
 
 TARGET = kinect_scan
 TEMPLATE = app
@@ -48,14 +48,16 @@ HEADERS  += mainwindow.h \
             lm.h \
             types.h \
             icp.h \
-    vecn.h \
-    trafo.h
+            vecn.h \
+            trafo.h
 
 FORMS    += mainwindow.ui \
             alignwindow.ui \
             params.ui
 
 unix:!symbian: {
+
+QMAKE_CXXFLAGS += -std=c++0x
 
 LIBS += -L$$PWD/../../OpenNI-2.1.0-x64/Redist \
         -L$$PWD/../../OpenNI-2.1.0-x64/Redist/OpenNI2/Drivers \
@@ -82,6 +84,9 @@ DEFINES += linux
 }
 
 mac:!symbian: {
+
+
+QMAKE_CXXFLAGS += -std=c++11
 
 LIBS += -L$$PWD/../OpenNI-2.1.0/Redist \
         -L$$PWD/../OpenNI-2.1.0/Redist/OpenNI2/Drivers \

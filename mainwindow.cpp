@@ -538,9 +538,7 @@ void MainWindow::on_alignButton_clicked()
     ui->statusBar->showMessage(ss.str().c_str());
 
     // refine by icp
-    cout <<   m_trafo_storage[index] << endl;
     refine_alignement(index);
-    cout <<   m_trafo_storage[index] << endl;
 
 }
 
@@ -1410,6 +1408,9 @@ void MainWindow::on_alignAllButton_clicked()
         ss << "The inlier ratio is " << ioratio << "\%.";
         ui->statusBar->showMessage(ss.str().c_str());
 
+        // refine by icp
+        refine_alignement(index);
+
     }
 
     // close alignment window (hide?)
@@ -1508,12 +1509,14 @@ void MainWindow::refine_alignement(size_t index) {
 
     get_oriented_pcl(index-1,x0,n0,c0,zmax);     // one-based index, identity trafo
     get_oriented_pcl(index,x1,n1,c1,zmax);
-    c0.clear();
+    c0.clear();                                  // clear stuff we don't need here
     c1.clear();
 
+    // create icp object and iterate
     CPointToPlaneICP icp(x0,n0,x1,m_trafo_storage[index]);
-    icp.Iterate(5);
+    icp.Iterate(m_params->get_no_icp_steps());
 
+    // set result
     m_trafo_storage[index] = icp.GetResult();
 
 }
