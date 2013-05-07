@@ -94,28 +94,27 @@ bool CPointToPlaneICP::UpdateCorrespondences() {
     // compute current transformation
     CRigidMotion<float,3> trafo(m_g.Get(0),m_g.Get(1),m_g.Get(2),m_g.Get(3),m_g.Get(4),m_g.Get(5));
 
-    // if m_corr is empty fill it first
-    if(m_corr.size()==0) {
+    // clear correspondences
+    m_corr.clear();     // always refill because some points may become inliers
 
-        // subsample if necessary
-        if(m_x1.size()>m_maxpts) {
 
-            unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-            default_random_engine generator(seed);
-            uniform_int_distribution<size_t> distribution(0,m_x1.size()-1);
+    // subsample if necessary
+   /* if(m_x1.size()>m_maxpts) {
 
-            for(size_t i=0; i<m_maxpts; i++)
-                m_corr.insert(pair<int,int>(distribution(generator),-1));
+        unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+        default_random_engine generator(seed);
+        uniform_int_distribution<size_t> distribution(0,m_x1.size()-1);
 
-        }
-        else {
-
-            for(size_t i=0; i<m_x1.size(); i++)
-                 m_corr.insert(pair<int,int>(i,-1));
-
-        }
+        for(size_t i=0; i<m_maxpts; i++)
+            m_corr.insert(pair<int,int>(distribution(generator),-1));
 
     }
+    else {*/
+
+        for(size_t i=0; i<m_x1.size(); i++)
+             m_corr.insert(pair<int,int>(i,-1));
+
+    //}
 
     // update
     map<int,int>::iterator it;
