@@ -25,6 +25,9 @@
 #define R4RVECN_H
 
 #include <stdlib.h>
+#ifdef __APPLE__
+#include <sys/types.h>
+#endif
 #include <iostream>
 
 /*! \brief short vectors of length \f$n\f$
