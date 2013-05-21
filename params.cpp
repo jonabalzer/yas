@@ -13,7 +13,8 @@ using namespace std;
 
 Params::Params(QWidget *parent):
     QWidget(parent),
-    ui(new Ui::Params)
+    ui(new Ui::Params),
+    m_D(Mat::zeros(480,640,CV_32FC1))
 {
     ui->setupUi(this);
 }
@@ -109,19 +110,19 @@ void Params::on_applyButton_clicked()
     fd.push_back(ui->fvEdit->text().toFloat());
     cd.push_back(ui->cuEdit->text().toFloat());
     cd.push_back(ui->cvEdit->text().toFloat());
-    kd.push_back(0);
-    kd.push_back(0);
-    kd.push_back(0);
-    kd.push_back(0);
-    kd.push_back(0);
+    kd.push_back(ui->k0DEdit->text().toFloat());
+    kd.push_back(ui->k1DEdit->text().toFloat());
+    kd.push_back(ui->k2DEdit->text().toFloat());
+    kd.push_back(ui->k3DEdit->text().toFloat());
+    kd.push_back(ui->k4DEdit->text().toFloat());
     range.push_back(ui->zminEdit->text().toFloat());
     range.push_back(ui->zmaxEdit->text().toFloat());
     dd.push_back(ui->c0Edit->text().toFloat());
     dd.push_back(ui->c1Edit->text().toFloat());
-    da.push_back(0);
-    da.push_back(0);
+    da.push_back(ui->alpha0Edit->text().toFloat());
+    da.push_back(ui->alpha1Edit->text().toFloat());
 
-    CDepthCam dcam(sd,fd,cd,0,vector<float>(5,0),Mat::eye(4,4,CV_32FC1),range,dd,Mat::zeros(sd[1],sd[0],CV_32FC1),da);
+    CDepthCam dcam(sd,fd,cd,0,vector<float>(5,0),Mat::eye(4,4,CV_32FC1),range,dd,m_D,da);
 
     emit cam_params_changed(rgb,dcam);
 
@@ -180,7 +181,6 @@ void Params::on_loadButton_clicked()
     ui->r33Edit->setText(QString::number(F.at<float>(2,2)));
     ui->tzEdit->setText(QString::number(F.at<float>(2,3)));
 
-
     ui->fuEdit->setText(QString::number(dcam.m_f[0]));
     ui->fvEdit->setText(QString::number(dcam.m_f[1]));
     ui->cuEdit->setText(QString::number(dcam.m_c[0]));
@@ -189,4 +189,25 @@ void Params::on_loadButton_clicked()
     ui->c1Edit->setText(QString::number(dcam.m_d[1]));
     ui->zminEdit->setText(QString::number(dcam.m_range[0]));
     ui->zmaxEdit->setText(QString::number(dcam.m_range[1]));
+
+}
+
+void Params::on_loadErrorPatternButton_clicked()
+{
+
+    QString filename = QFileDialog::getOpenFileName(this, tr("Save file..."),".",tr("*.txt"));
+
+    float* buffer = new float[640*480];
+
+    ifstream in(filename.toStdString().c_str());
+
+    if(!in.is_open())
+        return;
+
+    in.read((char*)buffer,sizeof(float)*640*480);
+
+    in.close();
+
+    m_D = Mat(480,640,CV_32FC1,buffer);
+
 }

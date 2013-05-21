@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>656</width>
+    <width>752</width>
     <height>451</height>
    </rect>
   </property>
@@ -18,12 +18,12 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>621</width>
+     <width>731</width>
      <height>401</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="sensorTab">
     <attribute name="title">
@@ -32,10 +32,10 @@
     <widget class="QGroupBox" name="depthGroupBox">
      <property name="geometry">
       <rect>
-       <x>350</x>
+       <x>370</x>
        <y>10</y>
-       <width>251</width>
-       <height>161</height>
+       <width>351</width>
+       <height>291</height>
       </rect>
      </property>
      <property name="title">
@@ -44,14 +44,49 @@
      <widget class="QWidget" name="gridLayoutWidget">
       <property name="geometry">
        <rect>
-        <x>8</x>
+        <x>10</x>
         <y>30</y>
-        <width>241</width>
-        <height>128</height>
+        <width>331</width>
+        <height>251</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="depthLayout">
-       <item row="3" column="0">
+       <item row="1" column="2">
+        <widget class="QLineEdit" name="cvEdit">
+         <property name="text">
+          <string>237.20</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QLineEdit" name="c0Edit">
+         <property name="text">
+          <string>4.04</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="rLabel">
+         <property name="text">
+          <string>Range</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QLineEdit" name="zminEdit">
+         <property name="text">
+          <string>0.2</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="2">
+        <widget class="QLineEdit" name="zmaxEdit">
+         <property name="text">
+          <string>1.4</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
         <widget class="QLabel" name="dispLabel">
          <property name="text">
           <string>Disparity map</string>
@@ -86,13 +121,6 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="2">
-        <widget class="QLineEdit" name="c1Edit">
-         <property name="text">
-          <string>-0.00297</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="fLabel">
          <property name="text">
@@ -100,96 +128,98 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="2">
-        <widget class="QLineEdit" name="cvEdit">
+       <item row="6" column="2">
+        <widget class="QLineEdit" name="c1Edit">
          <property name="text">
-          <string>237.20</string>
+          <string>-0.00297</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="c0Edit">
+       <item row="3" column="0">
+        <widget class="QLabel" name="radDLabel">
          <property name="text">
-          <string>4.04</string>
+          <string>Radial</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="derrorPatternLabel">
+         <property name="text">
+          <string>Error pattern</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0">
-        <widget class="QLabel" name="rLabel">
+        <widget class="QLabel" name="dDistLabel">
          <property name="text">
-          <string>Range</string>
+          <string>Distortion</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="zminEdit">
+       <item row="4" column="0">
+        <widget class="QLabel" name="tanDLabel">
          <property name="text">
-          <string>0.2</string>
+          <string>Tangential</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="2">
-        <widget class="QLineEdit" name="zmaxEdit">
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="k0DEdit">
          <property name="text">
-          <string>1.4</string>
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="QLineEdit" name="k1DEdit">
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="3">
+        <widget class="QLineEdit" name="k4DEdit">
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="k2DEdit">
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2">
+        <widget class="QLineEdit" name="k3DEdit">
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="2">
+        <widget class="QLineEdit" name="alpha1Edit">
+         <property name="text">
+          <string>-0.0036</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="3">
+        <widget class="QPushButton" name="loadErrorPatternButton">
+         <property name="text">
+          <string>Load</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QLineEdit" name="alpha0Edit">
+         <property name="text">
+          <string>-3.1694</string>
          </property>
         </widget>
        </item>
       </layout>
-     </widget>
-    </widget>
-    <widget class="QGroupBox" name="sourceGroupBox">
-     <property name="geometry">
-      <rect>
-       <x>360</x>
-       <y>230</y>
-       <width>241</width>
-       <height>121</height>
-      </rect>
-     </property>
-     <property name="title">
-      <string>Source</string>
-     </property>
-     <widget class="QWidget" name="horizontalLayoutWidget">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>60</y>
-        <width>201</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <layout class="QHBoxLayout" name="sourceButtons">
-       <item>
-        <widget class="QPushButton" name="refreshButton">
-         <property name="text">
-          <string>Refresh</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="infoButton">
-         <property name="text">
-          <string>Info</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QComboBox" name="sourceComboBox">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>30</y>
-        <width>201</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <item>
-       <property name="text">
-        <string>Not connected</string>
-       </property>
-      </item>
      </widget>
     </widget>
     <widget class="QGroupBox" name="rgbGroupBox">
@@ -197,7 +227,7 @@
       <rect>
        <x>10</x>
        <y>10</y>
-       <width>331</width>
+       <width>341</width>
        <height>341</height>
       </rect>
      </property>
@@ -207,7 +237,7 @@
      <widget class="QWidget" name="gridLayoutWidget_3">
       <property name="geometry">
        <rect>
-        <x>0</x>
+        <x>10</x>
         <y>30</y>
         <width>331</width>
         <height>311</height>
@@ -423,8 +453,8 @@
     <widget class="QWidget" name="horizontalLayoutWidget_2">
      <property name="geometry">
       <rect>
-       <x>358</x>
-       <y>173</y>
+       <x>470</x>
+       <y>321</y>
        <width>269</width>
        <height>31</height>
       </rect>
@@ -766,7 +796,7 @@
   <widget class="QPushButton" name="okButton">
    <property name="geometry">
     <rect>
-     <x>533</x>
+     <x>550</x>
      <y>417</y>
      <width>98</width>
      <height>27</height>

@@ -58,7 +58,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    size_t storage_size() { return m_rgb_storage.size(); };
+    size_t storage_size() { return m_rgb_storage.size(); }
 
 
 signals:

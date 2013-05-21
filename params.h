@@ -75,10 +75,12 @@ private slots:
 
     void on_loadButton_clicked();
 
+    void on_loadErrorPatternButton_clicked();
+
 private:
 
     Ui::Params* ui;
-
+    cv::Mat m_D;
 
 };
 

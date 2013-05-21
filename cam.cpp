@@ -32,7 +32,7 @@ CCam::CCam() {
 
     m_F = Mat::eye(4,4,CV_32FC1);
 
-	m_Finv = m_F;
+    m_Finv = m_F.clone();
 
 }
 
@@ -50,7 +50,7 @@ CCam::CCam(const vector<size_t>& size, const vector<float>& f, const vector<floa
     for(size_t i=0;i<5;i++)
         m_k[i]=k[i];
 
-    m_Finv = m_F.inv();
+    m_Finv = m_F.clone().inv();
 
 }
 
@@ -141,7 +141,7 @@ istream& operator >> (istream& is, CCam& x) {
 
     }
 
-    x.m_Finv = x.m_F.inv();
+    x.m_Finv = x.m_F.clone().inv();
 
     return is;
 
@@ -277,7 +277,7 @@ Vec3f CCam::UnProjectLocal(const Vec2i& u) const {
 CDepthCam::CDepthCam():
     CCam(),
     m_d(),
-    m_D(480,640,CV_32FC1),
+    m_D(Mat::zeros(480,640,CV_32FC1)),
     m_a () {
 
     m_range[0] = 0.3;
@@ -423,7 +423,7 @@ istream& operator >> (istream& is, CDepthCam& x) {
 
     }
 
-    x.m_Finv = x.m_F.inv();
+    x.m_Finv = x.m_F.clone().inv();
 
     return is;
 
