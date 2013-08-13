@@ -1,5 +1,5 @@
 #include "pcviewer.h"
-//#include <GL/glut.h>
+
 #include <math.h>
 #include <iostream>
 
@@ -9,13 +9,13 @@ using namespace std;
 PCViewer::PCViewer(QWidget *parent) :
     QGLWidget(parent),
     m_rgb(),
-    m_depth()
-{
+    m_depth() {
 
     setAttribute(Qt::WA_NoSystemBackground, true);
     setFocusPolicy(Qt::StrongFocus);
-    setAcceptDrops( true );
+    setAcceptDrops(true);
     setCursor(Qt::PointingHandCursor);
+
 }
 
 void PCViewer::set_pcl(cv::Mat& rgb, cv::Mat& depth) {
@@ -155,14 +155,14 @@ void rotate(const float* axis, float angle) {
 
 }
 
-void PCViewer::wheelEvent(QWheelEvent* event)
-{
+void PCViewer::wheelEvent(QWheelEvent* event) {
 
   float d = -(float)event->delta() / 120.0 * 0.2 * 100;
   cout << d << endl;
   translate(0,0,d);
   updateGL();
   event->accept();
+
 }
 
 void PCViewer::keyPressEvent(QKeyEvent* event) {
@@ -173,4 +173,5 @@ void PCViewer::keyPressEvent(QKeyEvent* event) {
 
     this->update();
     cout << "trans" << endl;
+
 }

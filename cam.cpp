@@ -70,7 +70,7 @@ ostream& operator<< (ostream& os, const CCam& x) {
 	os << x.m_alpha << endl;
 	os << "# frame world -> cam" << endl;
 
-    for(size_t i=0; i<4; i++) {
+    for(size_t i=0; i<3; i++) {
 
         for(size_t j=0; j<4; j++) {
 
@@ -81,7 +81,7 @@ ostream& operator<< (ostream& os, const CCam& x) {
 
         }
 
-        if(i<3)
+        if(i<2)
             os << endl;
 
     }

@@ -40,7 +40,7 @@ public:
     CDepthColorSensor();
 
     //! Destructor.
-    virtual ~CDepthColorSensor() { CloseDevice(); }
+    virtual ~CDepthColorSensor() { CloseDevice(); openni::OpenNI::shutdown(); }
 
     //! Parametrized constructor.
     CDepthColorSensor(CCam rgb, CDepthCam depth);

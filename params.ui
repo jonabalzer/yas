@@ -101,14 +101,14 @@
         </widget>
        </item>
        <item row="0" column="2">
-        <widget class="QLineEdit" name="fuEdit">
+        <widget class="QLineEdit" name="fvEdit">
          <property name="text">
           <string>566.62</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLineEdit" name="fvEdit">
+        <widget class="QLineEdit" name="fuEdit">
          <property name="text">
           <string>572.59</string>
          </property>
@@ -453,7 +453,7 @@
     <widget class="QWidget" name="horizontalLayoutWidget_2">
      <property name="geometry">
       <rect>
-       <x>470</x>
+       <x>440</x>
        <y>321</y>
        <width>269</width>
        <height>31</height>
@@ -796,7 +796,7 @@
   <widget class="QPushButton" name="okButton">
    <property name="geometry">
     <rect>
-     <x>550</x>
+     <x>642</x>
      <y>417</y>
      <width>98</width>
      <height>27</height>

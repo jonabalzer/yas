@@ -1417,8 +1417,8 @@ void MainWindow::on_alignAllButton_clicked()
     m_alignment->hide();
 
     // if checked, estimate the world coordinate system
-    if(m_params->center_wc())
-        m_trafo_storage[0] = estimate_world_frame();
+    //if(m_params->center_wc())
+    //    m_trafo_storage[0] = estimate_world_frame();
 
 }
 

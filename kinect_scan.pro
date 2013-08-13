@@ -57,7 +57,7 @@ FORMS    += mainwindow.ui \
 
 unix:!symbian: {
 
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++0x -O3
 
 LIBS += -L$$PWD/../../OpenNI-2.1.0-x64/Redist \
         -L$$PWD/../../OpenNI-2.1.0-x64/Redist/OpenNI2/Drivers \
