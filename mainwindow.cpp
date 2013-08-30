@@ -183,10 +183,22 @@ bool MainWindow::save_trafo(size_t index, QString fn) {
     if(!out)
         return 1;
 
-    CCam cam = m_sensor.GetRGBCam();
+    // use a copy of the cam to write frame into
+    CCam cam(m_sensor.GetRGBCam());
+
     Mat& F = cam.GetExtrinsics();
 
-    F = transform_to_first_image(index);
+    // depth to rgb
+    Mat Fd2r = F.clone();
+
+     // depth to world
+    Mat Fc2w = transform_to_first_image(index);
+
+    // world to depth
+    Mat Fw2c = Fc2w.inv();
+
+    // world -> depth -> rgb, saving rgb viewpoints makes colorization easier
+    F = Fd2r*Fw2c;
 
     out << cam << endl;
 
@@ -513,6 +525,14 @@ void MainWindow::on_alignButton_clicked()
                 vector<char>(),
                 DrawMatchesFlags::DEFAULT);
 
+    // if there are not enough correspondences return
+    if(x0.size()<3) {
+
+        ui->statusBar->showMessage("Insufficient number of correspondences...");
+        return;
+
+    }
+
     QImage vis(img_matches.data,img_matches.cols,img_matches.rows,QImage::Format_RGB888);
     m_alignment->show_image(vis);
     m_alignment->repaint();
@@ -749,7 +769,7 @@ void MainWindow::on_actionAbout_triggered()
 
 Mat MainWindow::estimate_world_frame() {
 
-    Mat T = Mat::zeros(m_trafo_storage.size()-1,3,CV_32FC1);
+    /*Mat T = Mat::zeros(m_trafo_storage.size()-1,3,CV_32FC1);
     Mat F = Mat::eye(4,4,CV_32FC1);
 
     Vec3f mean;
@@ -825,20 +845,38 @@ Mat MainWindow::estimate_world_frame() {
     Fw1.at<float>(2,1) = ez[0]*ex[1] - ez[1]*ex[0];
 
     // invert, this will be pre-multiplied to m_trafo_storage[0]
-    Mat Fw1inv = Fw1.inv();
+    Mat Fw1inv = Fw1.inv();*/
 
-    // get point cloud of first view, FIXME: set from zmax
-    //float maxr = (float)m_zmax;
+    Vec3f mean, ex, ez;
+
+    // get point cloud of first view
     vector<Point3f> pcl;
     vector<Vec3b> colors;
-    get_pcl(0,pcl,colors,0.5,Fw1inv);
+    float zmax = m_sensor.DisparityToDepth(ui->depthclipSlider->sliderPosition());
+    get_pcl(0,pcl,colors,zmax,Mat::eye(4,4,CV_32FC1));
+
+    // get alignment params
+    size_t nfeat, noctaves, nsamples;
+    double pthresh, ethresh, ratio, athresh;
+    m_params->get_alignment_parameters(nfeat,noctaves,pthresh,ethresh,ratio,nsamples,athresh);
 
     // estimate plane parameters w.r.t. Fw1
     CEstimatePlaneRansac pransac(pcl);
     size_t ninliers;
-    Vec4f plane = pransac.RunConsensus(5000,5,ninliers,this);
+    Vec4f plane = pransac.RunConsensus(nsamples,athresh,ninliers,this);
 
     cout << plane[0] << " " << plane[1] << " " << plane[2] << " " << plane[3] << endl;
+
+    // flip normal
+    if(plane[2]<0)
+        plane = -plane;
+
+    // show inlier/outlier ratio
+    double ioratio = (double)ninliers/(double)pcl.size();
+    ioratio *= 100;
+    stringstream ss;
+    ss << "The inlier ratio for plane estimation is " << ioratio << "\%.";
+    ui->statusBar->showMessage(ss.str().c_str());
 
     // build frame from world 2 -> world 1
     Mat Fw2 = Mat::eye(4,4,CV_32FC1);
@@ -873,7 +911,7 @@ Mat MainWindow::estimate_world_frame() {
     Mat Fw2inv = Fw2.inv();
 
     // Fwinv = Fw2inv*Fw1inv
-    return Fw2inv*Fw1inv;
+    return Fw2inv; //*Fw1inv;
 
 }
 
@@ -1136,6 +1174,8 @@ void MainWindow::on_actionSave_triggered()
 void MainWindow::on_actionOpen_triggered()
 {
 
+    m_timer.stop();
+
     QStringList filenames = QFileDialog::getOpenFileNames(this,tr("Open file..."),".",tr("*.exr"));
 
     if(filenames.size()==0)
@@ -1386,6 +1426,15 @@ void MainWindow::on_alignAllButton_clicked()
         m_alignment->show_image(vis);
         m_alignment->repaint();
 
+        // if there are not enough correspondences return
+        if(x0.size()<3) {
+
+            ui->statusBar->showMessage("Insufficient number of correspondences...");
+            return;
+
+        }
+
+
         // create ransac object
         CAlignRansac alignment(x0,x1);
 
@@ -1417,8 +1466,9 @@ void MainWindow::on_alignAllButton_clicked()
     m_alignment->hide();
 
     // if checked, estimate the world coordinate system
-    //if(m_params->center_wc())
-    //    m_trafo_storage[0] = estimate_world_frame();
+    if(m_params->center_wc())
+        m_trafo_storage[0] = estimate_world_frame();
+
 
 }
 

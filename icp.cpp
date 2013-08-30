@@ -183,7 +183,7 @@ bool CPointToPlaneICP::UpdateMotion() {
     memcpy(model.Data().get(),m_g.Data().get(),6*sizeof(double));
 
     // iterate
-    lms.Iterate(100,1e-10,1e-10,false);
+    lms.Iterate(5,1e-10,1e-10,false);
     //lms.Iterate(10,2,1e-10,true,false);
 
     // copy solution back

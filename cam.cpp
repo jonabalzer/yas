@@ -36,6 +36,27 @@ CCam::CCam() {
 
 }
 
+CCam::CCam(const CCam& cam) {
+
+    m_size[0] = cam.m_size[0];
+    m_size[1] = cam.m_size[1];
+    m_f[0] = cam.m_f[0];
+    m_f[1] = cam.m_f[1];
+    m_c[0] = cam.m_c[0];
+    m_c[1] = cam.m_c[1];
+
+    for(size_t i=0;i<5;i++)
+        m_k[i] = cam.m_k[i];
+
+    m_alpha = cam.m_alpha;
+
+    m_F = cam.m_F.clone();
+
+    m_Finv = cam.m_Finv.clone();
+
+}
+
+
 CCam::CCam(const vector<size_t>& size, const vector<float>& f, const vector<float>& c, const float& alpha, const vector<float>& k, const Mat& F):
     m_alpha(alpha),
     m_F(F) {

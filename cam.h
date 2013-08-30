@@ -49,6 +49,9 @@ public:
 	//! Constructor.
 	CCam();
 
+    //! Assignment operator.
+    CCam(const CCam& cam);
+
     //! Parametrized constructor.
     CCam(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F);
 

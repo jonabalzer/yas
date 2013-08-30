@@ -210,4 +210,7 @@ void Params::on_loadErrorPatternButton_clicked()
 
     m_D = Mat(480,640,CV_32FC1,buffer);
 
+    // does the mat constructor copy this?
+    // delete [] buffer;
+
 }

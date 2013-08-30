@@ -20,7 +20,7 @@ Vec4f CEstimatePlaneRansac::RunConsensus(size_t nsamples, float threshold, size_
     vector<size_t> ilmax;
 
     QProgressDialog progress("Consensus in progress...", "Abort", 0,nsamples,parent);
-    progress.setWindowTitle("KinectScan");
+    progress.setWindowTitle("Ground plane estimation");
     progress.setWindowModality(Qt::WindowModal);
 
     for(size_t k=0; k<nsamples; k++) {

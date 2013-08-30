@@ -54,14 +54,14 @@
        <item row="1" column="2">
         <widget class="QLineEdit" name="cvEdit">
          <property name="text">
-          <string>237.20</string>
+          <string>245.03</string>
          </property>
         </widget>
        </item>
        <item row="6" column="1">
         <widget class="QLineEdit" name="c0Edit">
          <property name="text">
-          <string>4.04</string>
+          <string>4.09</string>
          </property>
         </widget>
        </item>
@@ -103,21 +103,21 @@
        <item row="0" column="2">
         <widget class="QLineEdit" name="fvEdit">
          <property name="text">
-          <string>566.62</string>
+          <string>570.23</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
         <widget class="QLineEdit" name="fuEdit">
          <property name="text">
-          <string>572.59</string>
+          <string>569.03</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
         <widget class="QLineEdit" name="cuEdit">
          <property name="text">
-          <string>309.45</string>
+          <string>308.60</string>
          </property>
         </widget>
        </item>
@@ -131,7 +131,7 @@
        <item row="6" column="2">
         <widget class="QLineEdit" name="c1Edit">
          <property name="text">
-          <string>-0.00297</string>
+          <string>-0.003042</string>
          </property>
         </widget>
        </item>
@@ -201,7 +201,7 @@
        <item row="7" column="2">
         <widget class="QLineEdit" name="alpha1Edit">
          <property name="text">
-          <string>-0.0036</string>
+          <string> -0.0039</string>
          </property>
         </widget>
        </item>
@@ -215,7 +215,7 @@
        <item row="7" column="1">
         <widget class="QLineEdit" name="alpha0Edit">
          <property name="text">
-          <string>-3.1694</string>
+          <string>-3.4429</string>
          </property>
         </widget>
        </item>
@@ -254,35 +254,35 @@
        <item row="4" column="2">
         <widget class="QLineEdit" name="k3Edit">
          <property name="text">
-          <string>-0.0002</string>
+          <string>0.0032</string>
          </property>
         </widget>
        </item>
        <item row="9" column="2">
         <widget class="QLineEdit" name="r32Edit">
          <property name="text">
-          <string>0.02320</string>
+          <string>-0.00016</string>
          </property>
         </widget>
        </item>
        <item row="7" column="3">
         <widget class="QLineEdit" name="r13Edit">
          <property name="text">
-          <string>-0.00277</string>
+          <string>-0.01015</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
         <widget class="QLineEdit" name="cuRgbEdit">
          <property name="text">
-          <string>315.30</string>
+          <string>320.70</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
         <widget class="QLineEdit" name="fuRgbEdit">
          <property name="text">
-          <string>533.15</string>
+          <string>535.58</string>
          </property>
         </widget>
        </item>
@@ -296,35 +296,35 @@
        <item row="9" column="3">
         <widget class="QLineEdit" name="r33Edit">
          <property name="text">
-          <string>0.99973</string>
+          <string>0.99995</string>
          </property>
         </widget>
        </item>
        <item row="3" column="2">
         <widget class="QLineEdit" name="k1Edit">
          <property name="text">
-          <string>-0.3772</string>
+          <string>-0.2471</string>
          </property>
         </widget>
        </item>
        <item row="8" column="2">
         <widget class="QLineEdit" name="r22Edit">
          <property name="text">
-          <string>0.99968</string>
+          <string>0.99988</string>
          </property>
         </widget>
        </item>
        <item row="8" column="3">
         <widget class="QLineEdit" name="r23Edit">
          <property name="text">
-          <string>-0.02323</string>
+          <string>0.00001</string>
          </property>
         </widget>
        </item>
        <item row="0" column="2">
         <widget class="QLineEdit" name="fvRgbEdit">
          <property name="text">
-          <string>534.51</string>
+          <string>537.06</string>
          </property>
         </widget>
        </item>
@@ -338,7 +338,7 @@
        <item row="3" column="1">
         <widget class="QLineEdit" name="k0Edit">
          <property name="text">
-          <string>0.0728</string>
+          <string>0.0501</string>
          </property>
         </widget>
        </item>
@@ -359,7 +359,7 @@
        <item row="9" column="1">
         <widget class="QLineEdit" name="r31Edit">
          <property name="text">
-          <string>0.00300</string>
+          <string>0.01015</string>
          </property>
         </widget>
        </item>
@@ -373,7 +373,7 @@
        <item row="4" column="1">
         <widget class="QLineEdit" name="k2Edit">
          <property name="text">
-          <string>0.0060</string>
+          <string>0.0005</string>
          </property>
         </widget>
        </item>
@@ -387,42 +387,42 @@
        <item row="6" column="1">
         <widget class="QLineEdit" name="txEdit">
          <property name="text">
-          <string>-0.02891</string>
+          <string>-0.03627</string>
          </property>
         </widget>
        </item>
        <item row="8" column="1">
         <widget class="QLineEdit" name="r21Edit">
          <property name="text">
-          <string>0.00970</string>
+          <string>0.01570</string>
          </property>
         </widget>
        </item>
        <item row="7" column="1">
         <widget class="QLineEdit" name="r11Edit">
          <property name="text">
-          <string>0.99995</string>
+          <string>0.99983</string>
          </property>
         </widget>
        </item>
        <item row="7" column="2">
         <widget class="QLineEdit" name="r12Edit">
          <property name="text">
-          <string>-0.00976</string>
+          <string>-0.01570</string>
          </property>
         </widget>
        </item>
        <item row="6" column="2">
         <widget class="QLineEdit" name="tyEdit">
          <property name="text">
-          <string>-0.00341</string>
+          <string>0.00530</string>
          </property>
         </widget>
        </item>
        <item row="3" column="3">
         <widget class="QLineEdit" name="k4Edit">
          <property name="text">
-          <string> 0.4652</string>
+          <string>0.2151</string>
          </property>
         </widget>
        </item>
@@ -436,14 +436,14 @@
        <item row="6" column="3">
         <widget class="QLineEdit" name="tzEdit">
          <property name="text">
-          <string>0.00140</string>
+          <string>0.01022</string>
          </property>
         </widget>
        </item>
        <item row="1" column="2">
         <widget class="QLineEdit" name="cvRgbEdit">
          <property name="text">
-          <string>245.98</string>
+          <string> 237.61</string>
          </property>
         </widget>
        </item>
@@ -548,7 +548,7 @@
        <item row="4" column="1">
         <widget class="QLineEdit" name="goodMatchEdit">
          <property name="text">
-          <string>0.8</string>
+          <string>0.85</string>
          </property>
         </widget>
        </item>
@@ -576,7 +576,7 @@
        <item row="6" column="1">
         <widget class="QLineEdit" name="acceptanceEdit">
          <property name="text">
-          <string>0.01</string>
+          <string>0.005</string>
          </property>
         </widget>
        </item>
@@ -673,6 +673,9 @@
       </property>
       <property name="text">
        <string>Center CS</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
       </property>
      </widget>
     </widget>
