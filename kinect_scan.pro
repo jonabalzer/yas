@@ -30,7 +30,11 @@ SOURCES += main.cpp\
         lm.cpp \
         icp.cpp \
         vecn.cpp \
-        trafo.cpp
+        trafo.cpp \
+        poisson/PlyFile.cpp \
+        poisson/MarchingCubes.cpp \
+        poisson/Geometry.cpp \
+        poisson/Factor.cpp
 
 HEADERS  += mainwindow.h \
             pcviewer.h \
@@ -49,7 +53,27 @@ HEADERS  += mainwindow.h \
             types.h \
             icp.h \
             vecn.h \
-            trafo.h
+            trafo.h \
+            poisson/Vector.h \
+            poisson/Time.h \
+            poisson/SparseMatrix.h \
+            poisson/PPolynomial.h \
+            poisson/Polynomial.h \
+            poisson/PointStream.h \
+            poisson/PlyFile.h \
+            poisson/Ply.h \
+            poisson/Octree.h \
+            poisson/MultiGridOctreeData.h \
+            poisson/MAT.h \
+            poisson/MarchingCubes.h \
+            poisson/Hash.h \
+            poisson/Geometry.h \
+            poisson/FunctionData.h \
+            poisson/Factor.h \
+            poisson/BSplineData.h \
+            poisson/BinaryNode.h \
+            poisson/Array.h \
+            poisson/Allocator.h
 
 FORMS    += mainwindow.ui \
             alignwindow.ui \
