@@ -330,6 +330,7 @@ public:
 	int outOfCorePointCount(void);
 	int polygonCount( void );
 };
+
 class BufferedReadWriteFile
 {
 	bool tempFile;
@@ -343,6 +344,7 @@ public:
 	bool read ( void* data , size_t size );
 	void reset( void );
 };
+
 template< class Vertex >
 class CoredFileMeshData : public CoredMeshData< Vertex >
 {
@@ -379,6 +381,7 @@ Point3D<Real> RandomBallPoint(void){
         if(l<=1){return p;}
     }
 }
+
 template<class Real>
 Point3D<Real> RandomSpherePoint(void){
     Point3D<Real> p=RandomBallPoint<Real>();
@@ -409,6 +412,7 @@ void CrossProduct(const Point3D<Real>& p1,const Point3D<Real>& p2,Point3D<Real>&
     p.coords[1]=-p1.coords[0]*p2.coords[2]+p1.coords[2]*p2.coords[0];
     p.coords[2]= p1.coords[0]*p2.coords[1]-p1.coords[1]*p2.coords[0];
 }
+
 template<class Real>
 void EdgeCollapse(const Real& edgeRatio,std::vector<TriangleIndex>& triangles,std::vector< Point3D<Real> >& positions,std::vector< Point3D<Real> >* normals){
     int i,j,*remapTable,*pointCount,idx[3];
@@ -418,10 +422,12 @@ void EdgeCollapse(const Real& edgeRatio,std::vector<TriangleIndex>& triangles,st
 
     remapTable=new int[positions.size()];
     pointCount=new int[positions.size()];
+
     for(i=0;i<int(positions.size());i++){
         remapTable[i]=i;
         pointCount[i]=1;
     }
+
     for(i=int(triangles.size()-1);i>=0;i--){
         for(j=0;j<3;j++){
             idx[j]=triangles[i].idx[j];
@@ -504,6 +510,7 @@ void EdgeCollapse(const Real& edgeRatio,std::vector<TriangleIndex>& triangles,st
     delete[] pointCount;
     delete[] remapTable;
 }
+
 template<class Real>
 void TriangleCollapse(const Real& edgeRatio,std::vector<TriangleIndex>& triangles,std::vector< Point3D<Real> >& positions,std::vector< Point3D<Real> >* normals){
     int i,j,*remapTable,*pointCount,idx[3];
@@ -637,6 +644,7 @@ int Triangulation<Real>::factor(int tIndex,int& p1,int& p2,int & p3){
     else													{p3=edges[triangles[tIndex].eIndex[2]].pIndex[1];}
     return 1;
 }
+
 template<class Real>
 double Triangulation<Real>::area(int p1,int p2,int p3){
     Point3D<Real> q1,q2,q;
@@ -647,18 +655,21 @@ double Triangulation<Real>::area(int p1,int p2,int p3){
     CrossProduct(q1,q2,q);
     return Length(q);
 }
+
 template<class Real>
 double Triangulation<Real>::area(int tIndex){
     int p1,p2,p3;
     factor(tIndex,p1,p2,p3);
     return area(p1,p2,p3);
 }
+
 template<class Real>
 double Triangulation<Real>::area(void){
     double a=0;
     for(int i=0;i<int(triangles.size());i++){a+=area(i);}
     return a;
 }
+
 template<class Real>
 int Triangulation<Real>::addTriangle(int p1,int p2,int p3){
     hash_map<long long,int>::iterator iter;
@@ -699,6 +710,7 @@ int Triangulation<Real>::addTriangle(int p1,int p2,int p3){
     }
     return tIdx;
 }
+
 template<class Real>
 int Triangulation<Real>::flipMinimize(int eIndex){
     double oldArea,newArea;
@@ -759,6 +771,7 @@ int Triangulation<Real>::flipMinimize(int eIndex){
     }
     return 1;
 }
+
 /////////////////////////
 // CoredVectorMeshData //
 /////////////////////////
@@ -772,6 +785,7 @@ int CoredVectorMeshData< Vertex >::addOutOfCorePoint( const Vertex& p )
     oocPoints.push_back(p);
     return int(oocPoints.size())-1;
 }
+
 template< class Vertex >
 int CoredVectorMeshData< Vertex >::addPolygon( const std::vector< CoredVertexIndex >& vertices )
 {
@@ -782,6 +796,7 @@ int CoredVectorMeshData< Vertex >::addPolygon( const std::vector< CoredVertexInd
     polygons.push_back( polygon );
     return int( polygons.size() )-1;
 }
+
 template< class Vertex >
 int CoredVectorMeshData< Vertex >::nextOutOfCorePoint( Vertex& p )
 {
@@ -806,8 +821,10 @@ int CoredVectorMeshData< Vertex >::nextPolygon( std::vector< CoredVertexIndex >&
     }
     else return 0;
 }
+
 template< class Vertex >
 int CoredVectorMeshData< Vertex >::outOfCorePointCount(void){return int(oocPoints.size());}
+
 template< class Vertex >
 int CoredVectorMeshData< Vertex >::polygonCount( void ) { return int( polygons.size() ); }
 
@@ -822,18 +839,21 @@ CoredFileMeshData< Vertex >::CoredFileMeshData( void )
     oocPointFile = new BufferedReadWriteFile();
     polygonFile = new BufferedReadWriteFile();
 }
+
 template< class Vertex >
 CoredFileMeshData< Vertex >::~CoredFileMeshData( void )
 {
     delete oocPointFile;
     delete polygonFile;
 }
+
 template< class Vertex >
 void CoredFileMeshData< Vertex >::resetIterator ( void )
 {
     oocPointFile->reset();
     polygonFile->reset();
 }
+
 template< class Vertex >
 int CoredFileMeshData< Vertex >::addOutOfCorePoint( const Vertex& p )
 {
@@ -841,6 +861,7 @@ int CoredFileMeshData< Vertex >::addOutOfCorePoint( const Vertex& p )
     oocPoints++;
     return oocPoints-1;
 }
+
 template< class Vertex >
 int CoredFileMeshData< Vertex >::addPolygon( const std::vector< CoredVertexIndex >& vertices )
 {
@@ -855,12 +876,14 @@ int CoredFileMeshData< Vertex >::addPolygon( const std::vector< CoredVertexIndex
     polygons++;
     return polygons-1;
 }
+
 template< class Vertex >
 int CoredFileMeshData< Vertex >::nextOutOfCorePoint( Vertex& p )
 {
     if( oocPointFile->read( &p , sizeof( Vertex ) ) ) return 1;
     else return 0;
 }
+
 template< class Vertex >
 int CoredFileMeshData< Vertex >::nextPolygon( std::vector< CoredVertexIndex >& vertices )
 {
@@ -880,8 +903,10 @@ int CoredFileMeshData< Vertex >::nextPolygon( std::vector< CoredVertexIndex >& v
     }
     else return 0;
 }
+
 template< class Vertex >
 int CoredFileMeshData< Vertex >::outOfCorePointCount( void ){ return oocPoints; }
+
 template< class Vertex >
 int CoredFileMeshData< Vertex >::polygonCount( void ) { return polygons; }
 

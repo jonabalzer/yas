@@ -19,8 +19,8 @@ Vec4f CEstimatePlaneRansac::RunConsensus(size_t nsamples, float threshold, size_
     size_t max = 0;
     vector<size_t> ilmax;
 
-    QProgressDialog progress("Consensus in progress...", "Abort", 0,nsamples,parent);
-    progress.setWindowTitle("Ground plane estimation");
+    QProgressDialog progress("Estimating ground plane...", "Abort", 0,nsamples,parent);
+    progress.setWindowTitle("YAS");
     progress.setWindowModality(Qt::WindowModal);
 
     for(size_t k=0; k<nsamples; k++) {

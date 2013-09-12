@@ -34,7 +34,8 @@ SOURCES += main.cpp\
         poisson/PlyFile.cpp \
         poisson/MarchingCubes.cpp \
         poisson/Geometry.cpp \
-        poisson/Factor.cpp
+        poisson/Factor.cpp \
+    poisson/Ply.cpp
 
 HEADERS  += mainwindow.h \
             pcviewer.h \
@@ -81,7 +82,7 @@ FORMS    += mainwindow.ui \
 
 unix:!symbian: {
 
-QMAKE_CXXFLAGS += -std=c++0x -O3
+QMAKE_CXXFLAGS += -fopenmp -fpermissive -std=c++0x -O3
 
 LIBS += -L$$PWD/../../OpenNI-2.1.0-x64/Redist \
         -L$$PWD/../../OpenNI-2.1.0-x64/Redist/OpenNI2/Drivers \
@@ -97,7 +98,8 @@ LIBS += -L$$PWD/../../OpenNI-2.1.0-x64/Redist \
         -lOpenNI2 \
         -lOniFile \
         -lPS1080 \
-        -lann
+        -lann \
+        -lgomp
 
 INCLUDEPATH += /usr/local/include \
                /usr/include/OpenEXR \

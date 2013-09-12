@@ -137,6 +137,7 @@ public:
 	static long long CenterIndex( int depth , const int offSet[DIMENSION] , int maxDepth , int index[DIMENSION] );
 	static long long CornerIndexKey( const int index[DIMENSION] );
 };
+
 template< bool OutputDensity >
 class SortedTreeNodes
 {
@@ -197,7 +198,6 @@ public:
 	void setEdgeTable( EdgeTableData& eData ,                                           int threads ) { setEdgeTable( eData , NULL , maxDepth-1 , threads ); }
 	int getMaxEdgeCount( const TreeOctNode* rootNode , int depth , int threads ) const ;
 };
-
 
 template< int Degree , bool OutputDensity >
 class Octree
@@ -1390,8 +1390,8 @@ int Octree< Degree , OutputDensity >::setTree( std::vector<cv::Point3f>& mypoint
     typename TreeOctNode::NeighborKey3 neighborKey;
     neighborKey.set( maxDepth );
 
-    PointStream<Real>* pointStream;
-    pointStream = new MyPointStream(mypoints,mynormals);
+    //PointStream<Real>* pointStream;
+    MyPointStream* pointStream = new MyPointStream(mypoints,mynormals);
 
     tree.setFullDepth( _minDepth );
     // Read through once to get the center and scale

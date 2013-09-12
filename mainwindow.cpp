@@ -8,6 +8,18 @@
 #include <fstream>
 #include <algorithm>
 #include <set>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <float.h>
+#include <omp.h>
+
+
+#include "poisson/MarchingCubes.h"
+#include "poisson/Octree.h"
+#include "poisson/SparseMatrix.h"
+#include "poisson/PPolynomial.h"
+#include "poisson/MultiGridOctreeData.h"
 
 #include <QFileDialog>
 #include <QProgressDialog>
@@ -16,6 +28,8 @@
 #include <opencv2/nonfree/nonfree.hpp>
 
 using namespace std;
+using namespace PoissonRec;
+using namespace cv;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -29,7 +43,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_trafo_storage(),
     m_alignment(new AlignWindow),
     m_glview(new QGLViewerWidget()),
-    m_params(new Params())
+    m_params(new Params()),
+    m_mesh()
 {
 
     ui->setupUi(this);
@@ -39,7 +54,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->spinBoxStorage->setFocusPolicy(Qt::NoFocus);
 
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
-    connect(this,SIGNAL(current_image_changed(Mat&,Mat&)),this,SLOT(update_static_view(Mat&,Mat&)));
+    connect(this,SIGNAL(current_image_changed(cv::Mat&,cv::Mat&)),this,SLOT(update_static_view(cv::Mat&,cv::Mat&)));
     connect(this,SIGNAL(current_pcl_changed(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)),m_glview,SLOT(set_pcl(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)));
     connect(m_params,SIGNAL(cam_params_changed(CCam,CDepthCam)),this,SLOT(configure_sensor(CCam,CDepthCam)));
     connect(m_params,SIGNAL(save_params_clicked()),this,SLOT(on_saveParams_clicked()));
@@ -50,14 +65,20 @@ MainWindow::MainWindow(QWidget *parent) :
     // get min/max disparity (!) to set up slider
     size_t dmin, dmax;
     m_sensor.GetDisparityRange(dmin,dmax);
-    ui->depthclipSlider->setMinimum(dmax);      // the slider refers to depth!
-    ui->depthclipSlider->setMaximum(dmin);
-    ui->depthclipSlider->setSliderPosition(dmin);
+    ui->depthClipSlider->setMinimum(dmax);      // the slider refers to depth!
+    ui->depthClipSlider->setMaximum(dmin);
+    ui->depthClipSlider->setSliderPosition(dmin);
+    ui->minDepthClipSlider->setMinimum(dmax);      // the slider refers to depth!
+    ui->minDepthClipSlider->setMaximum(dmin);
+    ui->minDepthClipSlider->setSliderPosition(dmax);
 
     float zmax = m_sensor.DisparityToDepth(dmin);
     QString label;
     label.setNum(zmax,'f',2);
     ui->maxDepth->setText(label);
+    float zmin = m_sensor.DisparityToDepth(dmax);
+    label.setNum(zmin,'f',2);
+    ui->minDepth->setText(label);
 
     if(m_sensor.OpenDevice(0))
         QMessageBox::critical(this,"Error","Could not open source. Make sure the Kinect sensor is connected to your computer and drivers are working properly.");
@@ -216,9 +237,10 @@ bool MainWindow::save_pcl_as_ply(size_t index, QString fn) {
     vector<Point3f> normals;
     vector<Vec3b> colors;
 
-    float zmax = m_sensor.DisparityToDepth(ui->depthclipSlider->sliderPosition());
+    float zmax = m_sensor.DisparityToDepth(ui->depthClipSlider->sliderPosition());
+    float zmin = m_sensor.DisparityToDepth(ui->minDepthClipSlider->sliderPosition());
 
-    get_oriented_pcl(index,points,normals,colors,zmax,F);
+    get_oriented_pcl(index,points,normals,colors,zmin,zmax,F);
 
     ofstream out(fn.toStdString().c_str());
 
@@ -249,52 +271,6 @@ bool MainWindow::save_pcl_as_ply(size_t index, QString fn) {
 
 }
 
-
-bool MainWindow::save_mesh_as_ply(size_t index, QString fn) {
-
-    // get transformation to first frame, if it exists
-    Mat F = transform_to_first_image(index);
-    vector<Point3f> vertices;
-    vector<Vec3b> colors;
-    vector<Vec4i> faces;
-
-    float zmax = m_sensor.DisparityToDepth(ui->depthclipSlider->sliderPosition());
-
-    get_mesh(index,vertices,colors,faces,zmax,F);
-
-    ofstream out(fn.toStdString().c_str());
-
-    if(!out)
-        return 1;
-
-    out << "ply" << endl;
-    out << "format ascii 1.0" << endl;
-    out << "comment written by ucla vision lab kinect scan" << endl;
-    out << "element vertex " << vertices.size() << endl;
-    out << "property float32 x" << endl;
-    out << "property float32 y" << endl;
-    out << "property float32 z" << endl;
-    out << "property uchar red" << endl;
-    out << "property uchar green" << endl;
-    out << "property uchar blue" << endl;
-    out << "element face " << faces.size() << endl;
-    out << "property list uchar int vertex_index" << endl;
-    out << "end_header" << endl;
-
-    // write vertices
-    for(size_t i=0; i<vertices.size(); i++)
-        out << vertices[i].x << " " << vertices[i].y << " " << vertices[i].z << " " << (unsigned int)colors[i][0] << " " << (unsigned int)colors[i][1] << " " << (unsigned int)colors[i][2] << endl;
-
-    // write faces
-    for(size_t i=0; i<faces.size(); i++)
-        out << "4 " << faces[i][0] << " " << faces[i][1] << " " << faces[i][2] << " " << faces[i][3] << endl;
-
-    out.close();
-
-    return 0;
-
-}
-
 bool MainWindow::save_as_pgm(size_t index, QString fn) {
 
     vector<int> params;
@@ -308,12 +284,16 @@ bool MainWindow::save_as_pgm(size_t index, QString fn) {
 void MainWindow::on_actionUpdateClipDepth_triggered()
 {
 
-    int d = ui->depthclipSlider->sliderPosition();
-    float zmax = m_sensor.DisparityToDepth(d);
+    int dmax = ui->depthClipSlider->sliderPosition();
+    float zmax = m_sensor.DisparityToDepth(dmax);
+    int dmin = ui->minDepthClipSlider->sliderPosition();
+    float zmin = m_sensor.DisparityToDepth(dmin);
 
     QString label;
     label.setNum(zmax,'f',2);
     ui->maxDepth->setText(label);
+    label.setNum(zmin,'f',2);
+    ui->minDepth->setText(label);
 
     int index = ui->spinBoxStorage->value();
 
@@ -423,7 +403,7 @@ void MainWindow::on_spinBoxStorage_valueChanged(int arg1)
             vector<Point3f> points;
             vector<Vec3b> colors;
 
-            float zmax = m_sensor.DisparityToDepth(ui->depthclipSlider->sliderPosition());
+            float zmax = m_sensor.DisparityToDepth(ui->depthClipSlider->sliderPosition());
 
             get_pcl(arg1-1,points,colors,zmax,F);
 
@@ -432,133 +412,6 @@ void MainWindow::on_spinBoxStorage_valueChanged(int arg1)
         }
 
     }
-
-}
-
-void MainWindow::on_alignButton_clicked()
-{
-
-    // get image index
-    size_t index = (size_t)ui->spinBoxStorage->value();
-
-    // check whether there is something to do
-    if(index==m_rgb_storage.size() || m_rgb_storage.size()<2)
-        return;
-
-    // stop acqusition to have computational resources
-    m_timer.stop();
-
-    // show window
-    m_alignment->show();
-    m_alignment->activateWindow();
-    m_alignment->raise();
-
-    // get params
-    size_t nfeat, noctaves, nsamples;
-    double pthresh, ethresh, ratio, athresh;
-    m_params->get_alignment_parameters(nfeat,noctaves,pthresh,ethresh,ratio,nsamples,athresh);
-
-    // init non-free module
-    initModule_nonfree();
-
-    // create SIFT object
-    SIFT detector(nfeat,noctaves,pthresh,ethresh,0.5);
-
-    // warp to depth image plane
-    Mat rgb0 = m_sensor.WarpRGBToDepth(m_depth_storage[index-1],m_rgb_storage[index-1]);
-    Mat rgb1 = m_sensor.WarpRGBToDepth(m_depth_storage[index],m_rgb_storage[index]);
-
-    // detect and compute descriptors
-    vector<KeyPoint> kp0, kp1;
-    Mat desc0, desc1;
-    detector(rgb0,Mat(),kp0,desc0);
-    detector(rgb1,Mat(),kp1,desc1);
-
-    // matching
-    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
-    vector<vector<DMatch> > matches;
-    matcher->knnMatch(desc0,desc1,matches,2);
-
-    // compute 3d points
-    vector<DMatch> good_matches;
-    vector<Vec3f> x0, x1;
-
-    int maxd = ui->depthclipSlider->maximum();
-    int mind = ui->depthclipSlider->minimum();
-
-    for (size_t i = 0; i<matches.size(); i++) {
-
-        // check if match is good
-        if(matches[i][0].distance/matches[i][1].distance<ratio) {
-
-            // get both locations
-            Point2f u0, u1;
-            u0 = kp0[matches[i][0].queryIdx].pt;
-            u1 = kp1[matches[i][0].trainIdx].pt;
-
-            // if both points have depth, compute their 3d location
-            if(m_depth_storage[index-1].at<unsigned short>((size_t)u0.y,(size_t)u0.x)<maxd
-               && m_depth_storage[index].at<unsigned short>((size_t)u1.y,(size_t)u1.x)<maxd
-               && m_depth_storage[index-1].at<unsigned short>((size_t)u0.y,(size_t)u0.x)>mind
-               && m_depth_storage[index].at<unsigned short>((size_t)u1.y,(size_t)u1.x)>mind) {
-
-                good_matches.push_back(matches[i][0]);
-                x0.push_back(m_sensor.GetPoint((size_t)u0.y,(size_t)u0.x,m_depth_storage[index-1]));
-                x1.push_back(m_sensor.GetPoint((size_t)u1.y,(size_t)u1.x,m_depth_storage[index]));
-
-            }
-
-        }
-
-    }
-
-    // create of good matches visualization
-    Mat img_matches;
-    drawMatches(rgb0,
-                kp0,
-                rgb1,
-                kp1,
-                good_matches,
-                img_matches,
-                Scalar::all(-1),
-                Scalar::all(-1),
-                vector<char>(),
-                DrawMatchesFlags::DEFAULT);
-
-    // if there are not enough correspondences return
-    if(x0.size()<3) {
-
-        ui->statusBar->showMessage("Insufficient number of correspondences...");
-        return;
-
-    }
-
-    QImage vis(img_matches.data,img_matches.cols,img_matches.rows,QImage::Format_RGB888);
-    m_alignment->show_image(vis);
-    m_alignment->repaint();
-
-    // create ransac object
-    CAlignRansac alignment(x0,x1);
-
-    // optimize
-    size_t ninliers = 0;
-    Mat F = alignment.RunConcensus(nsamples,athresh,ninliers,this);
-
-    // bring alignment vis back
-    m_alignment->raise();
-
-    // store transformation
-    m_trafo_storage[index] = F;
-
-    // show inlier/outlier ratio
-    double ioratio = (double)ninliers/(double)good_matches.size();
-    ioratio *= 100;
-    stringstream ss;
-    ss << "The inlier ratio is " << ioratio << "\%.";
-    ui->statusBar->showMessage(ss.str().c_str());
-
-    // refine by icp
-    refine_alignement(index);
 
 }
 
@@ -670,8 +523,8 @@ void MainWindow::on_clearButton_clicked()
 
 void MainWindow::update_live_view() {
 
-    float dmax = (float)ui->depthclipSlider->sliderPosition();
-    float dmin = (float)ui->depthclipSlider->minimum();
+    float dmax = (float)ui->depthClipSlider->sliderPosition();
+    float dmin = (float)ui->depthClipSlider->minimum();
 
     // visualize
     QImage cimg(m_rgb.data,m_rgb.cols,m_rgb.rows,QImage::Format_RGB888);
@@ -729,9 +582,12 @@ void MainWindow::update_live_view() {
 
 void MainWindow::update_static_view(Mat& rgb, Mat& depth) {
 
-    float dmax = (float)ui->depthclipSlider->sliderPosition();
-    float dmin = (float)ui->depthclipSlider->minimum();
-    float dnorm = (float)ui->depthclipSlider->maximum() - dmin;
+    float dmax = (float)ui->depthClipSlider->sliderPosition();
+    float dmin = (float)ui->minDepthClipSlider->sliderPosition();
+
+    if(dmin>=dmax)
+        dmin = (float)ui->depthClipSlider->minimum();
+    float dnorm = (float)ui->depthClipSlider->maximum() - dmin;
 
     QImage cimg(rgb.data,rgb.cols,rgb.rows,QImage::Format_RGB888);
     ui->labeRGBStorage->setPixmap(QPixmap::fromImage(cimg));
@@ -763,96 +619,18 @@ void MainWindow::update_static_view(Mat& rgb, Mat& depth) {
 
 void MainWindow::on_actionAbout_triggered()
 {
-      QMessageBox::information(this,"About","More info: http://vision.ucla.edu");
+      QMessageBox::information(this,"About","More info on YAS: http://vision.ucla.edu");
 }
 
 
 Mat MainWindow::estimate_world_frame() {
-
-    /*Mat T = Mat::zeros(m_trafo_storage.size()-1,3,CV_32FC1);
-    Mat F = Mat::eye(4,4,CV_32FC1);
-
-    Vec3f mean;
-    mean *= 0;
-
-    for(size_t i=1; i<m_trafo_storage.size(); i++) {
-
-        // trafo from cam i to cam 0
-        F = F*m_trafo_storage[i];
-
-        // keep translations
-        for(size_t j=0; j<3; j++) {
-
-            T.at<float>(i-1,j) = F.at<float>(j,3);
-            mean[j] += F.at<float>(j,3);
-        }
-
-    }
-
-    // first guess for origin (project onto dominant plane later)
-    mean *= (1.0/(float)(m_trafo_storage.size()-1));
-
-    // remove mean
-    for(size_t i=0; i<(size_t)T.rows; i++) {
-
-        for(size_t j=0; j<3; j++)
-            T.at<float>(i,j) -= mean[j];
-
-    }
-
-    // compute normal by SVD
-    Mat Sigma, U, Vt;
-    SVD::compute(T, Sigma, U, Vt);
-    Vec3f ez;
-
-    for(size_t j=0; j<3; j++)
-        ez[j] = Vt.at<float>(2,j);
-
-
-    // find the first non-zero vector in T
-    Vec3f ex;
-    for(size_t i=0; i<(size_t)T.rows; i++) {
-
-        for(size_t j=0; j<3; j++)
-            ex[j] = T.at<float>(i,j);
-
-        if(cv::norm(ex)>0)
-            break;
-
-    }
-
-    // check if non-zero vector was found
-    if(cv::norm(ex)==0)
-        return F;
-
-    // if yes, make it orthogonal to ez and normalize
-    ex = ex - ez*(ex[0]*ez[0] + ex[1]*ez[1] + ex[2]*ez[2]);
-    ex *= (1/cv::norm(ex));
-
-    // fill in frame from world 1 to cam 0
-    Mat Fw1 = Mat::eye(4,4,CV_32FC1);
-    for(size_t i=0; i<3; i++) {
-
-        Fw1.at<float>(i,0) = ex[i];
-        Fw1.at<float>(i,2) = ez[i];
-        Fw1.at<float>(i,3) = mean[i];
-
-    }
-
-    // ey by cross product
-    Fw1.at<float>(0,1) = ez[1]*ex[2] - ez[2]*ex[1];
-    Fw1.at<float>(1,1) = ez[2]*ex[0] - ez[0]*ex[2];
-    Fw1.at<float>(2,1) = ez[0]*ex[1] - ez[1]*ex[0];
-
-    // invert, this will be pre-multiplied to m_trafo_storage[0]
-    Mat Fw1inv = Fw1.inv();*/
 
     Vec3f mean, ex, ez;
 
     // get point cloud of first view
     vector<Point3f> pcl;
     vector<Vec3b> colors;
-    float zmax = m_sensor.DisparityToDepth(ui->depthclipSlider->sliderPosition());
+    float zmax = m_sensor.DisparityToDepth(ui->depthClipSlider->sliderPosition());
     get_pcl(0,pcl,colors,zmax,Mat::eye(4,4,CV_32FC1));
 
     // get alignment params
@@ -934,7 +712,7 @@ void MainWindow::get_pcl(size_t index, vector<Point3f>& vertices, vector<Vec3b>&
         for(size_t j=0; j<(size_t)m_depth_storage[index].cols; j++) {
 
             // only do something disparity is unsaturated
-            if(m_depth_storage[index].at<unsigned short>(i,j)<=ui->depthclipSlider->maximum()) {
+            if(m_depth_storage[index].at<unsigned short>(i,j)<=ui->depthClipSlider->maximum()) {
 
                 x = m_sensor.GetPoint(i,j,m_depth_storage[index]);
                 xarray[0] = x;
@@ -961,7 +739,7 @@ void MainWindow::get_pcl(size_t index, vector<Point3f>& vertices, vector<Vec3b>&
 
 }
 
-void MainWindow::get_oriented_pcl(size_t index, vector<Point3f>& vertices, vector<Point3f>& normals, vector<Vec3b>& colors, float maxr, Mat F) {
+void MainWindow::get_oriented_pcl(size_t index, vector<Point3f>& vertices, vector<Point3f>& normals, vector<Vec3b>& colors, float minr, float maxr, Mat F) {
 
     // prepare transformation
     Mat Fsr = F(Range(0,3),Range(0,4));
@@ -989,17 +767,17 @@ void MainWindow::get_oriented_pcl(size_t index, vector<Point3f>& vertices, vecto
         for(size_t j=0; j<(size_t)m_depth_storage[index].cols; j++) {
 
             // only do something disparity is unsaturated
-            if(m_depth_storage[index].at<unsigned short>(i,j)<=ui->depthclipSlider->maximum()) {
+            if(m_depth_storage[index].at<unsigned short>(i,j)<=ui->depthClipSlider->maximum()) {
 
                 x = m_sensor.GetPoint(i,j,m_depth_storage[index]);
-                xarray[0] = x;
 
-                // transform if F is not the idendity
-                if(!isfid)
-                    cv::transform(xarray,xarray,Fsr);
+                if(x.z<maxr && x.z>minr) {
 
-                // check distance condition
-                if(cv::norm(xarray[0])<maxr) {
+                    xarray[0] = x;
+
+                    // transform if F is not the idendity
+                    if(!isfid)
+                        cv::transform(xarray,xarray,Fsr);
 
                     // transform normal
                     narray[0] = m_sensor.GetNormal(i,j,m_depth_storage[index]);
@@ -1018,109 +796,6 @@ void MainWindow::get_oriented_pcl(size_t index, vector<Point3f>& vertices, vecto
                     }
 
                 }
-
-            }
-
-        }
-
-    }
-
-}
-
-
-void MainWindow::get_mesh(size_t index, vector<Point3f>& vertices, vector<Vec3b>& colors, vector<Vec4i>& faces, float maxr, Mat F) {
-
-    // prepare transformation
-    Mat Fsr = F(Range(0,3),Range(0,4));
-    bool isfid = F.at<float>(0,0)==1 && F.at<float>(0,1)==0 && F.at<float>(0,2)==0 && F.at<float>(0,3)==0 &&
-                 F.at<float>(1,0)==0 && F.at<float>(1,1)==1 && F.at<float>(1,2)==0 && F.at<float>(1,3)==0 &&
-                 F.at<float>(2,0)==0 && F.at<float>(2,1)==0 && F.at<float>(2,2)==1 && F.at<float>(2,3)==0;
-
-    // allocate space for temporary variable
-    vector<Point3f> xarray;
-    Point3f x;
-    xarray.push_back(x);
-
-    // allocate map for topology
-    map<size_t,size_t> indexhash;
-    map<size_t,float> depthhash;
-
-    // collect points
-    for(size_t i=0; i<(size_t)m_depth_storage[index].rows; i++) {
-
-        for(size_t j=0; j<(size_t)m_depth_storage[index].cols; j++) {
-
-            unsigned short d = m_depth_storage[index].at<unsigned short>(i,j);
-            float z = m_sensor.DisparityToDepth(d);
-
-            // only do something disparity is unsaturated
-            if(m_depth_storage[index].at<unsigned short>(i,j)<=ui->depthclipSlider->maximum()) {
-
-                x = m_sensor.GetPoint(i,j,m_depth_storage[index]);
-                xarray[0] = x;
-
-                // transform if F is not the idendity
-                if(!isfid)
-                    cv::transform(xarray,xarray,Fsr);
-
-                // check distance condition
-                if(cv::norm(xarray[0])<maxr) {
-
-                    vertices.push_back(xarray[0]);
-
-                    Vec3b color = m_sensor.GetColor(x,m_rgb_storage[index]);
-                    colors.push_back(color);
-
-                    // insert into hash map: linear image index -> selected vertices
-                    indexhash.insert(pair<size_t,size_t>(i*m_depth_storage[index].cols+j,vertices.size()-1));
-                    depthhash.insert(pair<size_t,float>(i*m_depth_storage[index].cols+j,z));
-
-                }
-
-            }
-
-        }
-
-    }
-
-    // now iterate through index hash
-    map<size_t,float>::iterator ittl, ittr, itbr, itbl;
-
-    float variance = m_params->get_triangulation_threshold();
-
-    for(ittl=depthhash.begin(); ittl!=depthhash.end(); ittl++) {
-
-        // see if all the neighbors are present
-        ittr = depthhash.find(ittl->first+1);
-        itbr = depthhash.find(ittl->first+m_depth_storage[index].cols+1);
-        itbl = depthhash.find(ittl->first+m_depth_storage[index].cols);
-
-        // if yes check variance
-        if(ittr!=depthhash.end() && itbr!=depthhash.end() && itbl!=depthhash.end()) {
-
-            float zq[4];
-            zq[0] = ittl->second;
-            zq[1] = ittr->second;
-            zq[2] = itbr->second;
-            zq[3] = itbl->second;
-
-            float mean = 0.25*(zq[0] + zq[1] + zq[2] + zq[3]);
-
-            float var = 0;
-            for(size_t k=0; k<4; k++)
-                var += (zq[k]-mean)*(zq[k]-mean);
-            var = sqrt(var);
-
-            if(var<variance) {
-
-                Vec4i face;
-
-                face[0] = indexhash[ittl->first];
-                face[1] = indexhash[itbl->first];
-                face[2] = indexhash[itbr->first];
-                face[3] = indexhash[ittr->first];
-
-                faces.push_back(face);
 
             }
 
@@ -1156,12 +831,15 @@ void MainWindow::on_actionSave_triggered()
         error = save_trafo(index,filename);
     else if (filename.endsWith(".ply")) {
 
-        if(m_params->triangulate())
-            error = save_mesh_as_ply(index,filename);
-        else
-            error = save_pcl_as_ply(index,filename);
+        XForm4x4<float> id = XForm4x4<float>::Identity();
 
-    } else if(filename.endsWith(".pgm"))
+        if(m_params->ply_binary())
+            PoissonRec::PlyWritePolygons(filename.toStdString().c_str(),&m_mesh,PLY_BINARY_NATIVE,nullptr,0,id);
+        else
+            PoissonRec::PlyWritePolygons(filename.toStdString().c_str(),&m_mesh,PLY_ASCII,nullptr,0,id);
+
+    }
+    else if(filename.endsWith(".pgm"))
         error = save_as_pgm(index,filename);
     else
         error = 0;
@@ -1298,10 +976,7 @@ void MainWindow::on_actionSave_all_triggered()
 
             QString fn = QString((prefix+string(".ply")).c_str());
 
-            if(m_params->triangulate())
-                error = save_mesh_as_ply(i,fn);
-            else
-                error = save_pcl_as_ply(i,fn);
+            error = save_pcl_as_ply(i,fn);
 
             break;
 
@@ -1335,7 +1010,323 @@ void MainWindow::on_actionSave_all_triggered()
 
 }
 
-void MainWindow::on_alignAllButton_clicked()
+void MainWindow::on_actionPreferences_triggered() {
+
+    m_params->show();
+
+}
+
+void MainWindow::on_recordButton_clicked(bool checked) {
+
+    if(checked) {
+
+        m_timer.stop();
+
+        QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
+                                                        ".",
+                                                        tr("*.oni"));
+
+        if(filename.isEmpty()) {
+
+            ui->recordButton->setChecked(false);
+            ui->recordButton->setText("Record");
+
+            return;
+        }
+
+
+        //stringstream no;
+        //no.fill('0');
+        //no.width(8);
+        //no << rand();
+
+        //string filename = string("/home/jbalzer/Dump/")+no.str()+string(".oni");
+        //string filename = string("/home/jbalzer/Dump/raw.oni"); //+no.str()+string(".oni");
+
+        m_timer.start();
+
+        bool error = m_sensor.StartRecording(filename.toStdString().c_str());
+        //bool error = m_sensor.StartRecording(filename.c_str());
+
+        if(error) {
+
+            ui->statusBar->showMessage("Could not start capture.");
+            ui->recordButton->setChecked(false);
+
+        }
+        else
+            ui->recordButton->setText("Stop");
+
+    }
+    else {  // recording in progress
+
+        ui->recordButton->setText("Record");
+        m_sensor.StopRecording();
+        return;
+
+    }
+
+}
+
+
+void MainWindow::on_saveParams_clicked() {
+
+    QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),".",tr("*.txt"));
+
+    ofstream out(filename.toStdString().c_str());
+
+    if(!out.is_open())
+        return;
+
+    out << m_sensor;
+
+    out.close();
+
+}
+
+void MainWindow::refine_alignement(size_t index) {
+
+    // check whether there is something to do
+    if(index==m_rgb_storage.size() || m_rgb_storage.size()<2)
+        return;
+
+    float zmax = m_sensor.DisparityToDepth(ui->depthClipSlider->sliderPosition());
+    float zmin = m_sensor.DisparityToDepth(ui->minDepthClipSlider->sliderPosition());
+
+    vector<Point3f> x0, n0, x1, n1;
+    vector<Vec3b> c0, c1;
+
+    get_oriented_pcl(index-1,x0,n0,c0,zmin,zmax);     // one-based index, identity trafo
+    get_oriented_pcl(index,x1,n1,c1,zmin,zmax);
+    c0.clear();                                  // clear stuff we don't need here
+    c1.clear();
+
+    // create icp object and iterate
+    CPointToPlaneICP icp(x0,n0,x1,m_trafo_storage[index]);
+    icp.Iterate(m_params->get_no_icp_steps());
+
+    // set result
+    m_trafo_storage[index] = icp.GetResult();
+
+}
+
+
+void MainWindow::on_actionPoisson_triggered()
+{
+
+    // set parameters
+    int numProcessors = omp_get_num_procs();
+    int boundaryType = 1;
+    int Depth = 8;
+    int kernelDepth = Depth-2;
+    float samplesPerNode = 1.0;
+    float scaleFactor = 1.1;
+    int useConfidence = 0;
+    float constraintWeight = 4.0;
+    int adaptiveExponent = 1;
+    int isoDivide = 8;
+    int minDepth = 5;
+    int solverDivide = 8;
+    int minIters = 24;
+    double accuracy = 1e-3;
+    int maxSolveDepth = 6;
+
+    bool addBarycenter=false;
+    bool polygonMesh=false;
+    XForm4x4< Real > xForm = XForm4x4< Real >::Identity();
+
+    // merge all point clouds
+    float zmax = m_sensor.DisparityToDepth(ui->depthClipSlider->sliderPosition());
+    float zmin = m_sensor.DisparityToDepth(ui->minDepthClipSlider->sliderPosition());
+
+    vector<cv::Point3f> points, normals;
+    vector<Vec3b> colors;
+
+    for(size_t i=0; i<m_depth_storage.size(); i++) {
+
+        Mat F = transform_to_first_image(i);
+        get_oriented_pcl(i,points,normals,colors,zmin,zmax,F);
+        colors.clear();
+
+    }
+
+    // create octree
+    PoissonRec::Octree<2,false> tree;
+    tree.threads = numProcessors;
+
+    PoissonRec::OctNode< PoissonRec::TreeNodeData<false> , Real >::SetAllocator( MEMORY_ALLOCATOR_BLOCK_SIZE );
+
+    // init finite elements
+    tree.setBSplineData( Depth , boundaryType );
+
+    tree.setTree( points,
+                  normals,
+                  Depth,
+                  minDepth,
+                  kernelDepth,
+                  samplesPerNode,
+                  scaleFactor,
+                  useConfidence,
+                  constraintWeight,
+                  adaptiveExponent,
+                  xForm);
+
+    tree.ClipTree();
+    tree.finalize(isoDivide);
+    tree.SetLaplacianConstraints();
+
+    // solve linear system
+    tree.LaplacianMatrixIteration( solverDivide,
+                                   false,
+                                   minIters,
+                                   accuracy,
+                                   maxSolveDepth,
+                                   -1 );
+
+
+    // compute iso value
+    float isoValue = tree.GetIsoValue();
+
+    tree.GetMCIsoTriangles( isoValue,
+                            isoDivide,
+                            &m_mesh,
+                            0,
+                            1,
+                            addBarycenter,
+                            polygonMesh );
+
+  ui->statusBar->showMessage("Poisson reconstruction finished...");
+
+}
+
+void MainWindow::on_actionCurrent_triggered()
+{
+
+    // get image index
+    size_t index = (size_t)ui->spinBoxStorage->value();
+
+    // check whether there is something to do
+    if(index==m_rgb_storage.size() || m_rgb_storage.size()<2)
+        return;
+
+    // stop acqusition to have computational resources
+    m_timer.stop();
+
+    // show window
+    m_alignment->show();
+    m_alignment->activateWindow();
+    m_alignment->raise();
+
+    // get params
+    size_t nfeat, noctaves, nsamples;
+    double pthresh, ethresh, ratio, athresh;
+    m_params->get_alignment_parameters(nfeat,noctaves,pthresh,ethresh,ratio,nsamples,athresh);
+
+    // init non-free module
+    initModule_nonfree();
+
+    // create SIFT object
+    SIFT detector(nfeat,noctaves,pthresh,ethresh,0.5);
+
+    // warp to depth image plane
+    Mat rgb0 = m_sensor.WarpRGBToDepth(m_depth_storage[index-1],m_rgb_storage[index-1]);
+    Mat rgb1 = m_sensor.WarpRGBToDepth(m_depth_storage[index],m_rgb_storage[index]);
+
+    // detect and compute descriptors
+    vector<KeyPoint> kp0, kp1;
+    Mat desc0, desc1;
+    detector(rgb0,Mat(),kp0,desc0);
+    detector(rgb1,Mat(),kp1,desc1);
+
+    // matching
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
+    vector<vector<DMatch> > matches;
+    matcher->knnMatch(desc0,desc1,matches,2);
+
+    // compute 3d points
+    vector<DMatch> good_matches;
+    vector<Vec3f> x0, x1;
+
+    int maxd = ui->depthClipSlider->maximum();
+    int mind = ui->depthClipSlider->minimum();
+
+    for (size_t i = 0; i<matches.size(); i++) {
+
+        // check if match is good
+        if(matches[i][0].distance/matches[i][1].distance<ratio) {
+
+            // get both locations
+            Point2f u0, u1;
+            u0 = kp0[matches[i][0].queryIdx].pt;
+            u1 = kp1[matches[i][0].trainIdx].pt;
+
+            // if both points have depth, compute their 3d location
+            if(m_depth_storage[index-1].at<unsigned short>((size_t)u0.y,(size_t)u0.x)<maxd
+               && m_depth_storage[index].at<unsigned short>((size_t)u1.y,(size_t)u1.x)<maxd
+               && m_depth_storage[index-1].at<unsigned short>((size_t)u0.y,(size_t)u0.x)>mind
+               && m_depth_storage[index].at<unsigned short>((size_t)u1.y,(size_t)u1.x)>mind) {
+
+                good_matches.push_back(matches[i][0]);
+                x0.push_back(m_sensor.GetPoint((size_t)u0.y,(size_t)u0.x,m_depth_storage[index-1]));
+                x1.push_back(m_sensor.GetPoint((size_t)u1.y,(size_t)u1.x,m_depth_storage[index]));
+
+            }
+
+        }
+
+    }
+
+    // create of good matches visualization
+    Mat img_matches;
+    drawMatches(rgb0,
+                kp0,
+                rgb1,
+                kp1,
+                good_matches,
+                img_matches,
+                Scalar::all(-1),
+                Scalar::all(-1),
+                vector<char>(),
+                DrawMatchesFlags::DEFAULT);
+
+    // if there are not enough correspondences return
+    if(x0.size()<3) {
+
+        ui->statusBar->showMessage("Insufficient number of correspondences...");
+        return;
+
+    }
+
+    QImage vis(img_matches.data,img_matches.cols,img_matches.rows,QImage::Format_RGB888);
+    m_alignment->show_image(vis);
+    m_alignment->repaint();
+
+    // create ransac object
+    CAlignRansac alignment(x0,x1);
+
+    // optimize
+    size_t ninliers = 0;
+    Mat F = alignment.RunConcensus(nsamples,athresh,ninliers,this);
+
+    // bring alignment vis back
+    m_alignment->raise();
+
+    // store transformation
+    m_trafo_storage[index] = F;
+
+    // show inlier/outlier ratio
+    double ioratio = (double)ninliers/(double)good_matches.size();
+    ioratio *= 100;
+    stringstream ss;
+    ss << "The inlier ratio is " << ioratio << "\%.";
+    ui->statusBar->showMessage(ss.str().c_str());
+
+    // refine by icp
+    refine_alignement(index);
+
+}
+
+void MainWindow::on_actionAll_triggered()
 {
 
     if(m_rgb_storage.size()<2)
@@ -1380,8 +1371,8 @@ void MainWindow::on_alignAllButton_clicked()
         vector<DMatch> good_matches;
         vector<Vec3f> x0, x1;
 
-        int maxd = ui->depthclipSlider->maximum();
-        int mind = ui->depthclipSlider->minimum();
+        int maxd = ui->depthClipSlider->maximum();
+        int mind = ui->depthClipSlider->minimum();
 
         for (size_t i = 0; i<matches.size(); i++) {
 
@@ -1469,105 +1460,4 @@ void MainWindow::on_alignAllButton_clicked()
     if(m_params->center_wc())
         m_trafo_storage[0] = estimate_world_frame();
 
-
 }
-
-void MainWindow::on_actionPreferences_triggered() {
-
-    m_params->show();
-
-}
-
-void MainWindow::on_recordButton_clicked(bool checked) {
-
-    if(checked) {
-
-        m_timer.stop();
-
-        QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
-                                                        ".",
-                                                        tr("*.oni"));
-
-        if(filename.isEmpty()) {
-
-            ui->recordButton->setChecked(false);
-            ui->recordButton->setText("Record");
-
-            return;
-        }
-
-
-        //stringstream no;
-        //no.fill('0');
-        //no.width(8);
-        //no << rand();
-
-        //string filename = string("/home/jbalzer/Dump/")+no.str()+string(".oni");
-        //string filename = string("/home/jbalzer/Dump/raw.oni"); //+no.str()+string(".oni");
-
-        m_timer.start();
-
-        bool error = m_sensor.StartRecording(filename.toStdString().c_str());
-        //bool error = m_sensor.StartRecording(filename.c_str());
-
-        if(error) {
-
-            ui->statusBar->showMessage("Could not start capture.");
-            ui->recordButton->setChecked(false);
-
-        }
-        else
-            ui->recordButton->setText("Stop");
-
-    }
-    else {  // recording in progress
-
-        ui->recordButton->setText("Record");
-        m_sensor.StopRecording();
-        return;
-
-    }
-
-}
-
-
-void MainWindow::on_saveParams_clicked() {
-
-    QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),".",tr("*.txt"));
-
-    ofstream out(filename.toStdString().c_str());
-
-    if(!out.is_open())
-        return;
-
-    out << m_sensor;
-
-    out.close();
-
-}
-
-void MainWindow::refine_alignement(size_t index) {
-
-    // check whether there is something to do
-    if(index==m_rgb_storage.size() || m_rgb_storage.size()<2)
-        return;
-
-    float zmax = m_sensor.DisparityToDepth(ui->depthclipSlider->sliderPosition());
-
-    vector<Point3f> x0, n0, x1, n1;
-    vector<Vec3b> c0, c1;
-
-    get_oriented_pcl(index-1,x0,n0,c0,zmax);     // one-based index, identity trafo
-    get_oriented_pcl(index,x1,n1,c1,zmax);
-    c0.clear();                                  // clear stuff we don't need here
-    c1.clear();
-
-    // create icp object and iterate
-    CPointToPlaneICP icp(x0,n0,x1,m_trafo_storage[index]);
-    icp.Iterate(m_params->get_no_icp_steps());
-
-    // set result
-    m_trafo_storage[index] = icp.GetResult();
-
-}
-

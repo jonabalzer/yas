@@ -1,11 +1,12 @@
 #include "calignransac.h"
 
-#include <opencv2/nonfree/nonfree.hpp>
-
 #include <QProgressDialog>
 
 #include <random>
 #include <chrono>
+
+using namespace cv;
+using namespace std;
 
 CAlignRansac::CAlignRansac(vector<Vec3f>& x0, vector<Vec3f>&x1):
     m_x0(x0),
@@ -105,7 +106,6 @@ vector<size_t> CAlignRansac::EvaluateHypothesis(const Mat& F, double tolerance) 
 
 }
 
-
 Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, size_t& ninliers, QWidget* parent) {
 
     // seed for random number generator
@@ -118,7 +118,7 @@ Mat CAlignRansac::RunConcensus(size_t nosamples, double tol, size_t& ninliers, Q
     vector<size_t> ilmax;
 
     QProgressDialog progress("Consensus in progress...", "Abort", 0,nosamples,parent);
-    progress.setWindowTitle("KinectScan");
+    progress.setWindowTitle("YAS");
     progress.setWindowModality(Qt::WindowModal);
 
     for(size_t k=0; k<nosamples; k++) {

@@ -36,6 +36,18 @@ void Params::get_alignment_parameters(size_t& nfeat, size_t& noctaves, double& p
 
 }
 
+void Params::get_reconstruction_parameters(uint& depth, float& weight, float& samples, bool& confidence, bool& polygon) {
+
+    depth = ui->poissonDepthSpinBox->value();
+    weight = ui->poissonWeightEdit->text().toFloat();
+    samples = ui->poissonSampleEdit->text().toFloat();
+    confidence = ui->poissonConfidenceCheckBox->isChecked();
+    polygon = ui->poissonPolygonMeshCheckBox->isChecked();
+
+}
+
+
+
 
 bool Params::center_wc() {
 
@@ -50,7 +62,7 @@ float Params::get_triangulation_threshold() {
 
 }
 
-bool Params::triangulate() {
+bool Params::ply_binary() {
 
     return ui->triangulateCheckBox->isChecked();
 

@@ -34,6 +34,7 @@
 #include <ImfAttribute.h>
 
 #include "opencv2/opencv.hpp"
+
 #include <boost/circular_buffer.hpp>
 
 #include "alignwindow.h"
@@ -41,7 +42,8 @@
 #include "glwidget.h"
 #include "params.h"
 
-using namespace cv;
+#include "poisson/Ply.h"
+
 using namespace Imf;
 using namespace Imath;
 
@@ -63,7 +65,7 @@ public:
 
 signals:
 
-    void current_image_changed(Mat& rgb, Mat& depth);
+    void current_image_changed(cv::Mat& rgb, cv::Mat& depth);
     void current_pcl_changed(const std::vector<cv::Point3f>& points, const std::vector<cv::Vec3b>& colors);
 
 public slots:
@@ -87,13 +89,11 @@ private slots:
 
     void on_spinBoxStorage_valueChanged(int arg1);
 
-    void on_alignButton_clicked();
-
     void on_actionExit_triggered();
 
     void on_clearButton_clicked();
 
-    void update_static_view(Mat& rgb, Mat& depth);
+    void update_static_view(cv::Mat& rgb, cv::Mat& depth);
 
     void on_actionAbout_triggered();
 
@@ -103,8 +103,6 @@ private slots:
 
     void on_actionSave_all_triggered();
 
-    void on_alignAllButton_clicked();
-
     void on_actionPreferences_triggered();
 
     void on_recordButton_clicked(bool checked);
@@ -112,6 +110,12 @@ private slots:
     void configure_sensor(const CCam& rgb, const CDepthCam& depth);
 
     void on_saveParams_clicked();
+
+    void on_actionPoisson_triggered();
+
+    void on_actionCurrent_triggered();
+
+    void on_actionAll_triggered();
 
 private:
 
@@ -123,22 +127,24 @@ private:
     QTimer m_timer;
 
     // current data
-    Mat m_rgb;
-    boost::circular_buffer<Mat> m_depth_buffer;
+    cv::Mat m_rgb;
+    boost::circular_buffer<cv::Mat> m_depth_buffer;
 
     // saved images
-    vector<Mat> m_rgb_storage;          //!< stored rgb images
-    vector<Mat> m_depth_storage;        //!< stored depth images
-    vector<Mat> m_trafo_storage;        //!< stored transformations between them
+    std::vector<cv::Mat> m_rgb_storage;          //!< stored rgb images
+    std::vector<cv::Mat> m_depth_storage;        //!< stored depth images
+    std::vector<cv::Mat> m_trafo_storage;        //!< stored transformations between them
 
     // windows for tools
     AlignWindow* m_alignment;
     QGLViewerWidget* m_glview;
     Params* m_params;
 
+    // the reconstruction
+    PoissonRec::CoredFileMeshData<PoissonRec::PlyVertex<float> > m_mesh;
+
     // save routines
     bool save_pcl_as_ply(size_t index, QString fn);
-    bool save_mesh_as_ply(size_t index, QString fn);
     bool save_as_png(size_t index, QString fn);
     bool save_as_pgm(size_t index, QString fn);
     bool save_as_exr(size_t index, QString fn);
@@ -146,12 +152,12 @@ private:
 
     // helper routine
     unsigned short get_smoothed_depth(size_t i, size_t j);
-    Mat get_depth_from_buffer();
+    cv::Mat get_depth_from_buffer();
     void update_live_view();
 
     // geometry/alignment functions
-    Mat transform_to_first_image(size_t index);
-    Mat estimate_world_frame();
+    cv::Mat transform_to_first_image(size_t index);
+    cv::Mat estimate_world_frame();
     void refine_alignement(size_t index);
 
     /*! \brief Converts an image in the storage into a colored 3d point cloud for export or visualization.
@@ -161,19 +167,9 @@ private:
      * \param[in] maxr threshold on the distance points can have to the origin (after application of the transform \f$F\f$)
      * \param[in] F coordinate to apply to the points
      */
-    void get_pcl(size_t index, vector<Point3f>& vertices, vector<Vec3b>& colors, float maxr = 10000, Mat F = Mat::eye(4,4,CV_32FC1));
+    void get_pcl(size_t index, std::vector<cv::Point3f>& vertices, std::vector<cv::Vec3b>& colors, float maxr = 10000, cv::Mat F = cv::Mat::eye(4,4,CV_32FC1));
 
-    void get_oriented_pcl(size_t index, vector<Point3f>& vertices, vector<Point3f>& normals, vector<Vec3b>& colors, float maxr = 10000, Mat F = Mat::eye(4,4,CV_32FC1));
-
-    /*! \brief Converts an image in the storage into a colored 3d mesh.
-     * \param[in] index number of stored depth image
-     * \param[out] vertices point cloud in 3d
-     * \param[out] colors color of points
-     * \param[out] faces connectivity of the mesh
-     * \param[in] maxr threshold on the distance points can have to the origin (after application of the transform \f$F\f$)
-     * \param[in] F coordinate to apply to the points
-     */
-    void get_mesh(size_t index, vector<Point3f>& vertices, vector<Vec3b>& colors, vector<Vec4i>& faces, float maxr = 10000, Mat F = Mat::eye(4,4,CV_32FC1));
+    void get_oriented_pcl(size_t index, std::vector<cv::Point3f>& vertices, std::vector<cv::Point3f>& normals, std::vector<cv::Vec3b>& colors, float minr = 0, float maxr = 10000, cv::Mat F = cv::Mat::eye(4,4,CV_32FC1));
 
 protected:
 

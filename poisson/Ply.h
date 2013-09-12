@@ -37,17 +37,17 @@
 #define _strdup strdup
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-	
 #include <stdlib.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
 #include <vector>
-
 #include "Geometry.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define PLY_ASCII         1      /* ascii PLY file */
 #define PLY_BINARY_BE     2      /* binary PLY file, big endian */
@@ -220,6 +220,7 @@ extern int equal_strings(char *, char *);
 }
 #endif
 
+namespace PoissonRec {
 
 typedef struct PlyFace
 {
@@ -228,12 +229,12 @@ typedef struct PlyFace
 	int segment;
 } PlyFace;
 
+//static PlyProperty* face_props;
+
 static PlyProperty face_props[] =
 {
-	{ "vertex_indices" , PLY_INT , PLY_INT , offsetof(PlyFace,vertices) , 1 , PLY_UCHAR, PLY_UCHAR , offsetof(PlyFace,nr_vertices) },
+    { "vertex_indices" , PLY_INT , PLY_INT , offsetof(PlyFace,vertices) , 1 , PLY_UCHAR, PLY_UCHAR , offsetof(PlyFace,nr_vertices) },
 };
-
-namespace PoissonRec {
 
 template< class Real >
 class PlyVertex
@@ -262,21 +263,10 @@ public:
 	PlyVertex(const Point3D<Real>& p)			{point=p;}
 #endif
 };
+
+
 template< class Real > PlyVertex< Real > operator * ( XForm4x4< Real > xForm , PlyVertex< Real > v ) { return PlyVertex< Real >( xForm * v.point ); }
-template<>
-PlyProperty PlyVertex< float >::Properties[]=
-{
-	{"x", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyVertex,point.coords[0])), 0, 0, 0, 0},
-	{"y", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyVertex,point.coords[1])), 0, 0, 0, 0},
-	{"z", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyVertex,point.coords[2])), 0, 0, 0, 0}
-};
-template<>
-PlyProperty PlyVertex< double >::Properties[]=
-{
-	{"x", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyVertex,point.coords[0])), 0, 0, 0, 0},
-	{"y", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyVertex,point.coords[1])), 0, 0, 0, 0},
-	{"z", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyVertex,point.coords[2])), 0, 0, 0, 0}
-};
+
 template< class Real >
 class PlyValueVertex
 {
@@ -305,23 +295,9 @@ public:
 	PlyValueVertex(const Point3D<Real>& p)	{point=p;}
 #endif
 };
+
 template< class Real > PlyValueVertex< Real > operator * ( XForm4x4< Real > xForm , PlyValueVertex< Real > v ) { return PlyValueVertex< Real >( xForm * v.point , v.value ); }
-template< >
-PlyProperty PlyValueVertex< float >::Properties[]=
-{
-	{"x", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyValueVertex,point.coords[0])), 0, 0, 0, 0},
-	{"y", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyValueVertex,point.coords[1])), 0, 0, 0, 0},
-	{"z", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyValueVertex,point.coords[2])), 0, 0, 0, 0},
-	{"value", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyValueVertex,value)), 0, 0, 0, 0}
-};
-template< >
-PlyProperty PlyValueVertex< double >::Properties[]=
-{
-	{"x", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyValueVertex,point.coords[0])), 0, 0, 0, 0},
-	{"y", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyValueVertex,point.coords[1])), 0, 0, 0, 0},
-	{"z", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyValueVertex,point.coords[2])), 0, 0, 0, 0},
-	{"value", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyValueVertex,value)), 0, 0, 0, 0}
-};
+
 template< class Real >
 class PlyOrientedVertex
 {
@@ -349,27 +325,9 @@ public:
 	PlyOrientedVertex(const Point3D<Real>& p)	{point=p;}
 #endif
 };
+
 template< class Real > PlyOrientedVertex< Real > operator * ( XForm4x4< Real > xForm , PlyOrientedVertex< Real > v ) { return PlyOrientedVertex< Real >( xForm * v.point , xForm.inverse().transpose() * v.normal ); }
-template<>
-PlyProperty PlyOrientedVertex< float >::Properties[]=
-{
-	{"x", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyOrientedVertex,point.coords[0])), 0, 0, 0, 0},
-	{"y", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyOrientedVertex,point.coords[1])), 0, 0, 0, 0},
-	{"z", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyOrientedVertex,point.coords[2])), 0, 0, 0, 0},
-	{"nx", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyOrientedVertex,normal.coords[0])), 0, 0, 0, 0},
-	{"ny", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyOrientedVertex,normal.coords[1])), 0, 0, 0, 0},
-	{"nz", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyOrientedVertex,normal.coords[2])), 0, 0, 0, 0}
-};
-template<>
-PlyProperty PlyOrientedVertex< double >::Properties[]=
-{
-	{"x", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyOrientedVertex,point.coords[0])), 0, 0, 0, 0},
-	{"y", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyOrientedVertex,point.coords[1])), 0, 0, 0, 0},
-	{"z", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyOrientedVertex,point.coords[2])), 0, 0, 0, 0},
-	{"nx", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyOrientedVertex,normal.coords[0])), 0, 0, 0, 0},
-	{"ny", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyOrientedVertex,normal.coords[1])), 0, 0, 0, 0},
-	{"nz", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyOrientedVertex,normal.coords[2])), 0, 0, 0, 0}
-};
+
 template< class Real >
 class PlyColorVertex
 {
@@ -384,26 +342,6 @@ public:
 	operator const Point3D<Real>& () const		{return point;}
 	PlyColorVertex(void)						{point.coords[0]=point.coords[1]=point.coords[2]=0,color[0]=color[1]=color[2]=0;}
 	PlyColorVertex(const Point3D<Real>& p)	{point=p;}
-};
-template<>
-PlyProperty PlyColorVertex< float >::Properties[]=
-{
-	{"x", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyColorVertex,point.coords[0])), 0, 0, 0, 0},
-	{"y", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyColorVertex,point.coords[1])), 0, 0, 0, 0},
-	{"z", PLY_FLOAT, PLY_FLOAT, int(offsetof(PlyColorVertex,point.coords[2])), 0, 0, 0, 0},
-	{"red",		PLY_UCHAR, PLY_UCHAR, int(offsetof(PlyColorVertex,color[0])),	0, 0, 0, 0},
-	{"green",	PLY_UCHAR, PLY_UCHAR, int(offsetof(PlyColorVertex,color[1])),	0, 0, 0, 0},
-	{"blue",	PLY_UCHAR, PLY_UCHAR, int(offsetof(PlyColorVertex,color[2])),	0, 0, 0, 0}
-};
-template<>
-PlyProperty PlyColorVertex< double >::Properties[]=
-{
-	{"x", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyColorVertex,point.coords[0])), 0, 0, 0, 0},
-	{"y", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyColorVertex,point.coords[1])), 0, 0, 0, 0},
-	{"z", PLY_DOUBLE, PLY_DOUBLE, int(offsetof(PlyColorVertex,point.coords[2])), 0, 0, 0, 0},
-	{"red",		PLY_UCHAR, PLY_UCHAR, int(offsetof(PlyColorVertex,color[0])),	0, 0, 0, 0},
-	{"green",	PLY_UCHAR, PLY_UCHAR, int(offsetof(PlyColorVertex,color[1])),	0, 0, 0, 0},
-	{"blue",	PLY_UCHAR, PLY_UCHAR, int(offsetof(PlyColorVertex,color[2])),	0, 0, 0, 0}
 };
 
 template< class Vertex >
@@ -487,6 +425,7 @@ int PlyWritePolygons(char* fileName,
 	ply_close(ply);
 	return 1;
 }
+
 template<class Vertex>
 int PlyReadPolygons(char* fileName,
 					std::vector<Vertex>& vertices , std::vector<std::vector<int> >& polygons ,
@@ -666,8 +605,9 @@ int PlyWritePolygons( char* fileName , CoredMeshData< Vertex >* mesh , int file_
 	ply_close( ply );
 	return 1;
 }
+
 template< class Vertex >
-int PlyWritePolygons( char* fileName , CoredMeshData< Vertex >* mesh , int file_type , char** comments , int commentNum , XForm4x4< float > xForm )
+int PlyWritePolygons( const char* fileName , CoredMeshData< Vertex >* mesh , int file_type , char** comments , int commentNum , XForm4x4< float > xForm )
 {
 	XForm3x3< float > xFormN;
 	for( int i=0 ; i<3 ; i++ ) for( int j=0 ; j<3 ; j++ ) xFormN(i,j) = xForm(i,j);
@@ -734,7 +674,8 @@ int PlyWritePolygons( char* fileName , CoredMeshData< Vertex >* mesh , int file_
 	ply_close( ply );
 	return 1;
 }
-inline int PlyDefaultFileType(void){return PLY_ASCII;}
+
+inline int PlyDefaultFileType(void){ return PLY_ASCII; }
 
 }
 

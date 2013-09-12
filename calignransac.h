@@ -25,27 +25,25 @@
 #define CALIGNRANSAC_H
 
 #include <QWidget>
-#include "opencv2/opencv.hpp"
 
-using namespace cv;
-using namespace std;
+#include <opencv2/opencv.hpp>
 
 class CAlignRansac
 {
 public:
 
-    CAlignRansac(vector<Vec3f>& x0, vector<Vec3f>& x1);
+    CAlignRansac(std::vector<cv::Vec3f>& x0, std::vector<cv::Vec3f>& x1);
 
-    Mat RunConcensus(size_t nosamples, double tol, size_t& ninliers, QWidget* parent = 0);
+    cv::Mat RunConcensus(size_t nosamples, double tol, size_t& ninliers, QWidget* parent = 0);
 
 private:
 
-    bool EstimateMotion(vector<size_t> inds, Mat& F);
+    bool EstimateMotion(std::vector<size_t> inds, cv::Mat& F);
 
-    vector<size_t> EvaluateHypothesis(const Mat& F, double tolerance);
+    std::vector<size_t> EvaluateHypothesis(const cv::Mat& F, double tolerance);
 
-    vector<Vec3f>& m_x0;
-    vector<Vec3f>& m_x1;
+    std::vector<cv::Vec3f>& m_x0;
+    std::vector<cv::Vec3f>& m_x1;
 
 };
 
