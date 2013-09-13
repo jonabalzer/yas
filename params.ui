@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="sensorTab">
     <attribute name="title">
@@ -689,7 +689,7 @@
       <rect>
        <x>10</x>
        <y>10</y>
-       <width>331</width>
+       <width>351</width>
        <height>341</height>
       </rect>
      </property>
@@ -705,7 +705,7 @@
         <x>10</x>
         <y>30</y>
         <width>261</width>
-        <height>231</height>
+        <height>250</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="poissonGridLayout">
@@ -733,7 +733,7 @@
        <item row="1" column="2">
         <widget class="QLineEdit" name="poissonWeightEdit">
          <property name="text">
-          <string>4.0</string>
+          <string>0.2</string>
          </property>
         </widget>
        </item>
@@ -746,11 +746,11 @@
           <number>15</number>
          </property>
          <property name="value">
-          <number>6</number>
+          <number>7</number>
          </property>
         </widget>
        </item>
-       <item row="4" column="2">
+       <item row="6" column="2">
         <widget class="QCheckBox" name="poissonConfidenceCheckBox">
          <property name="text">
           <string>Confidence</string>
@@ -764,7 +764,7 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="2">
+       <item row="7" column="2">
         <widget class="QCheckBox" name="poissonPolygonMeshCheckBox">
          <property name="text">
           <string>Polygon mesh</string>
@@ -782,6 +782,34 @@
         <widget class="QLineEdit" name="poissonScaleEdit">
          <property name="text">
           <string>1.1</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLabel" name="poissonNoIterLabel">
+         <property name="text">
+          <string>Solver iterations</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2">
+        <widget class="QSpinBox" name="poissonNoIterSpinBox">
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QLabel" name="poissonAccuracyLabel">
+         <property name="text">
+          <string>Solver accuracy</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="2">
+        <widget class="QLineEdit" name="poissonAccuracyEdit">
+         <property name="text">
+          <string>1e-3</string>
          </property>
         </widget>
        </item>

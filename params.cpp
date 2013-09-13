@@ -36,11 +36,14 @@ void Params::get_alignment_parameters(size_t& nfeat, size_t& noctaves, double& p
 
 }
 
-void Params::get_reconstruction_parameters(uint& depth, float& weight, float& samples, bool& confidence, bool& polygon) {
+void Params::get_reconstruction_parameters(int& depth, float& weight, float& samples, float& scale, int& niter, float& acc, bool& confidence, bool& polygon) {
 
     depth = ui->poissonDepthSpinBox->value();
     weight = ui->poissonWeightEdit->text().toFloat();
     samples = ui->poissonSampleEdit->text().toFloat();
+    scale = ui->poissonScaleEdit->text().toFloat();
+    niter = ui->poissonNoIterSpinBox->value();
+    acc = ui->poissonAccuracyEdit->text().toFloat();
     confidence = ui->poissonConfidenceCheckBox->isChecked();
     polygon = ui->poissonPolygonMeshCheckBox->isChecked();
 

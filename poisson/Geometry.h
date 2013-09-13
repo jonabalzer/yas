@@ -321,6 +321,7 @@ public:
 
 	void resetIterator(void);
 
+    void reset() { oocPoints.clear(); polygons.clear(); resetIterator(); }
 	int addOutOfCorePoint( const Vertex& p );
 	int addPolygon( const std::vector< CoredVertexIndex >& vertices );
 
@@ -777,8 +778,10 @@ int Triangulation<Real>::flipMinimize(int eIndex){
 /////////////////////////
 template< class Vertex >
 CoredVectorMeshData< Vertex >::CoredVectorMeshData( void ) { oocPointIndex = polygonIndex = 0; }
+
 template< class Vertex >
 void CoredVectorMeshData< Vertex >::resetIterator ( void ) { oocPointIndex = polygonIndex = 0; }
+
 template< class Vertex >
 int CoredVectorMeshData< Vertex >::addOutOfCorePoint( const Vertex& p )
 {
@@ -807,6 +810,7 @@ int CoredVectorMeshData< Vertex >::nextOutOfCorePoint( Vertex& p )
     }
     else{return 0;}
 }
+
 template< class Vertex >
 int CoredVectorMeshData< Vertex >::nextPolygon( std::vector< CoredVertexIndex >& vertices )
 {

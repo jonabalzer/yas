@@ -367,7 +367,7 @@
   </action>
   <action name="actionPoisson">
    <property name="text">
-    <string>Poisson Reconstruction</string>
+    <string>Poisson</string>
    </property>
   </action>
   <action name="actionCurrent">

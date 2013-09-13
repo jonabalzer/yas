@@ -47,7 +47,7 @@ public:
     void get_alignment_parameters(size_t& nfeat, size_t& noctaves, double& pthresh, double& ethresh, double& ratio, size_t& nsamples, double& athresh);
 
     //! Access to Poisson parameter from main window.
-    void get_reconstruction_parameters(uint& depth, float& weight, float& samples, bool& confidence, bool& polygon);
+    void get_reconstruction_parameters(int& depth, float& weight, float& samples, float& scale, int& niter, float& acc, bool& confidence, bool& polygon);
 
     //! Access to centering flag.
     bool center_wc();

@@ -141,7 +141,7 @@ private:
     Params* m_params;
 
     // the reconstruction
-    PoissonRec::CoredFileMeshData<PoissonRec::PlyVertex<float> > m_mesh;
+    PoissonRec::CoredVectorMeshData<PoissonRec::PlyVertex<float> > m_mesh;
 
     // save routines
     bool save_pcl_as_ply(size_t index, QString fn);

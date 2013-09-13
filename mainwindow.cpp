@@ -1114,26 +1114,23 @@ void MainWindow::refine_alignement(size_t index) {
 void MainWindow::on_actionPoisson_triggered()
 {
 
-    // set parameters
-    int numProcessors = omp_get_num_procs();
-    int boundaryType = 1;
-    int Depth = 8;
-    int kernelDepth = Depth-2;
-    float samplesPerNode = 1.0;
-    float scaleFactor = 1.1;
-    int useConfidence = 0;
-    float constraintWeight = 4.0;
-    int adaptiveExponent = 1;
-    int isoDivide = 8;
-    int minDepth = 5;
-    int solverDivide = 8;
-    int minIters = 24;
-    double accuracy = 1e-3;
-    int maxSolveDepth = 6;
+  // set parameters
+    int Depth, boundaryType, kernelDepth, adaptiveExponent, isoDivide, solverDivide, minDepth, minIters, maxSolveDepth;
+    float samplesPerNode, scaleFactor, constraintWeight, accuracy;
+    bool addBarycenter,polygonMesh, useConfidence;
 
-    bool addBarycenter=false;
-    bool polygonMesh=false;
-    XForm4x4< Real > xForm = XForm4x4< Real >::Identity();
+    m_params->get_reconstruction_parameters(Depth,constraintWeight,samplesPerNode,scaleFactor,minIters,accuracy,useConfidence,polygonMesh);
+
+    boundaryType = 1;
+    kernelDepth = Depth-2;
+    addBarycenter = true;
+    adaptiveExponent = 1;
+    isoDivide = 8;
+    minDepth = 5;
+    solverDivide = 8;
+    maxSolveDepth = Depth;
+
+    XForm4x4<Real> xForm = XForm4x4<Real>::Identity();
 
     // merge all point clouds
     float zmax = m_sensor.DisparityToDepth(ui->depthClipSlider->sliderPosition());
@@ -1147,12 +1144,13 @@ void MainWindow::on_actionPoisson_triggered()
         Mat F = transform_to_first_image(i);
         get_oriented_pcl(i,points,normals,colors,zmin,zmax,F);
         colors.clear();
+        cout << points.size() << endl;
 
     }
 
     // create octree
-    PoissonRec::Octree<2,false> tree;
-    tree.threads = numProcessors;
+    PoissonRec::Octree<2,false> tree = PoissonRec::Octree<2,false>();
+    tree.threads = omp_get_num_procs();
 
     PoissonRec::OctNode< PoissonRec::TreeNodeData<false> , Real >::SetAllocator( MEMORY_ALLOCATOR_BLOCK_SIZE );
 
@@ -1181,12 +1179,16 @@ void MainWindow::on_actionPoisson_triggered()
                                    minIters,
                                    accuracy,
                                    maxSolveDepth,
-                                   -1 );
+                                   -1);
 
 
     // compute iso value
     float isoValue = tree.GetIsoValue();
 
+    // delete old mesh
+    m_mesh.reset();
+
+    // marching cubes
     tree.GetMCIsoTriangles( isoValue,
                             isoDivide,
                             &m_mesh,

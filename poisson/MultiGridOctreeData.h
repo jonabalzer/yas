@@ -212,6 +212,7 @@ class Octree
 	Real _scale;
 	Point3D< Real > _center;
 	std::vector< int > _pointCount;
+
 	struct PointData
 	{
 		Point3D< Real > position;
@@ -822,6 +823,7 @@ TreeNodeData< OutputDensity >::~TreeNodeData( void ) { }
 template< int Degree , bool OutputDensity >
 Octree< Degree , OutputDensity >::Octree(void)
 {
+    splatDepth = 0;
     threads = 1;
     radius = 0;
     width = 0;
@@ -837,6 +839,7 @@ bool Octree< Degree , OutputDensity >::_IsInset( const TreeOctNode* node )
     int res = 1<<d , o = 1<<(d-2);
     return ( off[0]>=o && off[0]<res-o && off[1]>=o && off[1]<res-o && off[2]>=o && off[2]<res-o );
 }
+
 template< int Degree , bool OutputDensity >
 bool Octree< Degree , OutputDensity >::_IsInsetSupported( const TreeOctNode* node )
 {
@@ -1294,6 +1297,7 @@ Real Octree< Degree, OutputDensity >::GetSampleWeight( const TreeOctNode* node ,
     }
     return Real( 1.0 / weight );
 }
+
 template< int Degree, bool OutputDensity >
 Real Octree< Degree, OutputDensity >::GetSampleWeight( const TreeOctNode* node , const Point3D<Real>& position , typename TreeOctNode::ConstNeighborKey5& neighborKey )
 {

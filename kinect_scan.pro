@@ -35,7 +35,8 @@ SOURCES += main.cpp\
         poisson/MarchingCubes.cpp \
         poisson/Geometry.cpp \
         poisson/Factor.cpp \
-    poisson/Ply.cpp
+    poisson/Ply.cpp \
+    poisson/Octree.cpp
 
 HEADERS  += mainwindow.h \
             pcviewer.h \
