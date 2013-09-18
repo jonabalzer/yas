@@ -159,16 +159,13 @@ void Params::on_loadButton_clicked()
         return;
 
     CCam rgb;
+    CDepthCam dcam;
+
     in >> rgb;
     in.get();
-
-    CDepthCam dcam;
     in >> dcam;
 
     in.close();
-
-    cout << dcam << endl;
-    cout << rgb << endl;
 
     emit cam_params_changed(rgb,dcam);
 

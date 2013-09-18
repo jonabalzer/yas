@@ -104,6 +104,23 @@ void MainWindow::configure_sensor(const CCam& rgb, const CDepthCam& depth) {
     CDepthCam& depthold = m_sensor.GetDepthCam();
     depthold = depth;
 
+    size_t dmin, dmax;
+    m_sensor.GetDisparityRange(dmin,dmax);
+    ui->depthClipSlider->setMinimum(dmax);      // the slider refers to depth!
+    ui->depthClipSlider->setMaximum(dmin);
+    ui->depthClipSlider->setSliderPosition(dmin);
+    ui->minDepthClipSlider->setMinimum(dmax);      // the slider refers to depth!
+    ui->minDepthClipSlider->setMaximum(dmin);
+    ui->minDepthClipSlider->setSliderPosition(dmax);
+
+    float zmax = m_sensor.DisparityToDepth(dmin);
+    QString label;
+    label.setNum(zmax,'f',2);
+    ui->maxDepth->setText(label);
+    float zmin = m_sensor.DisparityToDepth(dmax);
+    label.setNum(zmin,'f',2);
+    ui->minDepth->setText(label);
+
 }
 
 bool MainWindow::on_stepButton_clicked()
