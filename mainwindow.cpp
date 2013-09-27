@@ -57,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,SIGNAL(current_image_changed(cv::Mat&,cv::Mat&)),this,SLOT(update_static_view(cv::Mat&,cv::Mat&)));
     connect(this,SIGNAL(current_pcl_changed(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)),m_glview,SLOT(set_pcl(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)));
     connect(m_params,SIGNAL(cam_params_changed(CCam,CDepthCam)),this,SLOT(configure_sensor(CCam,CDepthCam)));
+    connect(m_params,SIGNAL(cam_params_changed(CCam,CDepthCam)),m_glview,SLOT(configure_cam(CCam,CDepthCam)));
     connect(m_params,SIGNAL(save_params_clicked()),this,SLOT(on_saveParams_clicked()));
 
     // load sensor data
