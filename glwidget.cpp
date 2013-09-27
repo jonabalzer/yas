@@ -74,11 +74,10 @@ void QGLViewerWidget::initializeGL() {
 
 void QGLViewerWidget::resizeGL(int w, int h)
 {
+
   m_cam_perspective.SetViewport(w, h);
   m_cam_perspective.Activate();
 
-  //  update_projection_matrix();
-  //  glViewport(0,0,w,h);
   updateGL();
 
 }
@@ -321,101 +320,6 @@ void QGLViewerWidget::keyPressEvent(QKeyEvent *event)
   }
   updateGL();
 }
-
-
-//void
-//QGLViewerWidget::translate(const Vec3f& _trans) {
-
-//  makeCurrent();
-//  glLoadIdentity();
-//  glTranslated(_trans[0],_trans[1],_trans[2]);
-//  glMultMatrixd(m_modelview_matrix);
-//  glGetDoublev(GL_MODELVIEW_MATRIX,m_modelview_matrix);
-
-//}
-
-//void
-//QGLViewerWidget::rotate(const Vec3f& _axis,float _angle){
-
-//  Vec3f t(m_modelview_matrix[0]*m_center[0] +
-//      m_modelview_matrix[4]*m_center[1] +
-//      m_modelview_matrix[8]*m_center[2] +
-//      m_modelview_matrix[12],
-//      m_modelview_matrix[1]*m_center[0] +
-//      m_modelview_matrix[5]*m_center[1] +
-//      m_modelview_matrix[9]*m_center[2] +
-//      m_modelview_matrix[13],
-//      m_modelview_matrix[2]*m_center[0] +
-//      m_modelview_matrix[6]*m_center[1] +
-//      m_modelview_matrix[10]*m_center[2] +
-//      m_modelview_matrix[14] );
-
-//  makeCurrent();
-//  glLoadIdentity();
-//  glTranslatef(t[0], t[1], t[2]);
-//  glRotated( _angle, _axis[0], _axis[1], _axis[2]);
-//  glTranslatef(-t[0], -t[1], -t[2]);
-//  glMultMatrixd(m_modelview_matrix);
-//  glGetDoublev(GL_MODELVIEW_MATRIX, m_modelview_matrix);
-
-//}
-
-
-//bool QGLViewerWidget::map_to_sphere(const QPoint& _v2D, Vec3f& _v3D )
-//{
-//  // This is actually doing the Sphere/Hyperbolic sheet hybrid thing,
-//  // based on Ken Shoemake's ArcBall in Graphics Gems IV, 1993.
-//  double x =  (2.0*_v2D.x() - width())/width();
-//  double y = -(2.0*_v2D.y() - height())/height();
-//  double xval = x;
-//  double yval = y;
-//  double x2y2 = xval*xval + yval*yval;
-
-//  const double rsqr = TRACKBALL_RADIUS*TRACKBALL_RADIUS;
-//  _v3D[0] = xval;
-//  _v3D[1] = yval;
-//  if (x2y2 < 0.5*rsqr) {
-//    _v3D[2] = sqrt(rsqr - x2y2);
-//  } else {
-//    _v3D[2] = 0.5*rsqr/sqrt(x2y2);
-//  }
-
-//  return true;
-
-//}
-
-//void QGLViewerWidget::update_projection_matrix() {
-
-//  makeCurrent();
-//  glMatrixMode( GL_PROJECTION );
-//  glLoadIdentity();
-//  //  gluPerspective(45.0, (GLfloat) width() / (GLfloat) height(),
-//  //         0.01*radius_, 100.0*radius_);
-//  glOrtho(-1,1,-1,1, 1, 3); // FIXME: no glut
-
-//  glGetDoublev( GL_PROJECTION_MATRIX, m_projection_matrix);
-//  glMatrixMode( GL_MODELVIEW );
-
-//}
-
-//void QGLViewerWidget::view_all() {
-
-//  translate( Vec3f( -(m_modelview_matrix[0]*m_center[0] +
-//             m_modelview_matrix[4]*m_center[1] +
-//      m_modelview_matrix[8]*m_center[2] +
-//      m_modelview_matrix[12]),
-//      -(m_modelview_matrix[1]*m_center[0] +
-//      m_modelview_matrix[5]*m_center[1] +
-//      m_modelview_matrix[9]*m_center[2] +
-//      m_modelview_matrix[13]),
-//      -(m_modelview_matrix[2]*m_center[0] +
-//      m_modelview_matrix[6]*m_center[1] +
-//      m_modelview_matrix[10]*m_center[2] +
-//      m_modelview_matrix[14] +
-//      3.0*m_radius) ) );
-
-//}
-
 
 void
 QGLViewerWidget::set_scene_pos( const Vec3f& _cog, float _radius )

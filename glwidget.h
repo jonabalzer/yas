@@ -62,10 +62,8 @@ public:
   float radius() const { return m_radius; }
   const cv::Vec3f& center() const { return m_center; }
 
-//  const GLdouble* modelview_matrix() const  { return m_modelview_matrix;  }
-//  const GLdouble* projection_matrix() const { return m_projection_matrix; }
-
-//  float fovy() const { return 45.0f; }
+  // clear the current data and redraw
+  void clear_data() { m_points.clear(); m_colors.clear(); updateGL(); }
 
 protected:
 
@@ -114,20 +112,9 @@ private:
 
   cv::Vec3f m_center;
   float m_radius;
-//  GLdouble m_projection_matrix[16];
-//  GLdouble m_modelview_matrix[16];
-
   TomGine::tgCamera m_cam_origin;
   TomGine::tgCamera m_cam_perspective;
-
-
-  // virtual trackball: map 2D screen point to unit sphere
-//  bool map_to_sphere(const QPoint& point, cv::Vec3f& result);
-
-  QPoint           m_last_point_2d;
-//  cv::Vec3f        m_last_point_3d;
-//  bool             m_last_point_ok;
-
+  QPoint m_last_point_2d;
   std::vector<cv::Point3f> m_points;
   std::vector<cv::Vec3b> m_colors;
 

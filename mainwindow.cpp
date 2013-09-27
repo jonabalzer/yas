@@ -361,11 +361,14 @@ Mat MainWindow::get_depth_from_buffer() {
 
 void MainWindow::on_action3D_View_triggered()
 {
-   //m_viewer->show();
-   //m_viewer->raise();
-   //m_viewer->activateWindow();
 
+    m_glview->clear_data();
     m_glview->show();
+
+    int val = ui->spinBoxStorage->value();
+
+    if(val>0)
+        on_spinBoxStorage_valueChanged(val);
 
 }
 
@@ -533,6 +536,8 @@ void MainWindow::on_clearButton_clicked()
         ui->labeRGBStorage->clear();
         ui->labelDepthStorage->clear();
         ui->spinBoxStorage->setMinimum(0);
+        m_glview->clear_data();
+
 
     }
 
@@ -637,7 +642,7 @@ void MainWindow::update_static_view(Mat& rgb, Mat& depth) {
 
 void MainWindow::on_actionAbout_triggered()
 {
-      QMessageBox::information(this,"About","More info on YAS: http://vision.ucla.edu");
+      QMessageBox::information(this,"About","(c) J. Balzer, T. Moerwald. \n More info on YAS: http://vision.ucla.edu");
 }
 
 
@@ -915,18 +920,19 @@ void MainWindow::on_actionOpen_triggered()
         Mat trafo = Mat::eye(4,4,CV_32FC1);
         m_trafo_storage.push_back(trafo);
 
-        // display
-        emit current_image_changed(rgb,depth);
-
-        // adjust counter
-        ui->spinBoxStorage->setMaximum(m_rgb_storage.size());
-
-        if(m_rgb_storage.size()==1)
-            ui->spinBoxStorage->setMinimum(1);
-
-        ui->spinBoxStorage->setValue(m_rgb_storage.size());
-
     }
+
+    // display
+    emit current_image_changed(m_rgb_storage[m_rgb_storage.size()-1],m_depth_storage[m_depth_storage.size()-1]);
+
+    // adjust counter
+    ui->spinBoxStorage->setMaximum(m_rgb_storage.size());
+
+    if(m_rgb_storage.size()==1)
+        ui->spinBoxStorage->setMinimum(1);
+
+    ui->spinBoxStorage->setValue(m_rgb_storage.size());
+
 
 }
 
