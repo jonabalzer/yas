@@ -8,8 +8,6 @@ QT       += core gui opengl
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-
-
 TARGET = kinect_scan
 TEMPLATE = app
 
@@ -88,6 +86,8 @@ unix:!symbian: {
 
 QMAKE_CXXFLAGS += -fopenmp -fpermissive -std=c++0x -O3
 
+QMAKE_LFLAGS += -Wl,-rpath=.
+
 LIBS += -L$$PWD/../../OpenNI-2.1.0-x64/Redist \
         -L$$PWD/../../OpenNI-2.1.0-x64/Redist/OpenNI2/Drivers \
         -L/usr/local/lib/ \
@@ -115,8 +115,9 @@ DEFINES += linux
 
 mac:!symbian: {
 
+QMAKE_CXXFLAGS += -std=c++11 -fpermissive -O3
 
-QMAKE_CXXFLAGS += -std=c++11
+QMAKE_LFLAGS += -Wl,-rpath=.
 
 LIBS += -L$$PWD/../OpenNI-2.1.0/Redist \
         -L$$PWD/../OpenNI-2.1.0/Redist/OpenNI2/Drivers \
@@ -136,8 +137,9 @@ LIBS += -L$$PWD/../OpenNI-2.1.0/Redist \
         -lANN
 
 INCLUDEPATH += /usr/local/include \
-               /usr/local/include/OpenEXR \
+               /usr/local/include/OpenEXR \               
                /opt/local/include \
+               /opt/local/include/OpenEXR
                $$PWD/../OpenNI-2.1.0/Include
 
 DEFINES += __APPLE__
