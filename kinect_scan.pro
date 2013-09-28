@@ -35,8 +35,9 @@ SOURCES += main.cpp\
         poisson/MarchingCubes.cpp \
         poisson/Geometry.cpp \
         poisson/Factor.cpp \
-    poisson/Ply.cpp \
-    poisson/Octree.cpp
+        poisson/Ply.cpp \
+        poisson/Octree.cpp \
+        tgCamera.cpp
 
 HEADERS  += mainwindow.h \
             pcviewer.h \
@@ -75,7 +76,9 @@ HEADERS  += mainwindow.h \
             poisson/BSplineData.h \
             poisson/BinaryNode.h \
             poisson/Array.h \
-            poisson/Allocator.h
+            poisson/Allocator.h \
+            tgMathlib.h \
+            tgCamera.h
 
 FORMS    += mainwindow.ui \
             alignwindow.ui \

@@ -32,6 +32,9 @@
 #include <vector>
 #include <map>
 
+#include "tgCamera.h"
+#include "cam.h"
+
 class QGLViewerWidget : public QGLWidget
 {
 
@@ -59,10 +62,8 @@ public:
   float radius() const { return m_radius; }
   const cv::Vec3f& center() const { return m_center; }
 
-  const GLdouble* modelview_matrix() const  { return m_modelview_matrix;  }
-  const GLdouble* projection_matrix() const { return m_projection_matrix; }
-
-  float fovy() const { return 45.0f; }
+  // clear the current data and redraw
+  void clear_data() { m_points.clear(); m_colors.clear(); updateGL(); }
 
 protected:
 
@@ -70,10 +71,17 @@ private slots:
 
   void set_pcl(const std::vector<cv::Point3f>& points, const std::vector<cv::Vec3b>& colors);
 
+  void configure_cam(const CCam& rgb, const CDepthCam& depth);
+
 private:
 
   // initialize OpenGL states (triggered by Qt)
   void initializeGL();
+
+  // draws a coordinate frame at the origin (0,0,0)
+  void drawCoordinates(float length=1.0);
+
+  void drawPoints(float size=1.0);
 
   // draw the scene (triggered by Qt)
   void paintGL();
@@ -89,6 +97,8 @@ protected:
   virtual void mouseMoveEvent(QMouseEvent* event);
   virtual void wheelEvent(QWheelEvent* event);
 
+  virtual void keyPressEvent(QKeyEvent *event);
+
 private:
 
   // updates projection matrix
@@ -102,16 +112,9 @@ private:
 
   cv::Vec3f m_center;
   float m_radius;
-  GLdouble m_projection_matrix[16];
-  GLdouble m_modelview_matrix[16];
-
-  // virtual trackball: map 2D screen point to unit sphere
-  bool map_to_sphere(const QPoint& point, cv::Vec3f& result);
-
-  QPoint           m_last_point_2d;
-  cv::Vec3f        m_last_point_3d;
-  bool             m_last_point_ok;
-
+  TomGine::tgCamera m_cam_origin;
+  TomGine::tgCamera m_cam_perspective;
+  QPoint m_last_point_2d;
   std::vector<cv::Point3f> m_points;
   std::vector<cv::Vec3b> m_colors;
 

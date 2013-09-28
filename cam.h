@@ -99,6 +99,8 @@ public:
     //! Access to trafo.
     cv::Mat& GetExtrinsics() { return m_F; }
 
+    void GetIntrinsics(size_t size[2], float f[2], float c[2], float& alpha, float k[5]);
+
 protected:
 
     size_t m_size[2];			//!< pixel size
@@ -132,6 +134,8 @@ public:
 
     //! Reads the camera parameters from a stream.
     friend std::istream& operator >> (std::istream& is, CDepthCam& x);
+
+    void GetRange(float range[2]);
 
 private:
 
