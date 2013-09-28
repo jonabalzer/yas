@@ -112,7 +112,6 @@ DEFINES += linux
 
 mac:!symbian: {
 
-
 QMAKE_CXXFLAGS += -std=c++11
 
 LIBS += -L$$PWD/../OpenNI-2.1.0/Redist \
