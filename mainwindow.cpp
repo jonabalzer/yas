@@ -443,13 +443,15 @@ Mat MainWindow::transform_to_first_image(size_t index){
     if(index==0)
         return F;
 
-    for(size_t i=1; i<=index; i++)
+    for(size_t i=1; i<=index; i++) {
+
         F = F*m_trafo_storage[i];
+
+    }
 
     return F;
 
 }
-
 
 void MainWindow::keyPressEvent(QKeyEvent* event) {
 
@@ -691,7 +693,8 @@ Mat MainWindow::estimate_world_frame() {
 
     // project (1,0,0) onto plane
     ex *= 0;
-    ex[0] = 1 - ez[0];
+    ex[0] = 1;
+    ex = ex - ez[0]*ez;
     cv::normalize(ex);
 
     // set columns 0,1,3 of Fw2

@@ -78,6 +78,8 @@ bool CAlignRansac::EstimateMotion(vector<size_t> inds, Mat& F) {
 
     // check determinant
     //float det = cv::determinant(R);
+    //cout << det << endl;
+
     return 0;
 
 }
