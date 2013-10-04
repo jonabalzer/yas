@@ -22,7 +22,7 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include "darray.h"
-#include "kernels.h"
+#include "types.h"
 
 #include <string.h>
 #include <math.h>
@@ -36,23 +36,26 @@
 #include <random>
 
 
+#ifdef _OPENMP
+#include <omp.h>
 #include <parallel/algorithm>
+#endif
 
 using namespace std;
 
 template <class T>
 CDenseArray<T>::CDenseArray():
-	m_nrows(0),
-	m_ncols(0),
-	m_transpose(false),
+    m_nrows(0),
+    m_ncols(0),
+    m_transpose(false),
     m_data() {
 
 }
 
 template <class T>
 CDenseArray<T>::CDenseArray(size_t nrows, size_t ncols, T val):
-	m_nrows(nrows),
-	m_ncols(ncols),
+    m_nrows(nrows),
+    m_ncols(ncols),
     m_transpose(false),
 #ifndef __SSE4_1__
     m_data(new T[nrows*ncols]) {
@@ -65,9 +68,85 @@ CDenseArray<T>::CDenseArray(size_t nrows, size_t ncols, T val):
 }
 
 template <class T>
+CDenseArray<T>::CDenseArray(size_t nrows, size_t ncols, const CDenseVector<T>& x):
+    m_nrows(nrows),
+    m_ncols(ncols),
+    m_transpose(false),
+    m_data(x.Data()){
+
+    assert(nrows*ncols==x.NElems());
+
+}
+
+template <class T>
+void CDenseArray<T>::Resize(size_t nrows, size_t ncols) {
+
+    if(nrows==m_nrows && ncols==m_ncols)
+        return;
+
+    CDenseArray<T> result(nrows,ncols);
+
+    // copy data
+    for(size_t i=0; i<min(nrows,m_nrows); i++) {
+
+        for(size_t j=0; j<min(ncols,m_ncols); j++)
+            result(i,j) = this->Get(i,j);
+
+    }
+
+    *this = result;
+
+}
+
+template <class T>
+void CDenseArray<T>::Concatenate(const CDenseArray& array, bool direction) {
+
+    // put on top of each other
+    if(!direction) {
+
+        assert(m_ncols==array.NCols());
+
+        size_t oldnrows = m_nrows;
+
+        // now resize, this changes m_nrows
+        this->Resize(oldnrows+array.NRows(),m_ncols);
+
+        // copy
+        for(size_t i=0; i<array.NRows(); i++) {
+
+            for(size_t j=0; j<array.NCols(); j++)
+                this->operator ()(oldnrows+i,j) = array.Get(i,j);
+
+        }
+
+    }
+    else {
+
+        assert(m_nrows==array.NRows());
+
+        size_t oldncols = m_ncols;
+
+        // now resize, this changes m_nrows
+        this->Resize(m_nrows,oldncols+array.NCols());
+
+        // copy
+        for(size_t i=0; i<array.NRows(); i++) {
+
+            for(size_t j=0; j<array.NCols(); j++)
+                this->operator ()(i,oldncols+j) = array.Get(i,j);
+
+        }
+
+
+    }
+
+}
+
+
+template <class T>
 CDenseArray<T>::CDenseArray(const CDenseArray& array):
-	m_nrows(array.m_nrows),
-	m_ncols(array.m_ncols),
+    m_nrows(array.m_nrows),
+    m_ncols(array.m_ncols),
     m_transpose(array.m_transpose),
     m_data(array.m_data) {
 
@@ -90,8 +169,8 @@ CDenseArray<T> CDenseArray<T>::operator=(const CDenseArray<T>& array) {
 
 template <class T>
 CDenseArray<T>::CDenseArray(size_t nrows, size_t ncols, shared_ptr<T> data):
-	m_nrows(nrows),
-	m_ncols(ncols),
+    m_nrows(nrows),
+    m_ncols(ncols),
     m_transpose(false),
     m_data(data) {}
 
@@ -103,7 +182,20 @@ void CDenseArray<T>::Set(shared_ptr<T> data) {
 }
 
 template <class T>
-CDenseArray<T> CDenseArray<T>::Clone() {
+void CDenseArray<T>::Set(const CBivariateFunction& f) {
+
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++)
+            this->Set(i,j,f(j,i));
+
+    }
+
+}
+
+
+template <class T>
+CDenseArray<T> CDenseArray<T>::Clone() const {
 
     CDenseArray<T> result(m_nrows,m_ncols);
 
@@ -126,10 +218,10 @@ CDenseArray<T>::~CDenseArray() {
 template <class T>
 void CDenseArray<T>::Eye() {
 
-	this->Scale(0);
+    this->Scale(0);
 
-	for(size_t i=0; i<min(this->NRows(),this->NCols());i++)
-		this->operator ()(i,i) = 1;
+    for(size_t i=0; i<min(this->NRows(),this->NCols());i++)
+        this->operator ()(i,i) = 1;
 
 }
 
@@ -244,31 +336,53 @@ void CDenseArray<T>::Ones() {
 template <class U>
 ostream& operator<< (ostream& os, const CDenseArray<U>& x) {
 
-	os.setf(ios::scientific,ios::floatfield);
-	os.precision(5);
+    os.setf(ios::scientific,ios::floatfield);
+    os.precision(5);
 
-	for(size_t i=0; i<x.m_nrows; i++) {
+    for(size_t i=0; i<x.m_nrows; i++) {
 
-		for(size_t j=0; j<x.m_ncols-1; j++) {
+        for(size_t j=0; j<x.m_ncols-1; j++) {
 
-			os << (float)x.Get(i,j) << " ";
+            os << x.Get(i,j) << " ";
 
-		}
+        }
 
-		if(i<x.m_nrows-1)
-			os << (float)x.Get(i,x.m_ncols-1) << endl;
-		else
-			os << (float)x.Get(i,x.m_ncols-1);
+        if(i<x.m_nrows-1)
+            os << x.Get(i,x.m_ncols-1) << endl;
+        else
+            os << x.Get(i,x.m_ncols-1);
 
-	}
+    }
 
-	return os;
+    return os;
+
+}
+
+template <>
+ostream& operator<< (ostream& os, const CDenseArray<unsigned char>& x) {
+
+    for(size_t i=0; i<x.m_nrows; i++) {
+
+        for(size_t j=0; j<x.m_ncols-1; j++) {
+
+            os << (unsigned int)x.Get(i,j) << " ";
+
+        }
+
+        if(i<x.m_nrows-1)
+            os << (unsigned int)x.Get(i,x.m_ncols-1) << endl;
+        else
+            os << (unsigned int)x.Get(i,x.m_ncols-1);
+
+    }
+
+    return os;
 
 }
 
 ofstream& operator<< (ofstream& os, const CDenseArray<bool>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " B1U" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::B1U << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(bool)*x.NElems());
 
@@ -276,9 +390,20 @@ ofstream& operator<< (ofstream& os, const CDenseArray<bool>& x) {
 
 }
 
+ofstream& operator << (ofstream& os, const CDenseArray<unsigned char>& x) {
+
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::C1U << endl;
+
+    os.write((char*)(x.m_data.get()),sizeof(unsigned char)*x.NElems());
+
+    return os;
+
+}
+
+
 ofstream& operator<< (ofstream& os, const CDenseArray<int>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " I4S" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::I4S << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(int)*x.NElems());
 
@@ -288,7 +413,7 @@ ofstream& operator<< (ofstream& os, const CDenseArray<int>& x) {
 
 ofstream& operator<< (ofstream& os, const CDenseArray<float>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " F4S" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::F4S << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(float)*x.NElems());
 
@@ -298,7 +423,7 @@ ofstream& operator<< (ofstream& os, const CDenseArray<float>& x) {
 
 ofstream& operator<< (ofstream& os, const CDenseArray<size_t>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " L8U" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::L8U << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(size_t)*x.NElems());
 
@@ -308,7 +433,7 @@ ofstream& operator<< (ofstream& os, const CDenseArray<size_t>& x) {
 
 ofstream& operator<< (ofstream& os, const CDenseArray<double>& x) {
 
-    os << x.NRows() << " " << x.NCols() << " D8S" << endl;
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::D8S << endl;
 
     os.write((char*)(x.m_data.get()),sizeof(double)*x.NElems());
 
@@ -316,35 +441,48 @@ ofstream& operator<< (ofstream& os, const CDenseArray<double>& x) {
 
 }
 
-template<>
-ETYPE CDenseArray<bool>::GetType() { return B1U; }
+ofstream& operator<< (ofstream& os, const CDenseArray<vec3>& x) {
+
+    os << x.NRows() << " " << x.NCols() << " " << (int)ETYPE::D8S3 << endl;
+
+    os.write((char*)(x.m_data.get()),sizeof(vec3)*x.NElems());
+
+    return os;
+
+}
 
 template<>
-ETYPE CDenseArray<int>::GetType() { return I4S; }
+ETYPE CDenseArray<bool>::GetType() { return ETYPE::B1U; }
 
 template<>
-ETYPE CDenseArray<size_t>::GetType() { return L8U; }
+ETYPE CDenseArray<int>::GetType() { return ETYPE::I4S; }
 
 template<>
-ETYPE CDenseArray<float>::GetType() { return F4S; }
+ETYPE CDenseArray<size_t>::GetType() { return ETYPE::L8U; }
 
 template<>
-ETYPE CDenseArray<double>::GetType() { return D8S; }
+ETYPE CDenseArray<float>::GetType() { return ETYPE::F4S; }
+
+template<>
+ETYPE CDenseArray<double>::GetType() { return ETYPE::D8S; }
+
+template<>
+ETYPE CDenseArray<vec3>::GetType() { return ETYPE::D8S3; }
 
 template<class U>
 istream& operator >> (istream& is, CDenseArray<U>& x) {
 
-	for(size_t i=0; i<x.m_nrows; i++) {
+    for(size_t i=0; i<x.m_nrows; i++) {
 
-		for(size_t j=0; j<x.m_ncols; j++) {
+        for(size_t j=0; j<x.m_ncols; j++) {
 
-			 is >> x(i,j);
+             is >> x(i,j);
 
-		}
+        }
 
-	}
+    }
 
-	return is;
+    return is;
 
 }
 
@@ -372,139 +510,279 @@ ifstream& operator >> (ifstream& in, CDenseArray<U>& x) {
 
     }
 
-    char sign, type;
-    size_t nbytes;
-
-    in >> type;
-    in >> nbytes;
-    in >> sign;
+    int temp;
+    in >> temp;
+    ETYPE type = (ETYPE)temp;
     in.get();
-
-    stringstream ss;
-    ss << type << nbytes << sign;
-
-    // create buffer
-    char* buffer = new char[nrows*ncols*nbytes];
-
-    // read data
-    in.read(buffer,nbytes*nrows*ncols);
 
     U* pdata = x.m_data.get();
 
-    if(ss.str()=="B1U") {
+    size_t nelems = nrows*ncols;
 
-        bool* cbuffer = (bool*)buffer;
+    switch(type) {
+
+    case ETYPE::B1U:
+    {
+
+        bool* buffer = new bool[nelems];
+        in.read((char*)buffer,nelems*sizeof(bool));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="S2S") {
+    case ETYPE::C1S:
+    {
 
-        short* cbuffer = (short*)buffer;
+        char* buffer = new char[nelems];
+        in.read((char*)buffer,nelems*sizeof(char));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="S2U") {
+    case ETYPE::C1U:
+    {
 
-        unsigned short* cbuffer = (unsigned short*)buffer;
+        unsigned char* buffer = new unsigned char[nelems];
+        in.read((char*)buffer,nelems*sizeof(unsigned char));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="C4S") {
+    case ETYPE::S2S:
+    {
 
-        char* cbuffer = (char*)buffer;
+        short* buffer = new short[nelems];
+        in.read((char*)buffer,nelems*sizeof(short));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
+
+    }
+    case ETYPE::S2U:
+    {
+
+        unsigned short* buffer = new unsigned short[nelems];
+        in.read((char*)buffer,nelems*sizeof(unsigned short));
+
+        // copy data and cast
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="C4U") {
+    case ETYPE::I4S:
+    {
 
-        unsigned char* cbuffer = (unsigned char*)buffer;
+        int* buffer = new int[nelems];
+        in.read((char*)buffer,nelems*sizeof(int));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="I4S") {
+    case ETYPE::I4U:
+    {
 
-        int* cbuffer = (int*)buffer;
+        unsigned int* buffer = new unsigned int[nelems];
+        in.read((char*)buffer,nelems*sizeof(unsigned int));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="I4U") {
+    case ETYPE::F4S:
+    {
 
-        unsigned int* cbuffer = (unsigned int*)buffer;
+        float* buffer = new float[nelems];
+        in.read((char*)buffer,nelems*sizeof(float));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="F4S") {
+    case ETYPE::L8S:
+    {
 
-        float* cbuffer = (float*)buffer;
+        long int* buffer = new long int[nelems];
+        in.read((char*)buffer,nelems*sizeof(long int));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
+    case ETYPE::L8U:
+    {
 
-    if(ss.str()=="L8S") {
-
-        long* cbuffer = (long*)buffer;
+        size_t* buffer = new size_t[nelems];
+        in.read((char*)buffer,nelems*sizeof(size_t));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="L8U") {
+    case ETYPE::D8S:
+    {
 
-        unsigned long* cbuffer = (unsigned long*)buffer;
+        double* buffer = new double[nelems];
+        in.read((char*)buffer,nelems*sizeof(double));
 
         // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
+        for(size_t i=0; i<nelems; i++)
+            pdata[i] = (U)buffer[i];
+
+        delete [] buffer;
+
+        break;
 
     }
 
-    if(ss.str()=="D8S") {
+    default:
+        return in;
 
-        double* cbuffer = (double*)buffer;
-
-        // copy data and cast
-        for(size_t i=0; i<nrows*ncols; i++)
-            pdata[i] = (U)cbuffer[i];
 
     }
-
-    delete [] buffer;
 
     return in;
+
+}
+
+ifstream& operator >> (ifstream& in, CDenseArray<vec3>& x) {
+
+    // read information
+    size_t nrows, ncols;
+    in >> nrows;
+    in >> ncols;
+
+    // resize storage if necessary
+    if(nrows!=x.NRows() || ncols!=x.NCols()) {
+
+        x.m_data.reset();
+
+#ifndef __SSE4_1__
+        x.m_data.reset(new vec3[nrows*ncols]);
+#else
+        x.m_data.reset((vec3*)_mm_malloc(nrows*ncols*sizeof(vec3),16));
+#endif
+        x.m_nrows = nrows;
+        x.m_ncols = ncols;
+        x.m_transpose = false;
+
+    }
+
+    int temp;
+    in >> temp;
+    ETYPE type = (ETYPE)temp;
+    in.get();
+
+    if(type!=ETYPE::D8S3) {
+
+        cerr << "Could not read file..." << endl;
+
+    }
+
+    in.read((char*)x.m_data.get(),nrows*ncols*sizeof(vec3));
+
+    return in;
+
+}
+
+template <class T>
+bool CDenseArray<T>::WriteToFile(const char* filename) {
+
+    ofstream out(filename);
+
+    if(!out.is_open()) {
+
+        cerr << "ERROR: Could not open " << filename << "..." << endl;
+        return 1;
+
+    }
+
+    out << *this;
+
+    out.close();
+
+    return 0;
+
+}
+
+template <class T>
+bool CDenseArray<T>::ReadFromFile(const char* filename) {
+
+    ifstream in(filename);
+
+    if(!in.is_open()) {
+
+        cerr << "ERROR: File " << filename << " not found..." << endl;
+        return 1;
+
+    }
+
+    in >> *this;
+
+    in.close();
+
+    return 0;
 
 }
 
@@ -531,59 +809,217 @@ bool CDenseArray<T>::Normalize() {
 template <class T>
 T CDenseArray<T>::Trace() const {
 
-	size_t m = min(m_nrows,m_ncols);
+    size_t m = min(m_nrows,m_ncols);
 
-	T sum = 0;
+    T sum = 0;
 
-	for(size_t i=0; i<m; i++)
-		sum += Get(i,i);
+    for(size_t i=0; i<m; i++)
+        sum += Get(i,i);
 
-	return sum;
+    return sum;
 
 }
 
 template <class T>
 T CDenseArray<T>::Determinant() const {
 
-	assert((m_ncols==2 && m_nrows==2) || (m_ncols==3 && m_nrows==3));
+    assert((m_ncols==2 && m_nrows==2) || (m_ncols==3 && m_nrows==3));
 
-	T det = 0;
+    T det = 0;
 
-	switch (m_nrows) {
+    switch (m_nrows) {
 
-		case 2:
+        case 2:
 
-			det = Get(0,0)*Get(1,1) - Get(0,1)*Get(1,0);
+            det = Get(0,0)*Get(1,1) - Get(0,1)*Get(1,0);
 
-			break;
+            break;
 
-		case 3:
+        case 3:
 
-			det = Get(0,0)*(Get(1,1)*Get(2,2)-Get(1,2)*Get(2,1)) - Get(0,1)*(Get(1,0)*Get(2,2)-Get(2,0)*Get(1,2)) + Get(0,2)*(Get(1,0)*Get(2,1)-Get(2,0)*Get(1,1));
+            det = Get(0,0)*(Get(1,1)*Get(2,2)-Get(1,2)*Get(2,1)) - Get(0,1)*(Get(1,0)*Get(2,2)-Get(2,0)*Get(1,2)) + Get(0,2)*(Get(1,0)*Get(2,1)-Get(2,0)*Get(1,1));
 
-			break;
+            break;
 
-		default:
+        default:
 
-			det = 0;
+            det = 0;
 
-			break;
-	}
+            break;
+    }
 
-	return det;
+    return det;
 
 }
 
 
+template <>
+void CDenseArray<rgb>::Shrink(double lambda) {
+
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++) {
+
+            double xabs = this->Get(i,j).Norm2();
+
+            CVector<double,3> result;
+
+            if(xabs<lambda)
+                result = 0.f*this->Get(i,j);
+            else {
+
+                // cast into double
+                result = CVector<double,3>(this->Get(i,j));
+
+                // normalize
+                result.Normalize();
+
+                // shrink
+                result = (xabs-lambda)*result;
+
+            }
+
+            // cast back
+            this->Set(i,j,rgb(result));
+
+        }
+
+    }
+
+}
+
+template <class T>
+void CDenseArray<T>::Shrink(double lambda) {
+
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++) {
+
+            double xabs = fabs(this->Get(i,j));
+
+            if(xabs<lambda)
+                this->Set(i,j,0);
+            else
+                this->Set(i,j,copysign(xabs-lambda,this->Get(i,j)));
+
+        }
+
+    }
+
+}
+
+template <>
+void CDenseArray<vec3>::Shrink(double lambda) {
+
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++) {
+
+            vec3 x = this->Get(i,j);
+
+            double xabs = x.Norm2();
+
+            if(xabs<lambda)
+                this->Set(i,j,vec3());
+            else {
+
+                x.Normalize();
+
+                this->Set(i,j,(xabs-lambda)*x);
+
+            }
+
+        }
+
+    }
+
+}
+
+template <class T>
+bool CDenseArray<T>::Invert() {
+
+    // this is not implemented yet for fields other than the reals
+    assert(false);
+
+    return false;
+
+}
+
+template <>
+bool CDenseArray<double>::Invert() {
+
+    assert((m_ncols==2 && m_nrows==2) || (m_ncols==3 && m_nrows==3));
+
+    double* pdata = m_data.get();
+    double* temp = new double[m_nrows*m_ncols];
+    memcpy(temp,pdata,m_nrows*m_ncols*sizeof(double));
+
+    if(m_nrows==2) {
+
+        double det = temp[0]*temp[3]-temp[1]*temp[2];
+
+        if(det==0) {
+
+            delete [] temp;
+            return 1;
+
+        }
+
+        double deti = 1/det;
+
+        // first linear part
+        pdata[0] = deti*temp[3];
+        pdata[1] = -deti*temp[1];
+        pdata[2] = -deti*temp[2];
+        pdata[3] = deti*temp[0];
+
+    }
+    else if(m_nrows==3) {
+
+        // inverse of det
+        double det = temp[0]*(temp[4]*temp[8] - temp[5]*temp[7])
+                   - temp[3]*(temp[8]*temp[1] - temp[2]*temp[7])
+                   + temp[6]*(temp[1]*temp[5] - temp[2]*temp[4]);
+
+        if(det==0) {
+
+            delete [] temp;
+            return 1;
+
+        }
+
+        double deti = 1.0/det;
+
+        // first linear part
+        pdata[0] = deti*(temp[4]*temp[8] - temp[5]*temp[7]);
+        pdata[1] = -deti*(temp[1]*temp[8] - temp[2]*temp[7]);
+        pdata[2] = deti*(temp[1]*temp[5] - temp[2]*temp[4]);
+        pdata[3] = -deti*(temp[3]*temp[8] - temp[5]*temp[6]);
+        pdata[4] = deti*(temp[0]*temp[8] - temp[2]*temp[6]);
+        pdata[5] = -deti*(temp[0]*temp[5] - temp[2]*temp[3]);
+        pdata[6] = deti*(temp[3]*temp[7] - temp[4]*temp[6]);
+        pdata[7] = -deti*(temp[0]*temp[7] - temp[1]*temp[6]);
+        pdata[8] = deti*(temp[0]*temp[4] - temp[1]*temp[3]);
+
+    }
+    else {
+
+        delete [] temp;
+        return 1;
+
+    }
+
+    delete [] temp;
+
+    return 0;
+
+}
+
 template <class T>
 void CDenseArray<T>::Transpose() {
 
-	size_t temp = m_nrows;
-
-	m_nrows = m_ncols;
-	m_ncols = temp;
-
-	m_transpose = !m_transpose;
+    std::swap(m_nrows,m_ncols);
+    m_transpose = !m_transpose;
 
 }
 
@@ -628,12 +1064,53 @@ double CDenseArray<T>::Norm(double p) const {
 
     assert(p>0);
 
-	double sum = 0;
+    double sum = 0;
 
     T* pdata = m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
-        sum += pow(fabs((double)pdata[i]),p);
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        sum += pow(fabs(pdata[i]),p);
+
+    return pow(sum,1/p);
+
+}
+
+template <>
+double CDenseArray<vec3>::Norm(double p) const {
+
+    assert(p>0);
+
+    double sum = 0;
+
+    vec3* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            sum += pow(fabs(pdata[i].Get(j)),p);
+
+    }
+
+    return pow(sum,1/p);
+
+}
+
+
+template <>
+double CDenseArray<rgb>::Norm(double p) const {
+
+    assert(p>0);
+
+    double sum = 0;
+
+    rgb* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            sum += pow(fabs(pdata[i].Get(j)),p);
+
+    }
 
     return pow(sum,1/p);
 
@@ -642,14 +1119,14 @@ double CDenseArray<T>::Norm(double p) const {
 template <class T>
 T CDenseArray<T>::Sum() const {
 
-	T sum = 0;
+    T sum = 0;
 
     T* pdata = m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         sum += pdata[i];
 
-	return sum;
+    return sum;
 
 }
 
@@ -664,6 +1141,23 @@ void CDenseArray<T>::Abs() {
 
 }
 
+template <>
+void CDenseArray<vec3>::Abs() {
+
+    vec3* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pdata[i] = pdata[i].Abs();
+
+}
+
+template <>
+void CDenseArray<rgb>::Abs() {
+
+    // unsigned char are positive already, so do nothing
+    return;
+
+}
 
 template <class T>
 T CDenseArray<T>::Get(size_t i, size_t j) const {
@@ -672,12 +1166,78 @@ T CDenseArray<T>::Get(size_t i, size_t j) const {
 
     T* pdata = m_data.get();
 
-	if(!m_transpose)
+    if(!m_transpose)
         return pdata[m_nrows*j + i];
-	else
+    else
         return pdata[m_ncols*i + j];
 
 }
+
+template <class T>
+template<typename U>
+U CDenseArray<T>::Get(const CVector<double,2> &p) {
+
+    double u, v;
+    u = p.Get(0);
+    v = p.Get(1);
+
+    int i = (int)floor(v);
+    int j = (int)floor(u);
+
+    if(i<0 || i>NRows()-2 || j<0 || j>NCols()-2)
+        return U(0);
+
+    double vd = v - i;
+    double ud = u - j;
+
+    U A00, A01, A10, A11, A0, A1;
+    A00 = U(Get(i,j));
+    A01 = U(Get(i,j+1));
+    A10 = U(Get(i+1,j));
+    A11 = U(Get(i+1,j+1));
+
+    A0 = A00*(1-ud) + A01*ud;
+    A1 = A10*(1-ud) + A11*ud;
+
+    return A0*(1-vd) + A1*vd;
+
+}
+
+template double CDenseArray<double>::Get<double>(const CVector<double,2>& p);
+template double CDenseArray<unsigned char>::Get<double>(const CVector<double,2>& p);
+template vec3 CDenseArray<rgb>::Get<vec3>(const CVector<double,2>& p);
+template vec3 CDenseArray<vec3>::Get<vec3>(const CVector<double,2>& p);
+
+
+template <class T>
+template<typename U>
+vector<U> CDenseArray<T>::Gradient(const CVector<double,2>& p) {
+
+    if(p.Get(0)<1 || p.Get(1)<1 || p.Get(0)>=NCols()-2 || p.Get(1)>=NRows()-2)
+        return vector<U>(2);
+
+    vec2 dx = { 1, 0 };
+    vec2 dy = { 0, 1 };
+
+    U I0x, I0y, I1x, I1y;
+    I0x = this->Get<U>(p-dx);
+    I0y = this->Get<U>(p-dy);
+    I1x = this->Get<U>(p+dx);
+    I1y = this->Get<U>(p+dy);
+
+    cout << I0x << " " << I1x << endl;
+    vector<U> grad;
+    grad.push_back(0.5*(I1x-I0x));
+    grad.push_back(0.5*(I1y-I0y));
+    cout << grad[0] << " " << grad[1] << endl;
+
+    return grad;
+
+}
+
+template vector<double> CDenseArray<double>::Gradient<double>(const CVector<double,2>& p);
+template vector<double> CDenseArray<unsigned char>::Gradient<double>(const CVector<double,2>& p);
+template vector<vec3> CDenseArray<rgb>::Gradient<vec3>(const CVector<double,2>& p);
 
 template <class T>
 CDenseVector<T> CDenseArray<T>::GetColumn(size_t j) const {
@@ -685,13 +1245,24 @@ CDenseVector<T> CDenseArray<T>::GetColumn(size_t j) const {
     if(m_transpose)
         return GetRow(j);
 
-    // create shared pointer to col data
-    shared_ptr<T> colptr(m_data,m_data.get()+j*m_nrows);
+    // if sizeof(T)*nrows is a multiple of 16, we can make a shallow copy
+    if(sizeof(T)*m_nrows%16==0) {
 
-    // create column view
-    CDenseVector<T> col(m_nrows,colptr);
+        shared_ptr<T> colptr(m_data,m_data.get()+j*m_nrows);
 
-	return col;
+        // create column view
+        CDenseVector<T> col(m_nrows,colptr);
+
+        return col;
+
+    }
+
+    CDenseVector<T> col(m_nrows); // this will be 16-byte aligned
+
+    for(size_t i=0; i<m_nrows; i++)
+        col(i) = Get(i,j);
+
+    return col;
 
 }
 
@@ -700,8 +1271,8 @@ void CDenseArray<T>::SetColumn(size_t j, const CDenseVector<T>& col) {
 
     assert(col.NCols()==1 && col.NRows() == NRows() && j<=NCols());
 
-	for(size_t i=0; i<col.NRows(); i++)
-		this->operator ()(i,j) = col.Get(i);
+    for(size_t i=0; i<col.NRows(); i++)
+        this->operator ()(i,j) = col.Get(i);
 
 }
 
@@ -725,10 +1296,10 @@ CDenseVector<T> CDenseArray<T>::GetRow(size_t i) const {
     CDenseVector<T> row(m_ncols);
     row.Transpose();
 
-	for(size_t j=0; j<m_ncols; j++)
-		row(j) = Get(i,j);
+    for(size_t j=0; j<m_ncols; j++)
+        row(j) = Get(i,j);
 
-	return row;
+    return row;
 
 }
 
@@ -739,9 +1310,9 @@ T& CDenseArray<T>::operator()(size_t i, size_t j) {
 
     T* pdata = m_data.get();
 
-	if(!m_transpose)
+    if(!m_transpose)
         return pdata[m_nrows*j + i];
-	else
+    else
         return pdata[m_nrows*i + j];				// m_nrows is replaced by m_ncols in transpose method
 
 }
@@ -753,10 +1324,32 @@ CDenseArray<T> CDenseArray<T>::operator+(const T& scalar) const {
 
     T* pdata = m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdata[i] = pdata[i] + scalar;
 
-	return result;
+    return result;
+
+}
+
+template <class T>
+CDenseArray<T> CDenseArray<T>::operator/(const CDenseArray<T>& array) const {
+
+    assert(m_nrows==array.m_nrows && m_ncols==array.m_ncols);
+
+    CDenseArray<T> result(array.m_nrows,array.m_ncols);
+
+    // this does not work low-level because of possible transpositions
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++) {
+
+            result(i,j) = this->Get(i,j)/array.Get(i,j);
+
+        }
+
+    }
+
+    return result;
 
 }
 
@@ -768,10 +1361,10 @@ CDenseArray<T> CDenseArray<T>::operator-(const T& scalar) const {
     T* pdata = m_data.get();
     T* pdatares = result.m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdatares[i] = pdata[i] - scalar;
 
-	return result;
+    return result;
 
 }
 
@@ -779,22 +1372,22 @@ CDenseArray<T> CDenseArray<T>::operator-(const T& scalar) const {
 template <class T>
 CDenseArray<T> CDenseArray<T>::operator+(const CDenseArray& array) const {
 
-	assert(m_nrows==array.m_nrows && m_ncols==array.m_ncols);
+    assert(m_nrows==array.m_nrows && m_ncols==array.m_ncols);
 
     CDenseArray<T> result(array.m_nrows,array.m_ncols);
 
     // this does not work low-level because of possible transpositions
-	for(size_t i=0; i<m_nrows; i++) {
+    for(size_t i=0; i<m_nrows; i++) {
 
-		for(size_t j=0; j<m_ncols; j++) {
+        for(size_t j=0; j<m_ncols; j++) {
 
-			result(i,j) = this->Get(i,j) + array.Get(i,j);
+            result(i,j) = this->Get(i,j) + array.Get(i,j);
 
-		}
+        }
 
-	}
+    }
 
-	return result;
+    return result;
 
 }
 
@@ -802,7 +1395,7 @@ CDenseArray<T> CDenseArray<T>::operator+(const CDenseArray& array) const {
 template <class T>
 CDenseArray<T> CDenseArray<T>::operator^(const CDenseArray& array) const {
 
-	assert(m_nrows==array.m_nrows && m_ncols==array.m_ncols);
+    assert(m_nrows==array.m_nrows && m_ncols==array.m_ncols);
 
     CDenseArray<T> result(array.m_nrows,array.m_ncols);
 
@@ -810,10 +1403,10 @@ CDenseArray<T> CDenseArray<T>::operator^(const CDenseArray& array) const {
     T* py = array.m_data.get();
     T* pz = result.m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         pz[i] = px[i]*py[i];
 
-	return result;
+    return result;
 
 }
 
@@ -832,40 +1425,71 @@ double CDenseArray<T>::InnerProduct(const CDenseArray<T>& x, const CDenseArray<T
 }
 
 template <class T>
+double CDenseArray<T>::InnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y, CMercerKernel<T>& kernel) {
+
+    assert(x.m_nrows==y.m_nrows && x.m_ncols==y.m_ncols);
+
+    T* px = x.m_data.get();
+    T* py = y.m_data.get();
+
+    return kernel.Evaluate(px,py);
+
+}
+
+template <class T>
+CDenseVector<T> CDenseArray<T>::ColumwiseInnerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y) {
+
+    assert(x.m_nrows==y.m_nrows && x.m_ncols==y.m_ncols);
+
+    CDenseVector<T> result(x.m_ncols);
+
+    for(size_t i=0; i<x.m_nrows; i++) {
+
+        for(size_t j=0; j<x.m_ncols; j++)
+            result(j) += x.Get(i,j)*y.Get(i,j);
+
+    }
+
+    return result;
+
+}
+
+
+template <class T>
 CDenseArray<T> CDenseArray<T>::KroneckerProduct(const CDenseArray<T>& x, const CDenseArray<T>& y) {
 
     CDenseArray<T> result(x.NRows()*y.NRows(),x.NCols()*y.NCols());
 
-	for(size_t i=0; i<x.NRows(); i++) {
+    for(size_t i=0; i<x.NRows(); i++) {
 
-		for(size_t j=0; j<x.NCols(); j++) {
+        for(size_t j=0; j<x.NCols(); j++) {
 
-			for(size_t k=0; k<y.NRows(); k++) {
+            for(size_t k=0; k<y.NRows(); k++) {
 
-				for(size_t l=0; l<y.NCols(); l++) {
+                for(size_t l=0; l<y.NCols(); l++) {
 
-					result(i*y.NRows()+k,j*y.NCols()+l) = x.Get(i,j)*y.Get(k,l);
+                    result(i*y.NRows()+k,j*y.NCols()+l) = x.Get(i,j)*y.Get(k,l);
 
-				}
+                }
 
-			}
+            }
 
-		}
+        }
 
-	}
+    }
 
-	return result;
+    return result;
 
 }
 
 template <class T>
 CDenseArray<T> CDenseArray<T>::Transpose(const CDenseArray<T>& x) {
 
-	CDenseArray<T> result(x);
+    CDenseArray<T> result(x);
 
-	result.Transpose();
+    result.Transpose();
 
-	return result;
+    return result;
 
 }
 
@@ -873,21 +1497,21 @@ CDenseArray<T> CDenseArray<T>::Transpose(const CDenseArray<T>& x) {
 template <class T>
 CDenseArray<T> CDenseArray<T>::operator-(const CDenseArray<T>& array) const {
 
-	assert(m_nrows==array.m_nrows && m_ncols==array.m_ncols);
+    assert(m_nrows==array.m_nrows && m_ncols==array.m_ncols);
 
     CDenseArray<T> result(array.m_nrows,array.m_ncols);
 
-	for(size_t i=0; i<m_nrows; i++) {
+    for(size_t i=0; i<m_nrows; i++) {
 
-		for(size_t j=0; j<m_ncols; j++) {
+        for(size_t j=0; j<m_ncols; j++) {
 
-			result(i,j) = this->Get(i,j) - array.Get(i,j);
+            result(i,j) = this->Get(i,j) - array.Get(i,j);
 
-		}
+        }
 
-	}
+    }
 
-	return result;
+    return result;
 
 }
 
@@ -899,10 +1523,10 @@ CDenseArray<T> CDenseArray<T>::operator*(const T& scalar) const {
     T* pdatares = result.m_data.get();
     T* pdata = m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdatares[i] = scalar*pdata[i];
 
-	return result;
+    return result;
 
 }
 
@@ -914,74 +1538,151 @@ CDenseArray<T> CDenseArray<T>::operator/(const T& scalar) const {
     T* pdatares = result.m_data.get();
     T* pdata = m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdatares[i] = pdata[i]/scalar;
 
-	return result;
+    return result;
 
 }
 
 template <class T>
 CDenseArray<T> CDenseArray<T>::operator*(const CDenseArray<T>& array) const {
 
-	assert(m_ncols==array.m_nrows);
+    assert(m_ncols==array.m_nrows);
 
     CDenseArray<T> result(m_nrows,array.m_ncols);
 
+#pragma omp parallel for
+    for(size_t i=0; i<m_nrows; i++) {
 
-	for(size_t i=0; i<m_nrows; i++) {
+        for(size_t j=0; j<array.m_ncols; j++) {
 
-		for(size_t j=0; j<array.m_ncols; j++) {
+            T sum = 0;
 
-			T sum = 0;
+            for(size_t k=0; k<m_ncols; k++)
+                sum += Get(i,k)*(array.Get(k,j));
 
-			for(size_t k=0; k<m_ncols; k++)
-				sum += Get(i,k)*(array.Get(k,j));
+            result(i,j) = sum;
 
-			result(i,j) = sum;
+        }
 
-		}
-
-	}
+    }
 
 
-	return result;
+    return result;
 
 }
 
 template <class T>
 CDenseVector<T> CDenseArray<T>::operator*(const CDenseVector<T>& vector) const {
 
-	assert(m_ncols==vector.m_nrows);
+    assert(m_ncols==vector.m_nrows);
 
     CDenseVector<T> result(m_nrows);
 
-	for(size_t i=0; i<m_nrows; i++) {
+#pragma omp parallel for
+    for(size_t i=0; i<m_nrows; i++) {
 
-		T sum = 0;
+        T sum = 0;
 
-		for(size_t k=0; k<m_ncols; k++)
-			sum += Get(i,k)*(vector.Get(k));
+        for(size_t k=0; k<m_ncols; k++)
+            sum += Get(i,k)*(vector.Get(k));
 
-		result(i) = sum;
+        result(i) = sum;
 
-	}
+    }
 
-	return result;
+    return result;
 
 }
 
+/*template<class T>
+template<class Array> Array CDenseArray<T>::operator*(const Array& array) const {
 
+
+    assert(m_ncols==array.m_nrows);
+
+    Array result(m_nrows,array.m_ncols);
+
+#pragma omp parallel for
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<array.m_ncols; j++) {
+
+            T sum = 0;
+
+            for(size_t k=0; k<m_ncols; k++)
+                sum += Get(i,k)*(array.Get(k,j));
+
+            result(i,j) = sum;
+
+        }
+
+    }
+
+
+    return result;
+
+}
+
+template CDenseArray<double> CDenseArray<double>::operator *(const CDenseArray<double>& x) const;
+template CDenseVector<double> CDenseArray<double>::operator *(const CDenseVector<double>& x) const;
+template CDenseArray<float> CDenseArray<float>::operator *(const CDenseArray<float>& x) const;
+template CDenseVector<float> CDenseArray<float>::operator *(const CDenseVector<float>& x) const;
+template CDenseVector<int> CDenseArray<int>::operator *(const CDenseVector<int>& x) const;
+template CDenseArray<int> CDenseArray<int>::operator *(const CDenseArray<int>& x) const;*/
+
+
+template<class T>
+template <u_int n> CVector<T,n> CDenseArray<T>::operator*(const CVector<T,n>& vector) const {
+
+    assert(m_ncols==n && m_nrows==n);
+
+    CVector<T,n> result;
+
+    for(size_t i=0; i<n; i++) {
+
+        T sum = 0;
+
+        for(size_t k=0; k<m_ncols; k++)
+            sum += Get(i,k)*(vector.Get(k));
+
+        result(i) = sum;
+
+    }
+
+    return result;
+
+}
 
 template <class T>
 void CDenseArray<T>::Scale(T scalar) {
 
     T* pdata = m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdata[i] *= scalar;
 
 }
+
+template <class T>
+CDenseArray<T> CDenseArray<T>::ScaleColumns(const CDenseVector<T>& s) {
+
+    CDenseArray<T> result(m_nrows,m_ncols);
+
+    for(size_t i=0; i<m_nrows; i++) {
+
+        for(size_t j=0; j<m_ncols; j++)
+            result(i,j) = this->Get(i,j)*s.Get(j);
+
+    }
+
+    return result;
+
+}
+
+
+
 
 template <class T>
 void CDenseArray<T>::Add(const T& scalar) {
@@ -1004,9 +1705,9 @@ T CDenseArray<T>::Median() {
     sort(temp.m_data.get(),temp.m_data.get()+temp.NElems());
 #endif
 
-	if(temp.NElems()%2==1)
+    if(temp.NElems()%2==1)
         return temp.m_data.get()[(size_t)((temp.NElems()+1)/2)-1];
-	else
+    else
         return 0.5*(temp.m_data.get()[temp.NElems()/2-1]+temp.m_data.get()[temp.NElems()/2]);
 
 }
@@ -1014,7 +1715,7 @@ T CDenseArray<T>::Median() {
 template <class T>
 T CDenseArray<T>::Variance() {
 
-	T mean = this->Mean();
+    T mean = this->Mean();
 
     CDenseArray<T> temp = this->Clone();
 
@@ -1022,10 +1723,10 @@ T CDenseArray<T>::Variance() {
     T* pthisdata = m_data.get();
 
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdata[i] = (pthisdata[i] - mean)*(pthisdata[i] - mean);
 
-	return temp.Mean();
+    return temp.Mean();
 
 }
 
@@ -1046,49 +1747,136 @@ T CDenseArray<T>::MAD() {
 
 }
 
+template <>
+rgb CDenseArray<rgb>::MAD() {
+
+    rgb median = Median();
+
+    CDenseArray<rgb> temp = this->Clone();
+
+    rgb* pdata = temp.m_data.get();
+    rgb* pthisdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            pdata[i](j) = (unsigned char)fabs(pthisdata[i].Get(j)-median.Get(j));
+
+    }
+
+    return temp.Median();
+
+}
+
+template <>
+vec3 CDenseArray<vec3>::MAD() {
+
+    vec3 median = Median();
+
+    CDenseArray<vec3> temp = this->Clone();
+
+    vec3* pdata = temp.m_data.get();
+    vec3* pthisdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++)
+            pdata[i](j) = fabs(pthisdata[i].Get(j)-median.Get(j));
+
+    }
+
+    return temp.Median();
+
+}
+
 template <class T>
 T CDenseArray<T>::Min() const {
 
-	T min = numeric_limits<T>::max();
+    T min = numeric_limits<T>::max();
 
     T* pdata = m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++) {
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
 
         if(pdata[i]<=min)
             min = pdata[i];
 
-	}
+    }
 
-	return min;
+    return min;
+
+}
+
+template <>
+rgb CDenseArray<rgb>::Min() const {
+
+    rgb min = { 0, 0, 0 };
+    rgb* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++) {
+
+            // find the minimum of every channel
+            if(pdata[i].Get(j)<=min.Get(j))
+                min(j) = pdata[i].Get(j);
+
+        }
+
+    }
+
+    return min;
 
 }
 
 template <class T>
 T CDenseArray<T>::Max() const {
 
-	T max = numeric_limits<T>::min();
+    T max = numeric_limits<T>::min();
 
     T* pdata = m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++) {
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
 
-        if(pdata[i]>=max)
+        if(max<=pdata[i])
             max = pdata[i];
 
-	}
+    }
 
-	return max;
+    return max;
 
 }
 
+template <>
+rgb CDenseArray<rgb>::Max() const {
+
+    rgb max = { 255, 255, 255 };
+    rgb* pdata = m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++) {
+
+        for(size_t j=0; j<3; j++) {
+
+            // find the minimum of every channel
+            if(pdata[i].Get(j)>=max.Get(j))
+                max(j) = pdata[i].Get(j);
+
+        }
+
+    }
+
+    return max;
+
+}
 
 template class CDenseArray<float>;
 template class CDenseArray<double>;
 template class CDenseArray<int>;
 template class CDenseArray<size_t>;
 template class CDenseArray<bool>;
-//template class CDenseArray<rgb>;
+template class CDenseArray<rgb>;
+template class CDenseArray<vec3>;
+template class CDenseArray<unsigned char>;
 
 template ostream& operator<< (ostream& os, const CDenseArray<double>& x);
 template istream& operator>> (istream& is, CDenseArray<double>& x);
@@ -1105,14 +1893,21 @@ template ifstream& operator>> (ifstream& is, CDenseArray<size_t>& x);
 template ostream& operator<< (ostream& os, const CDenseArray<bool>& x);
 template istream& operator>> (istream& is, CDenseArray<bool>& x);
 template ifstream& operator>> (ifstream& is, CDenseArray<bool>& x);
+template ostream& operator<< (ostream& os, const CDenseArray<rgb>& x);
+template ostream& operator<< (ostream& os, const CDenseArray<vec3>& x);
+
+template CVector<double,2> CDenseArray<double>::operator*(const CVector<double,2>& vector) const;
+template CVector<double,3> CDenseArray<double>::operator*(const CVector<double,3>& vector) const;
+template CVector<float,2> CDenseArray<float>::operator*(const CVector<float,2>& vector) const;
+template CVector<float,3> CDenseArray<float>::operator*(const CVector<float,3>& vector) const;
 
 template <class T>
 CDenseVector<T>::CDenseVector():
-	CDenseArray<T>::CDenseArray() {}
+    CDenseArray<T>::CDenseArray() {}
 
 template <class T>
 CDenseVector<T>::CDenseVector(size_t n):
-	CDenseArray<T>::CDenseArray(n,1)
+    CDenseArray<T>::CDenseArray(n,1)
 {}
 
 template <class T>
@@ -1120,6 +1915,9 @@ CDenseVector<T>::CDenseVector(size_t nrows, size_t ncols):
     CDenseArray<T>::CDenseArray(nrows,ncols) {
 
     assert(nrows==1 || ncols==1);
+
+    if(nrows==1)
+        m_transpose = true;
 
 }
 
@@ -1129,7 +1927,7 @@ CDenseVector<T>::CDenseVector(const CDenseVector& vector):
 
 template <class T>
 CDenseVector<T>::CDenseVector(size_t n, shared_ptr<T> data):
-	CDenseArray<T>::CDenseArray(n,1,data){}
+    CDenseArray<T>::CDenseArray(n,1,data){}
 
 template <class T>
 CDenseVector<T> CDenseVector<T>::operator=(const CDenseVector<T>& vector) {
@@ -1145,6 +1943,24 @@ CDenseVector<T> CDenseVector<T>::operator=(const CDenseVector<T>& vector) {
     return *this;
 
 }
+
+template <class T>
+template<u_int n>
+CDenseVector<T>::CDenseVector(CVector<T,n>& x):
+    CDenseArray<T>::CDenseArray(n,1) {
+
+    memcpy(m_data.get(),x.Data(),n*sizeof(T));
+
+}
+
+template <class T>
+CDenseVector<T>::CDenseVector(const CDenseArray<T>& x):
+    CDenseArray<T>::CDenseArray(x.NElems(),1,x.Data()){}
+
+template CDenseVector<double>::CDenseVector<3>(CVector<double,3>& x);
+template CDenseVector<double>::CDenseVector<2>(CVector<double,2>& x);
+template CDenseVector<float>::CDenseVector<3>(CVector<float,3>& x);
+template CDenseVector<float>::CDenseVector<2>(CVector<float,2>& x);
 
 template <class T>
 CDenseVector<T> CDenseVector<T>::Clone() {
@@ -1163,20 +1979,20 @@ CDenseVector<T> CDenseVector<T>::Clone() {
 template <class T>
 T& CDenseVector<T>::operator()(size_t i) {
 
-	if(m_transpose)
-		return CDenseArray<T>::operator()(0,i);
-	else
-		return CDenseArray<T>::operator()(i,0);
+    if(m_transpose)
+        return CDenseArray<T>::operator()(0,i);
+    else
+        return CDenseArray<T>::operator()(i,0);
 
 }
 
 template <class T>
 T CDenseVector<T>::Get(size_t i) const {
 
-	if(m_transpose)
-		return CDenseArray<T>::Get(0,i);
-	else
-		return CDenseArray<T>::Get(i,0);
+    if(m_transpose)
+        return CDenseArray<T>::Get(0,i);
+    else
+        return CDenseArray<T>::Get(i,0);
 
 }
 
@@ -1188,17 +2004,17 @@ CDenseVector<T> CDenseVector<T>::operator+(const T& scalar) const {
     T* pdata = m_data.get();
     T* pdatares = result.m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdatares[i] = pdata[i] + scalar;
 
-	return result;
+    return result;
 
 }
 
 template <class T>
 CDenseVector<T> CDenseVector<T>::operator+(const CDenseVector<T>& vector) const {
 
-	assert(m_nrows==vector.m_nrows && m_ncols==vector.m_ncols);
+    assert(m_nrows==vector.m_nrows && m_ncols==vector.m_ncols);
 
     CDenseVector<T> result(m_nrows,m_ncols);
 
@@ -1206,10 +2022,10 @@ CDenseVector<T> CDenseVector<T>::operator+(const CDenseVector<T>& vector) const 
     T* py = vector.m_data.get();
     T* pz = result.m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         pz[i] = px[i] + py[i];
 
-	return result;
+    return result;
 
 }
 
@@ -1226,10 +2042,101 @@ void CDenseVector<T>::Add(const CDenseVector<T>& vector) {
 
 }
 
+template <>
+CDenseVector<float> CDenseVector<float>::operator+(const CDenseVector<float>& vector) const {
+
+    assert(m_nrows==vector.m_nrows && m_ncols==vector.m_ncols);
+
+    CDenseVector<float> result(m_nrows,m_ncols);
+
+    float* px = m_data.get();
+    float* py = vector.m_data.get();
+    float* pz = result.m_data.get();
+
+//#ifndef __SSE4_1__
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pz[i] = px[i] + py[i];
+/*#else
+    size_t n = m_nrows*m_ncols;
+
+    size_t offset = n - n%4;    // #m_n - #m_n%4
+
+    __m128* pxs = (__m128*)px;
+    __m128* pys = (__m128*)py;
+    __m128* pzs = (__m128*)pz;
+
+    for(size_t i=0; i<offset/4; i++)
+        pzs[i] = _mm_hadd_ps(pxs[i],pys[i]);
+
+
+    // add offset
+    for(size_t i=offset; i<n; i++)
+        pz[i] = px[i] + py[i];
+#endif*/
+
+    return result;
+
+}
+
+template <>
+CDenseVector<float> CDenseVector<float>::operator-(const CDenseVector<float>& vector) const {
+
+    assert(m_nrows==vector.m_nrows && m_ncols==vector.m_ncols);
+
+    CDenseVector<float> result(m_nrows,m_ncols);
+
+    float* px = m_data.get();
+    float* py = vector.m_data.get();
+    float* pz = result.m_data.get();
+
+//#ifndef __SSE4_1__
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pz[i] = px[i] - py[i];
+/*#else
+    size_t n = m_nrows*m_ncols;
+
+    size_t offset = n - n%4;    // #m_n - #m_n%4
+
+    __m128* pxs = (__m128*)px;
+    __m128* pys = (__m128*)py;
+    __m128* pzs = (__m128*)pz;
+
+    for(size_t i=0; i<offset/4; i++)
+        pzs[i] = _mm_hsub_ps(pxs[i],pys[i]);
+
+
+    // add offset
+    for(size_t i=offset; i<n; i++)
+        pz[i] = px[i] - py[i];
+#endif*/
+
+    return result;
+
+}
+
+template <class T>
+CDenseVector<T> CDenseVector<T>::operator/(const CDenseVector<T>& vector) const {
+
+    assert(m_nrows==vector.m_nrows && m_ncols==vector.m_ncols);
+
+    CDenseVector<T> result(m_nrows,m_ncols);
+
+    const T* px = m_data.get();
+    const T* py = vector.m_data.get();
+    T* pz = result.m_data.get();
+
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
+        pz[i] = px[i]*(1/py[i]);
+
+    return result;
+
+}
+
+
 template <class T>
 CDenseVector<T> CDenseVector<T>::operator-(const CDenseVector<T>& vector) const {
 
-	assert(m_nrows==vector.m_nrows && m_ncols==vector.m_ncols);
+    assert(m_nrows==vector.m_nrows && m_ncols==vector.m_ncols);
 
     CDenseVector<T> result(m_nrows,m_ncols);
 
@@ -1240,7 +2147,7 @@ CDenseVector<T> CDenseVector<T>::operator-(const CDenseVector<T>& vector) const 
     for(size_t i=0; i<m_nrows*m_ncols; i++)
         pz[i] = px[i] - py[i];
 
-	return result;
+    return result;
 
 }
 
@@ -1252,36 +2159,36 @@ CDenseVector<T> CDenseVector<T>::operator*(const T& scalar) const {
     T* pdata = m_data.get();
     T* pdatares = result.m_data.get();
 
-	for(size_t i=0; i<m_nrows*m_ncols; i++)
+    for(size_t i=0; i<m_nrows*m_ncols; i++)
         pdatares[i] = scalar*pdata[i];
 
-	return result;
+    return result;
 
 }
 
 template <class T>
 CDenseVector<T> CDenseVector<T>::CrossProduct(const CDenseVector<T>& x, const CDenseVector<T>& y) {
 
-	assert((x.NRows()==3 && y.NRows()==3) || (x.NCols()==3 && y.NCols()==3));
+    assert((x.NRows()==3 && y.NRows()==3) || (x.NCols()==3 && y.NCols()==3));
 
-	CDenseVector<T> result(3);
+    CDenseVector<T> result(3);
 
-	result(0) = x.Get(1)*y.Get(2) - x.Get(2)*y.Get(1);
-	result(1) = x.Get(2)*y.Get(0) - x.Get(0)*y.Get(2);
-	result(2) = x.Get(0)*y.Get(1) - x.Get(1)*y.Get(0);
+    result(0) = x.Get(1)*y.Get(2) - x.Get(2)*y.Get(1);
+    result(1) = x.Get(2)*y.Get(0) - x.Get(0)*y.Get(2);
+    result(2) = x.Get(0)*y.Get(1) - x.Get(1)*y.Get(0);
 
-	return result;
+    return result;
 
 }
 
 template <class T>
 void CDenseVector<T>::Sort() {
 
-	#ifdef _OPENMP
+    #ifdef _OPENMP
     __gnu_parallel::sort(m_data.get(),m_data.get()+CDenseArray<T>::NElems());
-	#else
+    #else
     sort(m_data.get(),m_data.get()+CDenseArray<T>::NElems());
-	#endif
+    #endif
 
 }
 
@@ -1290,68 +2197,69 @@ template class CDenseVector<float>;
 template class CDenseVector<int>;
 template class CDenseVector<size_t>;
 template class CDenseVector<bool>;
+template class CDenseVector<u_char>;
 
 
 template <class T>
 CDenseSymmetricArray<T>::CDenseSymmetricArray():
-	m_nrows(0),
-	m_data(0) {
+    m_nrows(0),
+    m_data(0) {
 
 }
 
 template <class T>
 CDenseSymmetricArray<T>::CDenseSymmetricArray(size_t nrows):
-	m_nrows(nrows) {
+    m_nrows(nrows) {
 
-	m_data = new T[(nrows*(nrows+1))/2];
+    m_data = new T[(nrows*(nrows+1))/2];
 
-	memset(m_data,0,((nrows*(nrows+1))/2)*sizeof(T));
+    memset(m_data,0,((nrows*(nrows+1))/2)*sizeof(T));
 
 }
 
 template <class T>
 CDenseSymmetricArray<T>::CDenseSymmetricArray(const CDenseSymmetricArray& array):
-	m_nrows(array.m_nrows) {
+    m_nrows(array.m_nrows) {
 
-	m_data = new T[(array.m_nrows*(array.m_nrows+1))/2];
+    m_data = new T[(array.m_nrows*(array.m_nrows+1))/2];
 
-	memcpy(m_data,array.m_data,((array.m_nrows*(array.m_nrows+1))/2)*sizeof(T));
+    memcpy(m_data,array.m_data,((array.m_nrows*(array.m_nrows+1))/2)*sizeof(T));
 
 }
 
 template <class T>
 CDenseSymmetricArray<T>::~CDenseSymmetricArray() {
 
-	delete [] m_data;
+    delete [] m_data;
 
 }
 
 template <class T>
 void CDenseSymmetricArray<T>::Print() const {
 
-	for(size_t i=0; i<m_nrows; i++) {
+    for(size_t i=0; i<m_nrows; i++) {
 
-		for(size_t j=0; j<m_nrows; j++) {
+        for(size_t j=0; j<m_nrows; j++) {
 
-			printf("%.2f\t",(float)Get(i,j));
+            printf("%.2f\t",(float)Get(i,j));
 
-		}
+        }
 
-		printf("\n");
+        printf("\n");
 
-	}
+    }
 
 }
 
 template <class T>
 T CDenseSymmetricArray<T>::Norm2() const {
 
-	T sum = 0;
+    T sum = 0;
 
-	for(size_t i=0; i<(m_nrows*(m_nrows+1))/2; i++)
-		sum += m_data[i]*m_data[i];
+    for(size_t i=0; i<(m_nrows*(m_nrows+1))/2; i++)
+        sum += m_data[i]*m_data[i];
 
-	return sqrt(sum);
+    return sqrt(sum);
 
 }
 
@@ -1362,10 +2270,10 @@ T& CDenseSymmetricArray<T>::operator()(size_t i, size_t j) {
 
     assert(i<m_nrows && j<m_nrows);
 
-	if(i>j)
-		return operator()(j,i);
+    if(i>j)
+        return operator()(j,i);
 
-	return m_data[(j*(j+1))/2 + i];
+    return m_data[(j*(j+1))/2 + i];
 
 }
 
@@ -1374,104 +2282,104 @@ T CDenseSymmetricArray<T>::Get(size_t i, size_t j) const {
 
     assert(i<m_nrows && j<m_nrows);
 
-	if(i>j)
-		return Get(j,i);
+    if(i>j)
+        return Get(j,i);
 
-	return m_data[(j*(j+1))/2 + i];
+    return m_data[(j*(j+1))/2 + i];
 
 }
 
 template <class T>
 CDenseSymmetricArray<T> CDenseSymmetricArray<T>::operator=(const CDenseSymmetricArray<T>& array) {
 
-	if(this==&array)
-		return *this;
+    if(this==&array)
+        return *this;
 
-	if(m_nrows!=array.m_nrows) {
+    if(m_nrows!=array.m_nrows) {
 
-		delete [] m_data;
+        delete [] m_data;
 
-		m_nrows = array.m_nrows;
-		m_data = new T[(array.m_nrows*(array.m_nrows+1))/2];
+        m_nrows = array.m_nrows;
+        m_data = new T[(array.m_nrows*(array.m_nrows+1))/2];
 
-	}
+    }
 
-	memcpy(m_data,array.m_data,((array.m_nrows*(array.m_nrows+1))/2)*sizeof(T));
+    memcpy(m_data,array.m_data,((array.m_nrows*(array.m_nrows+1))/2)*sizeof(T));
 
-	return *this;
+    return *this;
 
 }
 
 template <class T>
 CDenseSymmetricArray<T> CDenseSymmetricArray<T>::operator+(const CDenseSymmetricArray& array) const {
 
-	assert(m_nrows==array.m_nrows);
+    assert(m_nrows==array.m_nrows);
 
-	CDenseSymmetricArray<T> result = CDenseSymmetricArray<T>(array.m_nrows);
+    CDenseSymmetricArray<T> result = CDenseSymmetricArray<T>(array.m_nrows);
 
-	for(size_t i=0; i<(m_nrows*(m_nrows+1))/2; i++)
-		result.m_data[i] = m_data[i] + array.m_data[i];
+    for(size_t i=0; i<(m_nrows*(m_nrows+1))/2; i++)
+        result.m_data[i] = m_data[i] + array.m_data[i];
 
-	return result;
+    return result;
 
 }
 
 template <class T>
 CDenseSymmetricArray<T> CDenseSymmetricArray<T>::operator-(const CDenseSymmetricArray& array) const {
 
-	assert(m_nrows==array.m_nrows);
-	CDenseSymmetricArray<T> result = CDenseSymmetricArray<T>(array.m_nrows);
+    assert(m_nrows==array.m_nrows);
+    CDenseSymmetricArray<T> result = CDenseSymmetricArray<T>(array.m_nrows);
 
-	for(size_t i=0; i<(m_nrows*(m_nrows+1))/2; i++)
-		result.m_data[i] = m_data[i] - array.m_data[i];
+    for(size_t i=0; i<(m_nrows*(m_nrows+1))/2; i++)
+        result.m_data[i] = m_data[i] - array.m_data[i];
 
-	return result;
+    return result;
 
 }
 
 template <class T>
 CDenseSymmetricArray<T> CDenseSymmetricArray<T>::operator*(const T& scalar) const {
 
-	CDenseSymmetricArray<T> result = CDenseSymmetricArray<T>(m_nrows);
+    CDenseSymmetricArray<T> result = CDenseSymmetricArray<T>(m_nrows);
 
-	for(size_t i=0; i<(m_nrows*(m_nrows+1))/2; i++)
-		result.m_data[i] = scalar* m_data[i];
+    for(size_t i=0; i<(m_nrows*(m_nrows+1))/2; i++)
+        result.m_data[i] = scalar* m_data[i];
 
-	return result;
+    return result;
 
 }
 
 template <class T>
 CDenseArray<T> CDenseSymmetricArray<T>::operator*(const CDenseArray<T>& array) const {
 
-	assert(m_nrows==array.NRows());
+    assert(m_nrows==array.NRows());
 
-	CDenseArray<T> result = CDenseArray<T>(m_nrows,array.NCols());
+    CDenseArray<T> result = CDenseArray<T>(m_nrows,array.NCols());
 
-	for(size_t i=0; i<m_nrows; i++) {
+    for(size_t i=0; i<m_nrows; i++) {
 
-		for(size_t j=0; j<array.NCols(); j++) {
+        for(size_t j=0; j<array.NCols(); j++) {
 
-			T sum = 0;
+            T sum = 0;
 
-			for(size_t k=0; k<array.NRows(); k++)
-					sum += Get(i,k)*(array.Get(k,j));
+            for(size_t k=0; k<array.NRows(); k++)
+                    sum += Get(i,k)*(array.Get(k,j));
 
-			result(i,j) = sum;
+            result(i,j) = sum;
 
-		}
+        }
 
-	}
+    }
 
-	return result;
+    return result;
 
 }
 
 template <class T>
 void CDenseSymmetricArray<T>::Scale(T scalar) {
 
-	for(size_t i=0; i<(m_nrows*(m_nrows+1))/2; i++)
-		m_data[i] = scalar*m_data[i];
+    for(size_t i=0; i<(m_nrows*(m_nrows+1))/2; i++)
+        m_data[i] = scalar*m_data[i];
 
 }
 

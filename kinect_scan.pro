@@ -8,7 +8,7 @@ QT       += core gui opengl
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = kinect_scan
+TARGET = yas
 TEMPLATE = app
 
 SOURCES += main.cpp\
@@ -82,14 +82,14 @@ FORMS    += mainwindow.ui \
             alignwindow.ui \
             params.ui
 
-unix:!symbian: {
+unix:!symbian {
 
 QMAKE_CXXFLAGS += -fopenmp -fpermissive -std=c++0x -O3
 
 QMAKE_LFLAGS += -Wl,-rpath=.
 
-LIBS += -L$$PWD/../../OpenNI-2.1.0-x64/Redist \
-        -L$$PWD/../../OpenNI-2.1.0-x64/Redist/OpenNI2/Drivers \
+LIBS += -L$$OPENNI_DIR/Redist/ \
+        -L$$OPENNI_DIR/Redist/OpenNI2/Drivers \
         -L/usr/local/lib/ \
         -lopencv_core \
         -lopencv_highgui \
@@ -107,41 +107,21 @@ LIBS += -L$$PWD/../../OpenNI-2.1.0-x64/Redist \
 
 INCLUDEPATH += /usr/local/include \
                /usr/include/OpenEXR \
-               $$PWD/../../OpenNI-2.1.0-x64/Include
-
-DEFINES += linux
+               $$OPENNI_DIR/Include \
 
 }
 
-mac:!symbian: {
+unix:!mac:!symbian {
 
-QMAKE_CXXFLAGS += -std=c++11 -fpermissive -O3
+    DEFINES += linux
 
-QMAKE_LFLAGS += -Wl,-rpath=.
+}
 
-LIBS += -L$$PWD/../OpenNI-2.1.0/Redist \
-        -L$$PWD/../OpenNI-2.1.0/Redist/OpenNI2/Drivers \
-        -L/usr/local/lib/ \
-        -lopencv_core \
-        -lopencv_highgui \
-        -lopencv_video \
-        -lopencv_imgproc \
-        -lopencv_features2d \
-        -lopencv_nonfree \
-        -lHalf \
-        -lIlmImf \
-        -lOpenNI2 \
-        -lOniFile \
-        -lPS1080 \
-        -L/opt/local/lib/ \
-        -lANN
+mac:!linux:!symbian {
 
-INCLUDEPATH += /usr/local/include \
-               /usr/local/include/OpenEXR \               
-               /opt/local/include \
+INCLUDEPATH += /opt/local/include \             # macports installs stuff in /opt/local
                /opt/local/include/OpenEXR
-               $$PWD/../OpenNI-2.1.0/Include
 
-DEFINES += __APPLE__
+DEFINES += __APPLE__                            # for typedefs of unsigned types
 
 }
