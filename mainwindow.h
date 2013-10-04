@@ -149,6 +149,7 @@ private:
     bool save_as_pgm(size_t index, QString fn);
     bool save_as_exr(size_t index, QString fn);
     bool save_trafo(size_t index, QString fn);
+    bool save_normal_map(size_t index, QString fn);
 
     // helper routine
     unsigned short get_smoothed_depth(size_t i, size_t j);

@@ -79,8 +79,8 @@ HEADERS  += mainwindow.h \
             tgCamera.h
 
 FORMS    += mainwindow.ui \
-            alignwindow.ui \
-            params.ui
+            params.ui \
+            alignwindow.ui
 
 unix:!symbian {
 

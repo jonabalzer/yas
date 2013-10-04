@@ -188,7 +188,7 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
             val.g = half(m_rgb_storage[index].at<Vec3b>(i,j)[1]);
             val.b = half(m_rgb_storage[index].at<Vec3b>(i,j)[2]);
 
-            if(!warp) {
+            if(!m_params->save_depth()) {
 
                 unsigned short d = m_depth_storage[index].at<unsigned short>(i,j);
                 val.a = half(d);
@@ -215,6 +215,74 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
 
 }
 
+bool MainWindow::save_normal_map(size_t index, QString fn) {
+
+    /* note that if the transformation is stored for external normal field
+     * integration, it has to be w.r.t. to the depth cam coordinate system
+     */
+    Mat F = transform_to_first_image(index);
+    float maxz = m_sensor.DisparityToDepth(ui->depthClipSlider->sliderPosition());
+    float minz = m_sensor.DisparityToDepth(ui->minDepthClipSlider->sliderPosition());
+
+    // prepare transformation
+    Mat Fsr = F(Range(0,3),Range(0,4));
+    bool isfid = F.at<float>(0,0)==1 && F.at<float>(0,1)==0 && F.at<float>(0,2)==0 && F.at<float>(0,3)==0 &&
+                 F.at<float>(1,0)==0 && F.at<float>(1,1)==1 && F.at<float>(1,2)==0 && F.at<float>(1,3)==0 &&
+                 F.at<float>(2,0)==0 && F.at<float>(2,1)==0 && F.at<float>(2,2)==1 && F.at<float>(2,3)==0;
+
+    // rotation for normal
+    Mat R = Fsr.clone();
+    R.at<float>(0,3) = 0;
+    R.at<float>(1,3) = 0;
+    R.at<float>(2,3) = 0;
+
+    // allocate space for temporary variable
+    vector<Point3f> xarray;
+    Point3f x;
+    xarray.push_back(x);
+    vector<Point3f> narray;
+    Point3f n;
+    narray.push_back(n);
+
+    CDenseArray<vec3> nf(m_depth_storage[index].rows,m_depth_storage[index].cols);
+
+    for(size_t i=0; i<nf.NRows(); i++) {
+
+        for(size_t j=0; j<nf.NCols(); j++) {
+
+            // only do something disparity is unsaturated
+            if(m_depth_storage[index].at<unsigned short>(i,j)<=ui->depthClipSlider->maximum()) {
+
+                x = m_sensor.GetPoint(i,j,m_depth_storage[index]);
+
+                if(x.z<maxz && x.z>minz) {
+
+                    // transform normal
+                    narray[0] = m_sensor.GetNormal(i,j,m_depth_storage[index]);
+
+                    if(!isfid)
+                        cv::transform(narray,narray,R);
+
+                    if(cv::norm(narray[0])>0) {
+
+                        vec3 nr4r = { narray[0].x, narray[0].y, narray[0].z };
+
+                        nf(i,j) = nr4r;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+    return nf.WriteToFile(fn.toStdString().c_str());
+
+}
+
 bool MainWindow::save_trafo(size_t index, QString fn) {
 
     ofstream out(fn.toStdString().c_str());
@@ -236,8 +304,10 @@ bool MainWindow::save_trafo(size_t index, QString fn) {
     // world to depth
     Mat Fw2c = Fc2w.inv();
 
-    // world -> depth -> rgb, saving rgb viewpoints makes colorization easier
-    F = Fd2r*Fw2c;
+    if(m_params->warp_to_rgb())
+        F = Fd2r*Fw2c;
+    else
+        F = Fw2c;
 
     out << cam << endl;
 
@@ -867,6 +937,8 @@ void MainWindow::on_actionSave_triggered()
     }
     else if(filename.endsWith(".pgm"))
         error = save_as_pgm(index,filename);
+    else if(filename.endsWith(".r4r"))
+        error = save_normal_map(index,filename);
     else
         error = 0;
 
@@ -925,16 +997,16 @@ void MainWindow::on_actionOpen_triggered()
 
     }
 
-    // display
-    emit current_image_changed(m_rgb_storage[m_rgb_storage.size()-1],m_depth_storage[m_depth_storage.size()-1]);
-
-    // adjust counter
+     // adjust counter
     ui->spinBoxStorage->setMaximum(m_rgb_storage.size());
 
-    if(m_rgb_storage.size()==1)
+    if(m_rgb_storage.size()>=1)
         ui->spinBoxStorage->setMinimum(1);
 
     ui->spinBoxStorage->setValue(m_rgb_storage.size());
+
+    // display
+    emit current_image_changed(m_rgb_storage[m_rgb_storage.size()-1],m_depth_storage[m_depth_storage.size()-1]);
 
 
 }
@@ -960,6 +1032,8 @@ void MainWindow::on_actionSave_all_triggered()
         format = 3;
     else if(filename.endsWith(".txt"))
         format = 4;
+    else if(filename.endsWith(".r4r"))
+        format = 5;
     else
         return;
 
@@ -1025,6 +1099,16 @@ void MainWindow::on_actionSave_all_triggered()
             break;
 
         }
+
+        case 5:
+        {
+
+            error = save_normal_map(i,QString((prefix+string(".r4r")).c_str()));
+
+            break;
+
+        }
+
 
         }
 
@@ -1381,7 +1465,12 @@ void MainWindow::on_actionAll_triggered()
 
     for(size_t index=1; index<m_rgb_storage.size(); index++) {
 
-        // warp to depth image plane
+        /*
+         * warp the rgb image to the depth image plane: this can be done with higher
+         * precision because we only need to compute projections of backprojected pixels
+         * (the latter backprojection only being available for the depth sensor). we
+         * need the color image to compute putative correspondences based on photometry.
+         */
         Mat rgb0 = m_sensor.WarpRGBToDepth(m_depth_storage[index-1],m_rgb_storage[index-1]);
         Mat rgb1 = m_sensor.WarpRGBToDepth(m_depth_storage[index],m_rgb_storage[index]);
 

@@ -56,8 +56,13 @@ public:
 
     bool ply_binary();
 
+    //! Should we save data w.r.t. to the color sensor coordinate system?
     bool warp_to_rgb();
 
+    //! Should we save depth instead of disparity on exr export?
+    bool save_depth();
+
+    //! Number of ICP refinement steps.
     unsigned short get_no_icp_steps();
 
 signals:
