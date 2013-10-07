@@ -98,6 +98,8 @@ LIBS += -L$$OPENNI_DIR/Redist/ \
         -lopencv_features2d \
         -lopencv_nonfree \
         -lHalf \
+        -lIex \
+        -lIlmThread \
         -lIlmImf \
         -lOpenNI2 \
         -lOniFile \

@@ -203,11 +203,30 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
 
     }
 
-    //Header header(m_rgb.cols,m_rgb.rows);
-    //header.insert ("comments", StringAttribute ("written by ucla vision lab kinect scan"));
-    //header.insert ("cameraTransform", M44fAttribute (cameraTransform));
+    Header header(m_rgb_storage[index].cols,m_rgb_storage[index].rows);
+    header.insert ("comments", StringAttribute ("YAS"));
 
-    RgbaOutputFile file(fn.toStdString().c_str(),m_rgb_storage[index].cols,m_rgb_storage[index].rows, WRITE_RGBA);
+    Mat Fcv;
+
+    // only save trafo if we store raw data!!!
+    if(!warp)
+        Fcv = m_trafo_storage.at(index);
+    else
+        Fcv = Mat::eye(4,4,CV_32FC1);
+
+    // copy into open exr format
+    Matrix44<float> Fexr;
+    for(u_int i=0; i<4; i++) {
+        for(u_int j=0; j<4; j++)
+            Fexr[i][j] = Fcv.at<float>(i,j);
+
+    }
+
+    // attach to header
+    header.insert ("view", M44fAttribute (Fexr));
+
+    // create and write file
+    RgbaOutputFile file(fn.toStdString().c_str(),header, WRITE_RGBA);
     file.setFrameBuffer (&out[0][0],1,m_rgb_storage[index].cols);
     file.writePixels (m_rgb_storage[index].rows);
 
@@ -291,25 +310,43 @@ bool MainWindow::save_trafo(size_t index, QString fn) {
         return 1;
 
     // use a copy of the cam to write frame into
-    CCam cam(m_sensor.GetRGBCam());
+    if(m_params->warp_to_rgb()) {
 
-    Mat& F = cam.GetExtrinsics();
+        CCam cam(m_sensor.GetRGBCam());
 
-    // depth to rgb
-    Mat Fd2r = F.clone();
+        Mat& F = cam.GetExtrinsics();
 
-     // depth to world
-    Mat Fc2w = transform_to_first_image(index);
+        // depth to rgb
+        Mat Fd2r = F.clone();
 
-    // world to depth
-    Mat Fw2c = Fc2w.inv();
+        // depth to world
+        Mat Fc2w = transform_to_first_image(index);
 
-    if(m_params->warp_to_rgb())
+        // world to depth
+        Mat Fw2c = Fc2w.inv();
+
         F = Fd2r*Fw2c;
-    else
+
+        out << cam << endl;
+
+    }
+    else {
+
+        CDepthCam cam(m_sensor.GetDepthCam());
+
+        Mat& F = cam.GetExtrinsics();
+
+        // depth to world
+        Mat Fc2w = transform_to_first_image(index);
+
+        // world to depth
+        Mat Fw2c = Fc2w.inv();
+
         F = Fw2c;
 
-    out << cam << endl;
+        out << cam << endl;
+
+    }
 
     out.close();
 
@@ -961,6 +998,9 @@ void MainWindow::on_actionOpen_triggered()
 
         RgbaInputFile file(filenames[i].toStdString().c_str());
 
+        // get transformation attribute
+        const M44fAttribute* Fexra = file.header().findTypedAttribute <M44fAttribute> ("view");
+
         Box2i dw = file.dataWindow();
 
         size_t width = dw.max.x - dw.min.x + 1;
@@ -992,8 +1032,22 @@ void MainWindow::on_actionOpen_triggered()
         m_depth_storage.push_back(depth);
 
         // store a idendity matrix as transformation
-        Mat trafo = Mat::eye(4,4,CV_32FC1);
-        m_trafo_storage.push_back(trafo);
+        Mat Fcv = Mat::eye(4,4,CV_32FC1);
+
+        if(Fexra!=0) {
+
+            Matrix44<float> Fexr = Fexra->value();
+
+            for(u_int i=0; i<4; i++) {
+
+                for(u_int j=0; j<4; j++)
+                    Fcv.at<float>(i,j) = Fexr[i][j];
+
+            }
+
+        }
+
+        m_trafo_storage.push_back(Fcv);
 
     }
 
@@ -1255,7 +1309,6 @@ void MainWindow::on_actionPoisson_triggered()
         Mat F = transform_to_first_image(i);
         get_oriented_pcl(i,points,normals,colors,zmin,zmax,F);
         colors.clear();
-        cout << points.size() << endl;
 
     }
 
