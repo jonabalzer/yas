@@ -214,9 +214,11 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
     else
         Fcv = Mat::eye(4,4,CV_32FC1);
 
-    // copy into open exr format
     Matrix44<float> Fexr;
+
+    // copy into open exr format
     for(u_int i=0; i<4; i++) {
+
         for(u_int j=0; j<4; j++)
             Fexr[i][j] = Fcv.at<float>(i,j);
 
