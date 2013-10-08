@@ -56,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(on_stepButton_clicked()));
     connect(this,SIGNAL(current_image_changed(cv::Mat&,cv::Mat&)),this,SLOT(update_static_view(cv::Mat&,cv::Mat&)));
     connect(this,SIGNAL(current_pcl_changed(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)),m_glview,SLOT(set_pcl(std::vector<cv::Point3f>,std::vector<cv::Vec3b>)));
+    connect(this,SIGNAL(current_mesh_changed(PoissonRec::CoredVectorMeshData<PoissonRec::PlyVertex<float> >)),m_glview,SLOT(set_mesh(PoissonRec::CoredVectorMeshData<PoissonRec::PlyVertex<float> >)));
     connect(m_params,SIGNAL(cam_params_changed(CCam,CDepthCam)),this,SLOT(configure_sensor(CCam,CDepthCam)));
     connect(m_params,SIGNAL(cam_params_changed(CCam,CDepthCam)),m_glview,SLOT(configure_cam(CCam,CDepthCam)));
     connect(m_params,SIGNAL(save_params_clicked()),this,SLOT(on_saveParams_clicked()));
@@ -475,6 +476,9 @@ void MainWindow::on_action3D_View_triggered()
     m_glview->show();
 
     int val = ui->spinBoxStorage->value();
+
+    std::cout << "[MainWindow::on_action3D_View_triggered]" << std::endl;
+    emit current_mesh_changed(m_mesh);
 
     if(val>0)
         on_spinBoxStorage_valueChanged(val);
@@ -1364,6 +1368,9 @@ void MainWindow::on_actionPoisson_triggered()
                             polygonMesh );
 
   ui->statusBar->showMessage("Poisson reconstruction finished...");
+
+//  if(!m_glview->isHidden())
+    emit current_mesh_changed(m_mesh);
 
 }
 

@@ -29,28 +29,28 @@ void QGLViewerWidget::initializeGL() {
   glEnable(GL_DEPTH_TEST);
   //glEnable(GL_COLOR_MATERIAL);
 
-  //  // set lights
-  //  GLfloat pos1[] = { 0.1,  0.1, -0.02, 0.0};
-  //  GLfloat pos2[] = {-0.1,  0.1, -0.02, 0.0};
-  //  GLfloat pos3[] = { 0.0,  0.0,  0.1,  0.0};
-  //  GLfloat col1[] = { 0.7,  0.7,  0.8,  1.0};
-  //  GLfloat col2[] = { 0.8,  0.7,  0.7,  1.0};
-  //  GLfloat col3[] = { 1.0,  1.0,  1.0,  1.0};
+    // set lights
+    GLfloat pos1[] = { 0.1,  0.1, -0.02, 0.0};
+    GLfloat pos2[] = {-0.1,  0.1, -0.02, 0.0};
+    GLfloat pos3[] = { 0.0,  0.0,  0.1,  0.0};
+    GLfloat col1[] = { 0.7,  0.7,  0.8,  1.0};
+    GLfloat col2[] = { 0.8,  0.7,  0.7,  1.0};
+    GLfloat col3[] = { 1.0,  1.0,  1.0,  1.0};
 
-  //  glEnable(GL_LIGHT0);
-  //  glLightfv(GL_LIGHT0,GL_POSITION, pos1);
-  //  glLightfv(GL_LIGHT0,GL_DIFFUSE,  col1);
-  //  glLightfv(GL_LIGHT0,GL_SPECULAR, col1);
+    glEnable(GL_LIGHT0);
+    glLightfv(GL_LIGHT0,GL_POSITION, pos1);
+    glLightfv(GL_LIGHT0,GL_DIFFUSE,  col1);
+    glLightfv(GL_LIGHT0,GL_SPECULAR, col1);
 
-  //  glEnable(GL_LIGHT1);
-  //  glLightfv(GL_LIGHT1,GL_POSITION, pos2);
-  //  glLightfv(GL_LIGHT1,GL_DIFFUSE,  col2);
-  //  glLightfv(GL_LIGHT1,GL_SPECULAR, col2);
+    glEnable(GL_LIGHT1);
+    glLightfv(GL_LIGHT1,GL_POSITION, pos2);
+    glLightfv(GL_LIGHT1,GL_DIFFUSE,  col2);
+    glLightfv(GL_LIGHT1,GL_SPECULAR, col2);
 
-  //  glEnable(GL_LIGHT2);
-  //  glLightfv(GL_LIGHT2,GL_POSITION, pos3);
-  //  glLightfv(GL_LIGHT2,GL_DIFFUSE,  col3);
-  //  glLightfv(GL_LIGHT2,GL_SPECULAR, col3);
+    glEnable(GL_LIGHT2);
+    glLightfv(GL_LIGHT2,GL_POSITION, pos3);
+    glLightfv(GL_LIGHT2,GL_DIFFUSE,  col3);
+    glLightfv(GL_LIGHT2,GL_SPECULAR, col3);
 
   //  glEnable(GL_LIGHTING);
 
@@ -84,6 +84,7 @@ void QGLViewerWidget::resizeGL(int w, int h)
 
 void QGLViewerWidget::drawCoordinates(float length)
 {
+  glDisable(GL_LIGHTING);
   glLineWidth(2.0);
   glBegin(GL_LINES);
   glColor3ub(255,0,0); glVertex3f(0.0f,0.0f,0.0f); glVertex3f(length,0.0f,0.0f);
@@ -94,6 +95,7 @@ void QGLViewerWidget::drawCoordinates(float length)
 
 void QGLViewerWidget::drawPoints(float size)
 {
+  glDisable(GL_LIGHTING);
   glPointSize(size);
   glBegin(GL_POINTS);
   for(size_t i=0; i<m_points.size(); i++)
@@ -104,6 +106,14 @@ void QGLViewerWidget::drawPoints(float size)
   glEnd();
 }
 
+void QGLViewerWidget::drawMesh()
+{
+  glEnable(GL_LIGHTING);
+
+  m_mesh.DrawFaces();
+
+}
+
 
 void QGLViewerWidget::paintGL()
 {
@@ -111,6 +121,8 @@ void QGLViewerWidget::paintGL()
   m_cam_perspective.Activate();
 
   drawPoints();
+
+  drawMesh();
 
   drawCoordinates();
 }
@@ -123,6 +135,44 @@ void QGLViewerWidget::set_pcl(const std::vector<cv::Point3f>& points, const std:
   updateGL();
   // also update the scene_pos here, or from outside with a rough estimate: cente-> central pixel point, etc
 
+}
+
+void QGLViewerWidget::set_mesh(const PoissonRec::CoredVectorMeshData<PoissonRec::PlyVertex<float> > &mesh)
+{
+  mesh.resetIterator();
+
+  for(size_t i=0; i<mesh.outOfCorePointCount(); i++)
+  {
+    PoissonRec::PlyVertex<float> pv;
+    mesh.nextOutOfCorePoint(pv);
+
+    TomGine::tgVertex v;
+    v.pos = TomGine::vec3(pv.point[0], pv.point[1], pv.point[2]);
+
+    m_mesh.m_vertices.push_back(v);
+  }
+
+
+  for(size_t i=0; i<mesh.polygonCount(); i++)
+  {
+    std::vector< PoissonRec::CoredVertexIndex > vertices;
+    mesh.nextPolygon(vertices);
+
+    TomGine::tgFace f;
+    for(size_t j=0; j<vertices.size(); j++)
+      f.v.push_back(vertices[j].idx);
+
+    m_mesh.m_faces.push_back(f);
+  }
+
+  m_mesh.RemoveBigTriangles(0.1);
+
+  m_mesh.ComputeNormals();
+
+  std::cout << "QGLViewerWidget::set_mesh (Vertices: " << m_mesh.m_vertices.size() <<
+               ", Faces: " << m_mesh.m_faces.size() << ")" << std::endl;
+
+  updateGL();
 }
 
 void QGLViewerWidget::configure_cam(const CCam& rgb, const CDepthCam& depth)
@@ -138,12 +188,12 @@ void QGLViewerWidget::configure_cam(const CCam& rgb, const CDepthCam& depth)
   depth.GetIntrinsics(size, f, c, alpha, k);
   depth.GetRange(range);
 
-//  printf("%d %d\n", size[0], size[1]);
-//  printf("%f %f\n", f[0], f[1]);
-//  printf("%f %f\n", c[0], c[1]);
-//  printf("%f\n", alpha);
-//  printf("%f %f %f %f %f\n", k[0], k[1], k[2], k[3], k[4]);
-//  printf("%f %f\n", range[0], range[1]);
+  //  printf("%d %d\n", size[0], size[1]);
+  //  printf("%f %f\n", f[0], f[1]);
+  //  printf("%f %f\n", c[0], c[1]);
+  //  printf("%f\n", alpha);
+  //  printf("%f %f %f %f %f\n", k[0], k[1], k[2], k[3], k[4]);
+  //  printf("%f %f\n", range[0], range[1]);
 
   TomGine::tgCamera::Parameter params;
   params.width = size[0];
@@ -159,8 +209,8 @@ void QGLViewerWidget::configure_cam(const CCam& rgb, const CDepthCam& depth)
 
   m_cam_perspective = m_cam_origin;
 
-//  printf("[configure_cam] camera:\n");
-//  m_cam_perspective.Print();
+  //  printf("[configure_cam] camera:\n");
+  //  m_cam_perspective.Print();
 }
 
 
