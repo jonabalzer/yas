@@ -35,7 +35,8 @@ SOURCES += main.cpp\
         poisson/Factor.cpp \
         poisson/Ply.cpp \
         poisson/Octree.cpp \
-        tgCamera.cpp
+        tgCamera.cpp \
+        tgModel.cpp
 
 HEADERS  += mainwindow.h \
             pcviewer.h \
@@ -76,7 +77,8 @@ HEADERS  += mainwindow.h \
             poisson/Array.h \
             poisson/Allocator.h \
             tgMathlib.h \
-            tgCamera.h
+            tgCamera.h \
+            tgModel.h
 
 FORMS    += mainwindow.ui \
             params.ui \
