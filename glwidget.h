@@ -32,8 +32,11 @@
 #include <vector>
 #include <map>
 
+#include "poisson/Ply.h"
 #include "tgCamera.h"
+#include "tgModel.h"
 #include "cam.h"
+
 
 class QGLViewerWidget : public QGLWidget
 {
@@ -63,13 +66,15 @@ public:
   const cv::Vec3f& center() const { return m_center; }
 
   // clear the current data and redraw
-  void clear_data() { m_points.clear(); m_colors.clear(); updateGL(); }
+  void clear_data() { m_points.clear(); m_colors.clear(); m_mesh.Clear(); updateGL(); }
 
 protected:
 
 private slots:
 
   void set_pcl(const std::vector<cv::Point3f>& points, const std::vector<cv::Vec3b>& colors);
+
+  void set_mesh(const PoissonRec::CoredVectorMeshData<PoissonRec::PlyVertex<float> > &mesh);
 
   void configure_cam(const CCam& rgb, const CDepthCam& depth);
 
@@ -82,6 +87,8 @@ private:
   void drawCoordinates(float length=1.0);
 
   void drawPoints(float size=1.0);
+
+  void drawMesh();
 
   // draw the scene (triggered by Qt)
   void paintGL();
@@ -117,6 +124,8 @@ private:
   QPoint m_last_point_2d;
   std::vector<cv::Point3f> m_points;
   std::vector<cv::Vec3b> m_colors;
+
+  TomGine::tgModel m_mesh;
 
 };
 

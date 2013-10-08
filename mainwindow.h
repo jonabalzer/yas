@@ -67,6 +67,7 @@ signals:
 
     void current_image_changed(cv::Mat& rgb, cv::Mat& depth);
     void current_pcl_changed(const std::vector<cv::Point3f>& points, const std::vector<cv::Vec3b>& colors);
+    void current_mesh_changed(const PoissonRec::CoredVectorMeshData<PoissonRec::PlyVertex<float> > &mesh);
 
 public slots:
 
