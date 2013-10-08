@@ -165,7 +165,7 @@ void QGLViewerWidget::set_mesh(const PoissonRec::CoredVectorMeshData<PoissonRec:
     m_mesh.m_faces.push_back(f);
   }
 
-  m_mesh.RemoveBigTriangles(0.1);
+  //m_mesh.RemoveBigTriangles(0.1);
 
   m_mesh.ComputeNormals();
 
