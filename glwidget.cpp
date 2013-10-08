@@ -141,6 +141,16 @@ void QGLViewerWidget::set_mesh(const PoissonRec::CoredVectorMeshData<PoissonRec:
 {
   mesh.resetIterator();
 
+  for(size_t i=0; i<mesh.inCorePoints.size(); i++)
+  {
+    PoissonRec::PlyVertex<float> pv = mesh.inCorePoints[i];
+
+    TomGine::tgVertex v;
+    v.pos = TomGine::vec3(pv.point[0], pv.point[1], pv.point[2]);
+
+    m_mesh.m_vertices.push_back(v);
+  }
+
   for(size_t i=0; i<mesh.outOfCorePointCount(); i++)
   {
     PoissonRec::PlyVertex<float> pv;
@@ -160,7 +170,15 @@ void QGLViewerWidget::set_mesh(const PoissonRec::CoredVectorMeshData<PoissonRec:
 
     TomGine::tgFace f;
     for(size_t j=0; j<vertices.size(); j++)
-      f.v.push_back(vertices[j].idx);
+    {
+      if( vertices[j].inCore )
+        f.v.push_back(unsigned(vertices[j].idx));
+//        ply_face.vertices[i] = polygon[i].idx;
+      else
+        f.v.push_back(unsigned(vertices[j].idx) + unsigned(mesh.inCorePoints.size()));
+//        ply_face.vertices[i] = polygon[i].idx + int( mesh->inCorePoints.size() );
+
+    }
 
     m_mesh.m_faces.push_back(f);
   }
