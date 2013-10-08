@@ -139,6 +139,8 @@ void QGLViewerWidget::set_pcl(const std::vector<cv::Point3f>& points, const std:
 
 void QGLViewerWidget::set_mesh(const PoissonRec::CoredVectorMeshData<PoissonRec::PlyVertex<float> > &mesh)
 {
+
+  m_mesh.Clear();
   mesh.resetIterator();
 
   for(size_t i=0; i<mesh.inCorePoints.size(); i++)
@@ -173,17 +175,12 @@ void QGLViewerWidget::set_mesh(const PoissonRec::CoredVectorMeshData<PoissonRec:
     {
       if( vertices[j].inCore )
         f.v.push_back(unsigned(vertices[j].idx));
-//        ply_face.vertices[i] = polygon[i].idx;
       else
         f.v.push_back(unsigned(vertices[j].idx) + unsigned(mesh.inCorePoints.size()));
-//        ply_face.vertices[i] = polygon[i].idx + int( mesh->inCorePoints.size() );
-
     }
 
     m_mesh.m_faces.push_back(f);
   }
-
-//  m_mesh.RemoveBigTriangles(0.1);
 
   m_mesh.ComputeNormals();
 
