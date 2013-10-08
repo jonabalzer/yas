@@ -31,6 +31,7 @@
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include <ImfStandardAttributes.h>
+#include <ImfMatrixAttribute.h>
 #include <ImfAttribute.h>
 
 #include "opencv2/opencv.hpp"
