@@ -36,10 +36,7 @@
 #include <random>
 
 
-#ifdef _OPENMP
-#include <omp.h>
 #include <parallel/algorithm>
-#endif
 
 using namespace std;
 
@@ -931,7 +928,7 @@ CDenseArray<T> CDenseArray<T>::operator*(const CDenseArray<T>& array) const {
 
     CDenseArray<T> result(m_nrows,array.m_ncols);
 
-#pragma omp parallel for
+
 	for(size_t i=0; i<m_nrows; i++) {
 
 		for(size_t j=0; j<array.m_ncols; j++) {
@@ -959,7 +956,6 @@ CDenseVector<T> CDenseArray<T>::operator*(const CDenseVector<T>& vector) const {
 
     CDenseVector<T> result(m_nrows);
 
-#pragma omp parallel for
 	for(size_t i=0; i<m_nrows; i++) {
 
 		T sum = 0;

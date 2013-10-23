@@ -30,10 +30,6 @@
 #include <smmintrin.h>
 #endif
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 using namespace std;
 
 template <class T>
@@ -179,10 +175,6 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     double t0, t1;
 
-#ifdef _OPENMP
-    t0 = omp_get_wtime();
-#endif
-
     float result;
 
     if(kn!=SPARSEONESIDED) {
@@ -200,18 +192,10 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     }
 
-#ifdef _OPENMP
-    t1 = omp_get_wtime();
-    cout << "Time SIMD: " << t1-t0 << endl;
-#endif
 
     cout << result << endl;
 
     float comparison = 0;
-
-#ifdef _OPENMP
-    t0 = omp_get_wtime();
-#endif
 
     switch(kn) {
     {
@@ -293,12 +277,6 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     }
     }
-
-
-#ifdef _OPENMP
-    t1 = omp_get_wtime();
-    cout << "Time: " << t1-t0 << endl;
-#endif
 
     cout << comparison << endl;
 
