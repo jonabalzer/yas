@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="sensorTab">
     <attribute name="title">
@@ -663,6 +663,9 @@
       <string>Misc</string>
      </property>
      <widget class="QCheckBox" name="centerCheckBox">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -674,8 +677,11 @@
       <property name="text">
        <string>Center CS</string>
       </property>
-      <property name="checked">
+      <property name="checkable">
        <bool>true</bool>
+      </property>
+      <property name="checked">
+       <bool>false</bool>
       </property>
      </widget>
     </widget>

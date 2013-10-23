@@ -31,6 +31,9 @@
 #include <sys/types.h>          // needed for u_int type
 #endif
 
+
+//template<typename T> class CDenseVector;
+
 /*! \brief short vectors of length \f$n\f$
  *
  *
@@ -46,6 +49,12 @@ public:
 
     //! Constructor.
     CVector(T val);
+
+    //! Constructor.
+    //CVector(const CDenseVector<T>& x);
+
+    //! Initializer list constructor.
+    CVector(std::initializer_list<T> list);
 
     //! Typecast operator.
     template<typename U> operator CVector<U,n>() const {
@@ -65,6 +74,9 @@ public:
     //! Computes \f$l_2\f$-norm.
     double Norm2() const;
 
+    //! Computes the absolute value.
+    CVector<T,n> Abs() const;
+
     //! Normalizes the vector.
     bool Normalize();
 
@@ -82,6 +94,9 @@ public:
 
     //! Writes vector to a stream.
     template <class U,u_int m> friend std::ostream& operator << (std::ostream& os, const CVector<U,m>& x);
+
+    //! Reads vector from a stream.
+    template <class U,u_int m> friend std::istream& operator >> (std::istream& is, CVector<U,m>& x);
 
     //! Low-level acces to the data.
     T* Data() { return m_data; }
@@ -186,14 +201,14 @@ inline CVector<T,n> operator*(const CVector<T,n>& x, const U& s) {
 
 //! Pre-multiplies a vector by a scalar.
 template <typename T,u_int n,typename U>
-inline CVector<T,n> operator*(const U& s, const CVector<T,n>& x) {
+CVector<U,n> operator*(const U& s, const CVector<T,n>& x) {
 
-    CVector<T,n> result;
+       CVector<U,n> result;
 
-    for(u_int i=0; i<n; i++)
-        result(i) = x.Get(i)*(T)s;
+       for(u_int i=0; i<n; i++)
+           result(i) = (U)x.Get(i)*s;
 
-    return result;
+       return result;
 
 }
 
@@ -259,6 +274,97 @@ inline CVector<T,n> operator-(const U& s, const CVector<T,n>& x) {
         result(i) = (T)s - x.Get(i);
 
     return result;
+
+}
+
+//! Checks two vectors for equality.
+template <typename T,u_int n>
+inline bool operator==(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+    bool result = true;
+
+    for(u_int i=0; i<n; i++)
+        result = result && (x.Get(i)==y.Get(i));
+
+    return result;
+
+}
+
+//! Checks two vectors for inequality.
+template <typename T,u_int n>
+inline bool operator<(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+    bool result = true;
+
+    for(u_int i=0; i<n; i++)
+        result = result && (x.Get(i)<y.Get(i));
+
+    return result;
+
+}
+
+//! Checks two vectors for inequality.
+template <typename T,u_int n>
+inline bool operator<=(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+    bool result = true;
+
+    for(u_int i=0; i<n; i++)
+        result = result && (x.Get(i)<=y.Get(i));
+
+    return result;
+
+}
+
+//! Checks two vectors for inequality.
+template <typename T>
+inline bool operator<(const CVector<T,3>& x, const CVector<T,3>& y) {
+
+    if(x.Get(0)<y.Get(0))
+        return true;
+    else if(x.Get(0)>y.Get(0))
+        return false;
+
+    // if we got here, the first components are equal
+    if(x.Get(1)<y.Get(1))
+        return true;
+    else if(x.Get(1)>y.Get(1))
+        return false;
+
+    if(x.Get(2)<y.Get(2))
+        return true;
+
+    return false;
+
+}
+
+template <typename T>
+inline bool operator<=(const CVector<T,3>& x, const CVector<T,3>& y) {
+
+    if(x.Get(0)<=y.Get(0))
+        return true;
+    else if(x.Get(0)>=y.Get(0))
+        return false;
+
+    // if we got here, the first components are equal
+    if(x.Get(1)<=y.Get(1))
+        return true;
+    else if(x.Get(1)>=y.Get(1))
+        return false;
+
+    if(x.Get(2)<=y.Get(2))
+        return true;
+
+    return false;
+
+}
+
+
+//! Checks two vectors for inequality.
+template <typename T,u_int n>
+inline bool operator!=(const CVector<T,n>& x, const CVector<T,n>& y) {
+
+    return !(x==y);
 
 }
 

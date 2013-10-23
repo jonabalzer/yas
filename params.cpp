@@ -74,7 +74,13 @@ bool Params::ply_binary() {
 
 bool Params::warp_to_rgb() {
 
-    return ui->saveDepthCheckBox->isChecked() && ui->alignRGBCheckBox->isChecked();
+    return ui->alignRGBCheckBox->isChecked();
+
+}
+
+bool Params::save_depth() {
+
+    return ui->saveDepthCheckBox->isChecked();
 
 }
 

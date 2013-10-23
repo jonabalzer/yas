@@ -29,28 +29,28 @@ void QGLViewerWidget::initializeGL() {
   glEnable(GL_DEPTH_TEST);
   //glEnable(GL_COLOR_MATERIAL);
 
-  //  // set lights
-  //  GLfloat pos1[] = { 0.1,  0.1, -0.02, 0.0};
-  //  GLfloat pos2[] = {-0.1,  0.1, -0.02, 0.0};
-  //  GLfloat pos3[] = { 0.0,  0.0,  0.1,  0.0};
-  //  GLfloat col1[] = { 0.7,  0.7,  0.8,  1.0};
-  //  GLfloat col2[] = { 0.8,  0.7,  0.7,  1.0};
-  //  GLfloat col3[] = { 1.0,  1.0,  1.0,  1.0};
+    // set lights
+    GLfloat pos1[] = { 0.1,  0.1, -0.02, 0.0};
+    GLfloat pos2[] = {-0.1,  0.1, -0.02, 0.0};
+    GLfloat pos3[] = { 0.0,  0.0,  0.1,  0.0};
+    GLfloat col1[] = { 0.7,  0.7,  0.8,  1.0};
+    GLfloat col2[] = { 0.8,  0.7,  0.7,  1.0};
+    GLfloat col3[] = { 1.0,  1.0,  1.0,  1.0};
 
-  //  glEnable(GL_LIGHT0);
-  //  glLightfv(GL_LIGHT0,GL_POSITION, pos1);
-  //  glLightfv(GL_LIGHT0,GL_DIFFUSE,  col1);
-  //  glLightfv(GL_LIGHT0,GL_SPECULAR, col1);
+    glEnable(GL_LIGHT0);
+    glLightfv(GL_LIGHT0,GL_POSITION, pos1);
+    glLightfv(GL_LIGHT0,GL_DIFFUSE,  col1);
+    glLightfv(GL_LIGHT0,GL_SPECULAR, col1);
 
-  //  glEnable(GL_LIGHT1);
-  //  glLightfv(GL_LIGHT1,GL_POSITION, pos2);
-  //  glLightfv(GL_LIGHT1,GL_DIFFUSE,  col2);
-  //  glLightfv(GL_LIGHT1,GL_SPECULAR, col2);
+    glEnable(GL_LIGHT1);
+    glLightfv(GL_LIGHT1,GL_POSITION, pos2);
+    glLightfv(GL_LIGHT1,GL_DIFFUSE,  col2);
+    glLightfv(GL_LIGHT1,GL_SPECULAR, col2);
 
-  //  glEnable(GL_LIGHT2);
-  //  glLightfv(GL_LIGHT2,GL_POSITION, pos3);
-  //  glLightfv(GL_LIGHT2,GL_DIFFUSE,  col3);
-  //  glLightfv(GL_LIGHT2,GL_SPECULAR, col3);
+    glEnable(GL_LIGHT2);
+    glLightfv(GL_LIGHT2,GL_POSITION, pos3);
+    glLightfv(GL_LIGHT2,GL_DIFFUSE,  col3);
+    glLightfv(GL_LIGHT2,GL_SPECULAR, col3);
 
   //  glEnable(GL_LIGHTING);
 
@@ -84,6 +84,7 @@ void QGLViewerWidget::resizeGL(int w, int h)
 
 void QGLViewerWidget::drawCoordinates(float length)
 {
+  glDisable(GL_LIGHTING);
   glLineWidth(2.0);
   glBegin(GL_LINES);
   glColor3ub(255,0,0); glVertex3f(0.0f,0.0f,0.0f); glVertex3f(length,0.0f,0.0f);
@@ -94,6 +95,7 @@ void QGLViewerWidget::drawCoordinates(float length)
 
 void QGLViewerWidget::drawPoints(float size)
 {
+  glDisable(GL_LIGHTING);
   glPointSize(size);
   glBegin(GL_POINTS);
   for(size_t i=0; i<m_points.size(); i++)
@@ -104,15 +106,28 @@ void QGLViewerWidget::drawPoints(float size)
   glEnd();
 }
 
+void QGLViewerWidget::drawMesh()
+{
+
+  glEnable(GL_LIGHTING);
+
+  m_mesh.DrawFaces();
+
+}
+
 
 void QGLViewerWidget::paintGL()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
   m_cam_perspective.Activate();
 
   drawPoints();
 
+  drawMesh();
+
   drawCoordinates();
+
 }
 
 void QGLViewerWidget::set_pcl(const std::vector<cv::Point3f>& points, const std::vector<cv::Vec3b>& colors) {
@@ -121,13 +136,66 @@ void QGLViewerWidget::set_pcl(const std::vector<cv::Point3f>& points, const std:
   m_colors = colors;
 
   updateGL();
-  // also update the scene_pos here, or from outside with a rough estimate: cente-> central pixel point, etc
 
+}
+
+void QGLViewerWidget::set_mesh(const PoissonRec::CoredVectorMeshData<PoissonRec::PlyVertex<float> > &mesh)
+{
+
+  m_mesh.Clear();
+  mesh.resetIterator();
+
+  for(size_t i=0; i<mesh.inCorePoints.size(); i++)
+  {
+    PoissonRec::PlyVertex<float> pv = mesh.inCorePoints[i];
+
+    TomGine::tgVertex v;
+    v.pos = TomGine::vec3(pv.point[0], pv.point[1], pv.point[2]);
+
+    m_mesh.m_vertices.push_back(v);
+  }
+
+  for(size_t i=0; i<mesh.outOfCorePointCount(); i++)
+  {
+    PoissonRec::PlyVertex<float> pv;
+    mesh.nextOutOfCorePoint(pv);
+
+    TomGine::tgVertex v;
+    v.pos = TomGine::vec3(pv.point[0], pv.point[1], pv.point[2]);
+
+    m_mesh.m_vertices.push_back(v);
+  }
+
+
+  for(size_t i=0; i<mesh.polygonCount(); i++)
+  {
+    std::vector< PoissonRec::CoredVertexIndex > vertices;
+    mesh.nextPolygon(vertices);
+
+    TomGine::tgFace f;
+    for(size_t j=0; j<vertices.size(); j++)
+    {
+      if( vertices[j].inCore )
+        f.v.push_back(unsigned(vertices[j].idx));
+      else
+        f.v.push_back(unsigned(vertices[j].idx) + unsigned(mesh.inCorePoints.size()));
+    }
+
+    m_mesh.m_faces.push_back(f);
+  }
+
+  m_mesh.ComputeNormals();
+
+  std::cout << "QGLViewerWidget::set_mesh (Vertices: " << m_mesh.m_vertices.size() <<
+               ", Faces: " << m_mesh.m_faces.size() << ")" << std::endl;
+
+  updateGL();
 }
 
 void QGLViewerWidget::configure_cam(const CCam& rgb, const CDepthCam& depth)
 {
-  cv::Mat extrinsic = depth.GetExtrinsics();
+
+  //cv::Mat extrinsic = depth.GetExtrinsics();
 
   size_t size[2];
   float f[2];
@@ -138,12 +206,12 @@ void QGLViewerWidget::configure_cam(const CCam& rgb, const CDepthCam& depth)
   depth.GetIntrinsics(size, f, c, alpha, k);
   depth.GetRange(range);
 
-//  printf("%d %d\n", size[0], size[1]);
-//  printf("%f %f\n", f[0], f[1]);
-//  printf("%f %f\n", c[0], c[1]);
-//  printf("%f\n", alpha);
-//  printf("%f %f %f %f %f\n", k[0], k[1], k[2], k[3], k[4]);
-//  printf("%f %f\n", range[0], range[1]);
+  //  printf("%d %d\n", size[0], size[1]);
+  //  printf("%f %f\n", f[0], f[1]);
+  //  printf("%f %f\n", c[0], c[1]);
+  //  printf("%f\n", alpha);
+  //  printf("%f %f %f %f %f\n", k[0], k[1], k[2], k[3], k[4]);
+  //  printf("%f %f\n", range[0], range[1]);
 
   TomGine::tgCamera::Parameter params;
   params.width = size[0];
@@ -159,8 +227,9 @@ void QGLViewerWidget::configure_cam(const CCam& rgb, const CDepthCam& depth)
 
   m_cam_perspective = m_cam_origin;
 
-//  printf("[configure_cam] camera:\n");
-//  m_cam_perspective.Print();
+  //  printf("[configure_cam] camera:\n");
+  //  m_cam_perspective.Print();
+
 }
 
 
@@ -168,7 +237,7 @@ void QGLViewerWidget::mousePressEvent(QMouseEvent* event)
 {
 
   m_last_point_2d = event->pos();
-  //m_last_point_ok = map_to_sphere(m_last_point_2d,m_last_point_3d);
+
 
 }
 
@@ -199,8 +268,7 @@ void QGLViewerWidget::mouseMoveEvent(QMouseEvent* event) {
     m_cam_perspective.TranslateF(0.001f * (far - near) * dx);
     m_cam_perspective.TranslateF(0.001f * (far - near) * dy);
 
-    //float value_y = m_radius * dy * 3.0 / h;
-    //translate(Vec3f(0.0, 0.0, value_y));
+
   }
 
 
@@ -211,23 +279,6 @@ void QGLViewerWidget::mouseMoveEvent(QMouseEvent* event) {
     m_cam_perspective.TranslateS(-0.0005f * (far - near) * dx);
     m_cam_perspective.TranslateU(0.0005f * (far - near) * dy);
 
-    //    float z = - (m_modelview_matrix[ 2]*m_center[0] +
-    //         m_modelview_matrix[ 6]*m_center[1] +
-    //         m_modelview_matrix[10]*m_center[2] +
-    //         m_modelview_matrix[14]) /
-    //                (m_modelview_matrix[ 3]*m_center[0] +
-    //             m_modelview_matrix[ 7]*m_center[1] +
-    //             m_modelview_matrix[11]*m_center[2] +
-    //             m_modelview_matrix[15]);
-
-    //    float aspect     = w / h;
-    //    float near_plane = 0.01 * m_radius;
-    //    float top        = tan(fovy()/2.0f*M_PI/180.0f) * near_plane;
-    //    float right      = aspect*top;
-
-    //    translate(Vec3f( 2.0*dx/w*right/near_plane*z,
-    //            -2.0*dy/h*top/near_plane*z,
-    //             0.0f));
   }
 
 
@@ -239,37 +290,7 @@ void QGLViewerWidget::mouseMoveEvent(QMouseEvent* event) {
     m_cam_perspective.Orbit(cor, m_cam_perspective.GetU(), -0.05f * dx);
     m_cam_perspective.Orbit(cor, m_cam_perspective.GetS(), -0.05f * dy);
 
-    //    printf("rotate %f %f %f\n", cor.x, cor.y, cor.z);
-    //    if (m_last_point_ok) {
-    //      if ((newPoint_hitSphere = map_to_sphere(newPoint2D, newPoint3D))) {
 
-    //        Vec3f axis;
-    //        //cvCrossProduct(&last_point_3D_,&newPoint3D,&axis);
-
-    //        axis[0] = m_last_point_3d[1]*newPoint3D[2] - m_last_point_3d[2]*newPoint3D[1];
-    //        axis[1] = m_last_point_3d[2]*newPoint3D[0] - m_last_point_3d[0]*newPoint3D[2];
-    //        axis[2] = m_last_point_3d[0]*newPoint3D[1] - m_last_point_3d[1]*newPoint3D[0];
-
-
-    //        if (cv::norm(axis) < 1e-7) {
-    //          axis[0] = 1;
-    //          axis[1] = 0;
-    //          axis[2] = 0;
-    //        } else {
-    //          axis = cv::normalize(axis);
-    //        }
-    //        // find the amount of rotation
-    //        Vec3f d = m_last_point_3d - newPoint3D;
-    //        float t = 0.5 * cv::norm(d) / TRACKBALL_RADIUS;
-    //        if (t < -1.0)
-    //          t = -1.0;
-    //        else if (t > 1.0)
-    //          t = 1.0;
-    //        float phi = 2.0 * asin(t);
-    //        float angle = phi * 180.0 / M_PI;
-    //        rotate(axis, angle);
-    //      }
-    //    }
 
   }
 
@@ -277,8 +298,7 @@ void QGLViewerWidget::mouseMoveEvent(QMouseEvent* event) {
 
   // remember this point
   m_last_point_2d = newPoint2D;
-  //  m_last_point_3d = newPoint3D;
-  //  m_last_point_ok = newPoint_hitSphere;
+
 
   // trigger redraw
   updateGL();
@@ -286,10 +306,10 @@ void QGLViewerWidget::mouseMoveEvent(QMouseEvent* event) {
 
 
 
-void QGLViewerWidget::mouseReleaseEvent( QMouseEvent* /* _event */ )
-{
-  //m_last_point_ok = false;
-}
+//void QGLViewerWidget::mouseReleaseEvent( QMouseEvent* /* _event */ )
+//{
+//  //m_last_point_ok = false;
+//}
 
 
 void QGLViewerWidget::wheelEvent(QWheelEvent* _event)
@@ -311,25 +331,16 @@ void QGLViewerWidget::wheelEvent(QWheelEvent* _event)
 
 }
 
-void QGLViewerWidget::keyPressEvent(QKeyEvent *event)
-{
-  if(event->key() == Qt::Key_Z)
-  {
+void QGLViewerWidget::keyPressEvent(QKeyEvent *event) {
+
+  if(event->key() == Qt::Key_Z) {
+
     m_cam_perspective = m_cam_origin;
     m_cam_perspective.Activate();
+
   }
+
   updateGL();
-}
-
-void
-QGLViewerWidget::set_scene_pos( const Vec3f& _cog, float _radius )
-{
-  m_center = _cog;
-  m_radius = _radius;
-
-  //update_projection_matrix();
-  //view_all();
 
 }
-
 

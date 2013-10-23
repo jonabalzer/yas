@@ -422,8 +422,6 @@ cv::Mat CDepthColorSensor::WarpDepthToRGB(const cv::Mat& disp, const cv::Mat& rg
 
            if(irgb>=0 && irgb<m_rgb_cam.m_size[1] && jrgb>=0 && jrgb<m_rgb_cam.m_size[0] && z>m_depth_cam.m_range[0] && z<m_depth_cam.m_range[1])
                result.at<float>(irgb,jrgb) = xcr[2];
-           else
-               result.at<float>(irgb,jrgb) = 0;
 
        }
 

@@ -103,10 +103,6 @@ struct vec2 {
     y *= inv;
     return length;
   }
-  inline void absolute(){
-    x = abs(x);
-    y = abs(y);
-  }
 
   union {
     struct {
@@ -212,11 +208,6 @@ struct vec3 {
     y = v1.z * v2.x - v1.x * v2.z;
     z = v1.x * v2.y - v1.y * v2.x;
   }
-  inline void absolute(){
-    x = abs(x);
-    y = abs(y);
-    z = abs(z);
-  }
 
   inline void rotate(float alpha, vec3 r);
 
@@ -239,14 +230,6 @@ inline vec3 cross(const vec3 &v1,const vec3 &v2) {
   ret.x = v1.y * v2.z - v1.z * v2.y;
   ret.y = v1.z * v2.x - v1.x * v2.z;
   ret.z = v1.x * v2.y - v1.y * v2.x;
-  return ret;
-}
-
-inline vec3 absolute(const vec3 &v1) {
-  vec3 ret;
-  ret.x = abs(v1.x);
-  ret.y = abs(v1.y);
-  ret.z = abs(v1.z);
   return ret;
 }
 

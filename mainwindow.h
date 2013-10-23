@@ -31,6 +31,7 @@
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include <ImfStandardAttributes.h>
+#include <ImfMatrixAttribute.h>
 #include <ImfAttribute.h>
 
 #include "opencv2/opencv.hpp"
@@ -67,6 +68,7 @@ signals:
 
     void current_image_changed(cv::Mat& rgb, cv::Mat& depth);
     void current_pcl_changed(const std::vector<cv::Point3f>& points, const std::vector<cv::Vec3b>& colors);
+    void current_mesh_changed(const PoissonRec::CoredVectorMeshData<PoissonRec::PlyVertex<float> > &mesh);
 
 public slots:
 
@@ -149,6 +151,7 @@ private:
     bool save_as_pgm(size_t index, QString fn);
     bool save_as_exr(size_t index, QString fn);
     bool save_trafo(size_t index, QString fn);
+    bool save_normal_map(size_t index, QString fn);
 
     // helper routine
     unsigned short get_smoothed_depth(size_t i, size_t j);

@@ -22,6 +22,8 @@
 ////////////////////////////////////////////////////////////////////////////////*/
 
 #include "kernels.h"
+#include "types.h"
+
 #include <math.h>
 #include <algorithm>
 
@@ -31,6 +33,7 @@
 #endif
 
 using namespace std;
+
 
 template <class T>
 double CMercerKernel<T>::Evaluate(T *x, T *y) {
@@ -43,6 +46,31 @@ double CMercerKernel<T>::Evaluate(T *x, T *y) {
     return result;
 
 }
+
+template <>
+double CMercerKernel<rgb>::Evaluate(rgb* x, rgb* y) {
+
+    double result = 0;
+
+    for(size_t i=0; i<m_n; i++)
+        result += InnerProduct(x[i],y[i]);
+
+    return result;
+
+}
+
+template <>
+double CMercerKernel<vec3>::Evaluate(vec3* x, vec3* y) {
+
+    double result = 0;
+
+    for(size_t i=0; i<m_n; i++)
+        result += InnerProduct(x[i],y[i]);
+
+    return result;
+
+}
+
 
 template<>
 double CMercerKernel<float>::Evaluate(float* x, float* y) {
@@ -84,15 +112,6 @@ double CMercerKernel<float>::Evaluate(float* x, float* y) {
 
 }
 
-template<>
-double CMercerKernel<int>::Evaluate(int *x, int *y) {
-
-
-
-    return 0;
-
-}
-
 template<class T>
 void CMercerKernel<T>::Gradient(T* x, T* y, T* nablax) {
 
@@ -128,11 +147,7 @@ CMercerKernel<T>* CMercerKernel<T>::Create(int no, int n) {
         kernel = new CHellingerKernel<T>(n);
         break;
     }
-    case SPARSEONESIDED:
-    {
-        kernel = new COneSidedSparseKernel<T>(n);
-        break;
-    }
+
     }
 
     return kernel;
@@ -161,36 +176,14 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     }
 
-    // only for sparse-sided
-    int indices[10];
-    for(size_t i=0; i<10; i++)
-        indices[i] = rand()%n;
-
-    CMercerKernel<float>* kernel;
-
-    if(kn!=SPARSEONESIDED)
-        kernel = CMercerKernel<float>::Create(kn,n);
-    else
-        kernel = CMercerKernel<float>::Create(kn,10);
+    CMercerKernel<float>* kernel = CMercerKernel<float>::Create(kn,n);
 
     double t0, t1;
 
     float result;
 
-    if(kn!=SPARSEONESIDED) {
-
-        for(size_t k=0; k<notests; k++)
-            result = kernel->Evaluate(x,y);
-
-    }
-    else {
-
-        COneSidedSparseKernel<float>* osk = (COneSidedSparseKernel<float>*)(kernel);
-
-        for(size_t k=0; k<notests; k++)
-            result = osk->Evaluate(x,indices,y);
-
-    }
+    for(size_t k=0; k<notests; k++)
+        result = kernel->Evaluate(x,y);
 
 
     cout << result << endl;
@@ -263,20 +256,9 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
         break;
 
     }
-    case SPARSEONESIDED:
-    {
-
-        for(size_t k=0; k<notests; k++) {
-
-            comparison = 0;
-
-            for(size_t i=0;i<10;i++)
-                comparison += x[i]*y[indices[i]];
-
-        }
 
     }
-    }
+
 
     cout << comparison << endl;
 
@@ -290,7 +272,6 @@ void CMercerKernel<T>::TestKernel(int kn, int n, size_t notests) {
 
     delete kernel;
 
-
 }
 
 template class CMercerKernel<float>;
@@ -298,6 +279,7 @@ template class CMercerKernel<double>;
 template class CMercerKernel<bool>;
 template class CMercerKernel<int>;
 template class CMercerKernel<size_t>;
+template class CMercerKernel<unsigned char>;
 
 template<class T>
 double CChiSquaredKernel<T>::Evaluate(T* x, T* y) {
@@ -398,7 +380,7 @@ template class CChiSquaredKernel<double>;
 template class CChiSquaredKernel<int>;
 template class CChiSquaredKernel<size_t>;
 template class CChiSquaredKernel<bool>;
-
+template class CChiSquaredKernel<unsigned char>;
 
 template <class T>
 double CIntersectionKernel<T>::Evaluate(T* x, T* y) {
@@ -461,6 +443,7 @@ template class CIntersectionKernel<double>;
 template class CIntersectionKernel<bool>;
 template class CIntersectionKernel<int>;
 template class CIntersectionKernel<size_t>;
+template class CIntersectionKernel<unsigned char>;
 
 template <class T>
 double CHellingerKernel<T>::Evaluate(T* x, T* y) {
@@ -481,6 +464,43 @@ double CHellingerKernel<T>::Evaluate(T* x, T* y) {
 
 }
 
+template <>
+double CHellingerKernel<rgb>::Evaluate(rgb* x, rgb* y) {
+
+    double result = 0;
+    double xi, yi;
+
+    for(size_t i=0; i<m_n; i++) {
+
+        rgb xy = x[i]*y[i];
+
+        for(size_t j=0; j<3; j++)
+            result += sqrt(xy.Get(j));
+
+    }
+
+    return result;
+
+}
+
+template <>
+double CHellingerKernel<vec3>::Evaluate(vec3* x, vec3* y) {
+
+    double result = 0;
+    double xi, yi;
+
+    for(size_t i=0; i<m_n; i++) {
+
+        vec3 xy = x[i]*y[i];
+
+        for(size_t j=0; j<3; j++)
+            result += sqrt(xy.Get(j));
+
+    }
+
+    return result;
+
+}
 template <>
 double CHellingerKernel<float>::Evaluate(float* x, float* y) {
 
@@ -537,6 +557,7 @@ template class CHellingerKernel<double>;
 template class CHellingerKernel<int>;
 template class CHellingerKernel<bool>;
 template class CHellingerKernel<size_t>;
+template class CHellingerKernel<unsigned char>;
 
 template <class T>
 unsigned int CBitwiseHammingKernel<T>::m_lut[256] = {   0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3,
@@ -572,6 +593,7 @@ template class CRBFKernel<double>;
 template class CRBFKernel<bool>;
 template class CRBFKernel<size_t>;
 template class CRBFKernel<int>;
+template class CRBFKernel<unsigned char>;
 
 template <class T>
 double CPolynomialKernel<T>::Evaluate(T*x , T*y) {
@@ -587,16 +609,5 @@ template class CPolynomialKernel<double>;
 template class CPolynomialKernel<int>;
 template class CPolynomialKernel<bool>;
 template class CPolynomialKernel<size_t>;
-
-template <class T>
-double COneSidedSparseKernel<T>::Evaluate(T *x, int* indices, T* y) {
-
-    double result = 0;
-
-    for(size_t i=0; i<m_n; i++)
-        result += (double)x[indices[i]]*(double)y[i];
-
-    return result;
-
-}
+template class CPolynomialKernel<unsigned char>;
 
