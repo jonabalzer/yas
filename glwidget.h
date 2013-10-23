@@ -45,30 +45,16 @@ class QGLViewerWidget : public QGLWidget
 
 public:
 
-  // Default constructor.
+  //! Default constructor.
   QGLViewerWidget(QWidget* _parent=0);
 
-  // Destructor.
+  //! Destructor.
   virtual ~QGLViewerWidget();
 
 public:
 
-  /* Sets the center and size of the whole scene.
-     The _center is used as fixpoint for rotations and for adjusting
-     the camera/viewer (see view_all()). */
-  void set_scene_pos(const cv::Vec3f& center, float radius);
-
-  /* view the whole scene: the eye point is moved far enough from the
-     center so that the whole scene is visible. */
-  void view_all();
-
-  float radius() const { return m_radius; }
-  const cv::Vec3f& center() const { return m_center; }
-
-  // clear the current data and redraw
+  //! Clears the current data and redraws.
   void clear_data() { m_points.clear(); m_colors.clear(); m_mesh.Clear(); updateGL(); }
-
-protected:
 
 private slots:
 
@@ -80,42 +66,23 @@ private slots:
 
 private:
 
-  // initialize OpenGL states (triggered by Qt)
+  //! Initializes OpenGL states (triggered by Qt).
   void initializeGL();
 
-  // draws a coordinate frame at the origin (0,0,0)
+  //! Draws a coordinate frame at the origin (0,0,0).
   void drawCoordinates(float length=1.0);
 
+  //! Draws the current point cloud.
   void drawPoints(float size=1.0);
 
+  //! Draws the current mesh.
   void drawMesh();
 
-  // draw the scene (triggered by Qt)
+  //! Draws the scene (triggered by Qt).
   void paintGL();
 
-  // handle resize events (triggered by Qt)
+  //! Handle resize events (triggered by Qt).
   void resizeGL(int w, int h);
-
-protected:
-
-  // Qt mouse events
-  virtual void mousePressEvent(QMouseEvent* event);
-  virtual void mouseReleaseEvent(QMouseEvent* event);
-  virtual void mouseMoveEvent(QMouseEvent* event);
-  virtual void wheelEvent(QWheelEvent* event);
-
-  virtual void keyPressEvent(QKeyEvent *event);
-
-private:
-
-  // updates projection matrix
-  void update_projection_matrix();
-
-  // translate the scene and update modelview matrix
-  void translate(const cv::Vec3f& _trans);
-
-  // rotate the scene (around its center) and update modelview matrix
-  void rotate(const cv::Vec3f& _axis, float _angle);
 
   cv::Vec3f m_center;
   float m_radius;
@@ -124,8 +91,16 @@ private:
   QPoint m_last_point_2d;
   std::vector<cv::Point3f> m_points;
   std::vector<cv::Vec3b> m_colors;
-
   TomGine::tgModel m_mesh;
+
+protected:
+
+  // Qt mouse events
+  virtual void mousePressEvent(QMouseEvent* event);
+  //virtual void mouseReleaseEvent(QMouseEvent* event);
+  virtual void mouseMoveEvent(QMouseEvent* event);
+  virtual void wheelEvent(QWheelEvent* event);
+  virtual void keyPressEvent(QKeyEvent *event);
 
 };
 
