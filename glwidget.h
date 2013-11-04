@@ -51,10 +51,10 @@ public:
   //! Destructor.
   virtual ~QGLViewerWidget();
 
-public:
-
   //! Clears the current data and redraws.
   void clear_data() { m_points.clear(); m_colors.clear(); m_mesh.Clear(); updateGL(); }
+
+public:
 
 private slots:
 
@@ -97,7 +97,6 @@ protected:
 
   // Qt mouse events
   virtual void mousePressEvent(QMouseEvent* event);
-  //virtual void mouseReleaseEvent(QMouseEvent* event);
   virtual void mouseMoveEvent(QMouseEvent* event);
   virtual void wheelEvent(QWheelEvent* event);
   virtual void keyPressEvent(QKeyEvent *event);

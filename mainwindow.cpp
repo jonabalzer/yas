@@ -189,14 +189,23 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
             val.g = half(m_rgb_storage[index].at<Vec3b>(i,j)[1]);
             val.b = half(m_rgb_storage[index].at<Vec3b>(i,j)[2]);
 
-            if(!m_params->save_depth()) {
+            unsigned short d = m_depth_storage[index].at<unsigned short>(i,j);
 
-                unsigned short d = m_depth_storage[index].at<unsigned short>(i,j);
-                val.a = half(d);
+            if(warp)
+                 val.a = half(wdepth.at<float>(i,j));
+            else {
+
+                if(m_params->save_depth()) {
+
+                    float depth = m_sensor.DisparityToDepth(d);
+
+                    val.a = half(depth);
+
+                }
+                else
+                    val.a = half(d);
 
             }
-            else
-                val.a = half(wdepth.at<float>(i,j));
 
             out[i][j] = val;
 
@@ -531,7 +540,7 @@ void MainWindow::on_spinBoxStorage_valueChanged(int arg1)
         // show images
         emit current_image_changed(m_rgb_storage[arg1-1],m_depth_storage[arg1-1]);
 
-        if(!m_glview->isHidden()) {
+        //if(!m_glview->isHidden()) {
 
             Mat F = transform_to_first_image(arg1-1);
             vector<Point3f> points;
@@ -543,7 +552,7 @@ void MainWindow::on_spinBoxStorage_valueChanged(int arg1)
 
             emit current_pcl_changed(points,colors);
 
-        }
+        //}
 
     }
 
@@ -643,7 +652,20 @@ void MainWindow::on_clearButton_clicked()
         if(index>0)
             index--;
 
+        // update image display
         emit current_image_changed(m_rgb_storage[index],m_depth_storage[index]);
+
+        // update opengl viewer
+        Mat F = transform_to_first_image(index);
+        vector<Point3f> points;
+        vector<Vec3b> colors;
+
+        float zmax = m_sensor.DisparityToDepth(ui->depthClipSlider->sliderPosition());
+
+        get_pcl(index,points,colors,zmax,F);
+
+        emit current_pcl_changed(points,colors);
+
 
     }
     else {
@@ -653,8 +675,8 @@ void MainWindow::on_clearButton_clicked()
         ui->spinBoxStorage->setMinimum(0);
         m_glview->clear_data();
 
-
     }
+
 
 }
 

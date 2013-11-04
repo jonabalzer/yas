@@ -13,7 +13,6 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-        pcviewer.cpp \
         alignwindow.cpp \
         calignransac.cpp \
         cplaneransac.cpp \
@@ -23,7 +22,6 @@ SOURCES += main.cpp\
         params.cpp \
         darray.cpp \
         iter.cpp \
-        precond.cpp \
         kernels.cpp \
         lm.cpp \
         icp.cpp \
@@ -39,7 +37,6 @@ SOURCES += main.cpp\
         tgModel.cpp
 
 HEADERS  += mainwindow.h \
-            pcviewer.h \
             alignwindow.h \
             calignransac.h \
             cplaneransac.h \

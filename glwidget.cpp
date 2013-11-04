@@ -24,10 +24,10 @@ QGLViewerWidget::~QGLViewerWidget() {}
 
 void QGLViewerWidget::initializeGL() {
 
-  glClearColor(0.5, 0.5, 0.5, 0.0);
-  //glDisable(GL_DITHER);
-  glEnable(GL_DEPTH_TEST);
-  //glEnable(GL_COLOR_MATERIAL);
+    glClearColor(0.5, 0.5, 0.5, 0.0);
+    //glDisable(GL_DITHER);
+    glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_COLOR_MATERIAL);
 
     // set lights
     GLfloat pos1[] = { 0.1,  0.1, -0.02, 0.0};
@@ -190,6 +190,7 @@ void QGLViewerWidget::set_mesh(const PoissonRec::CoredVectorMeshData<PoissonRec:
                ", Faces: " << m_mesh.m_faces.size() << ")" << std::endl;
 
   updateGL();
+
 }
 
 void QGLViewerWidget::configure_cam(const CCam& rgb, const CDepthCam& depth)
@@ -245,13 +246,6 @@ void QGLViewerWidget::mouseMoveEvent(QMouseEvent* event) {
 
   QPoint newPoint2D = event->pos();
 
-  // Left button: rotate around center_
-  // Middle button: translate object
-  // Left & middle button: zoom in/out
-
-  //Vec3f  newPoint3D;
-  //bool   newPoint_hitSphere = map_to_sphere( newPoint2D, newPoint3D );
-
   float dx = newPoint2D.x() - m_last_point_2d.x();
   float dy = newPoint2D.y() - m_last_point_2d.y();
 
@@ -265,32 +259,26 @@ void QGLViewerWidget::mouseMoveEvent(QMouseEvent* event) {
   if ( (event->buttons() == (Qt::LeftButton+Qt::MidButton)) ||
        (event->buttons() == Qt::LeftButton && event->modifiers() == Qt::ControlModifier))
   {
+
     m_cam_perspective.TranslateF(0.001f * (far - near) * dx);
     m_cam_perspective.TranslateF(0.001f * (far - near) * dy);
 
 
-  }
-
-
-  // move in x,y direction
+  }  // move in x,y direction
   else if ( (event->buttons() == Qt::MidButton) ||
             (event->buttons() == Qt::LeftButton && event->modifiers() == Qt::AltModifier) )
   {
+
     m_cam_perspective.TranslateS(-0.0005f * (far - near) * dx);
     m_cam_perspective.TranslateU(0.0005f * (far - near) * dy);
 
-  }
-
-
-
-  // rotate
+  } // rotate
   else if (event->buttons() == Qt::LeftButton)
   {
+
     TomGine::vec3 cor(m_center[0], m_center[1], m_center[2]);
     m_cam_perspective.Orbit(cor, m_cam_perspective.GetU(), -0.05f * dx);
     m_cam_perspective.Orbit(cor, m_cam_perspective.GetS(), -0.05f * dy);
-
-
 
   }
 
@@ -303,14 +291,6 @@ void QGLViewerWidget::mouseMoveEvent(QMouseEvent* event) {
   // trigger redraw
   updateGL();
 }
-
-
-
-//void QGLViewerWidget::mouseReleaseEvent( QMouseEvent* /* _event */ )
-//{
-//  //m_last_point_ok = false;
-//}
-
 
 void QGLViewerWidget::wheelEvent(QWheelEvent* _event)
 {
