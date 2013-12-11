@@ -785,7 +785,6 @@ void MainWindow::on_actionAbout_triggered()
 
 Mat MainWindow::estimate_world_frame() {
 
-    Vec3f mean, ex, ez;
 
     // get point cloud of first view
     vector<Point3f> pcl;
@@ -819,25 +818,39 @@ Mat MainWindow::estimate_world_frame() {
     // build frame from world 2 -> world 1
     Mat Fw2 = Mat::eye(4,4,CV_32FC1);
 
+    // init origin, x-/z-axis
+    Vec3f t, ex, ez;
+
     // normal of plane gives news ez axis
     for(size_t i=0; i<3; i++)
         ez[i] = plane[i];
 
+    // get barycenter of point cloud
+    Point3f bc;
+    for(size_t i=0; i<pcl.size(); i++)
+        bc += pcl.at(i);
+
+    bc = bc*(1.0/float(pcl.size()));
+    Vec3f bcv;
+    bcv[0] = bc.x;
+    bcv[1] = bc.y;
+    bcv[2] = bc.z;
+
     // project origin on plane
-    mean = ez*plane[3];
+    t = bcv - ez*(bcv[0]*ez[0]+bcv[1]*ez[1]+bcv[2]*ez[2]-plane[3]);
 
     // project (1,0,0) onto plane
     ex *= 0;
     ex[0] = 1;
     ex = ex - ez[0]*ez;
-    cv::normalize(ex);
+    ex = cv::normalize(ex);
 
     // set columns 0,1,3 of Fw2
     for(size_t i=0; i<3; i++) {
 
         Fw2.at<float>(i,0) = ex[i];
         Fw2.at<float>(i,2) = ez[i];
-        Fw2.at<float>(i,3) = mean[i];
+        Fw2.at<float>(i,3) = t[i];
 
     }
 
@@ -849,6 +862,7 @@ Mat MainWindow::estimate_world_frame() {
     // inverse
     Mat Fw2inv = Fw2.inv();
 
+    cout <<  Fw2inv << endl;
     // Fwinv = Fw2inv*Fw1inv
     return Fw2inv; //*Fw1inv;
 
