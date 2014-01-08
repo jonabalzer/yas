@@ -82,8 +82,6 @@ CDepthColorSensor::CDepthColorSensor():
 
     OpenNI::initialize();
 
-
-
 }
 
 CDepthColorSensor::CDepthColorSensor(CCam rgb, CDepthCam depth):
@@ -108,7 +106,7 @@ bool CDepthColorSensor::OpenDevice(int i) {
     OpenNI::enumerateDevices(&devicelist);
 
     if(i>=devicelist.getSize()) {
-        cout << "Device no. " << i << " not found." << endl;
+        cerr << "Device no. " << i << " not found." << endl;
         return 1;
 
     }
@@ -116,68 +114,92 @@ bool CDepthColorSensor::OpenDevice(int i) {
    // open device
    if(m_device.open(devicelist[i].getUri())!=STATUS_OK) {
 
-       cout << "Couldn't open device: " << OpenNI::getExtendedError() << endl;
+       cerr << "Couldn't open device: " << OpenNI::getExtendedError() << endl;
        return 1;
 
    }
 
-   // set registration property, we will do this manually
-   m_device.setImageRegistrationMode(IMAGE_REGISTRATION_OFF);
-
-   // open streams
-   if (m_device.getSensorInfo(SENSOR_COLOR) != NULL) {
-
-       if(m_rgb_stream.create(m_device, SENSOR_COLOR)!=STATUS_OK)
-           return 1;
-
-   }
-   else
-       return 1;
-
-   if (m_device.getSensorInfo(SENSOR_DEPTH) != NULL) {
-
-       if(m_depth_stream.create(m_device, SENSOR_DEPTH)!=STATUS_OK)
-           return 1;
-
-   }
-   else
-       return 1;
-
-   // standard settings
-   VideoMode mode(m_rgb_stream.getVideoMode());
-   mode.setResolution(m_rgb_cam.m_size[0],m_rgb_cam.m_size[1]);
-   m_rgb_stream.setVideoMode(mode);
-   m_rgb_stream.setMirroringEnabled(false);
-
-   CameraSettings* cam = m_rgb_stream.getCameraSettings();
-   cam->setAutoExposureEnabled(false);
-   cam->setAutoWhiteBalanceEnabled(false);
-
-   VideoMode dmode(m_depth_stream.getVideoMode());
-   dmode.setResolution(m_depth_cam.m_size[0],m_depth_cam.m_size[1]);
-   dmode.setPixelFormat(PIXEL_FORMAT_SHIFT_9_2);
-   m_depth_stream.setVideoMode(dmode);
-   m_depth_stream.setMirroringEnabled(false);
-
-   if(m_rgb_stream.start()!= STATUS_OK) {
-
-      cout << "Couldn't start RGB stream: " << OpenNI::getExtendedError() << endl;
-      return 1;
-
-   }
-
-  if(m_depth_stream.start()!= STATUS_OK) {
-
-      cout << "Couldn't start depth stream: " << OpenNI::getExtendedError() << endl;
-      return 1;
-
-  }
-
-
-
-  return 0;
+   return InitDevice();
 
 }
+
+bool  CDepthColorSensor::OpenDevice(const char* filename) {
+
+    if(m_device.open(filename)!=STATUS_OK) {
+
+        cerr << "Couldn't open device: " << OpenNI::getExtendedError() << endl;
+        return 1;
+
+    }
+
+    return InitDevice();
+
+}
+
+
+bool CDepthColorSensor::InitDevice() {
+
+    // set registration property, we will do this manually
+    m_device.setImageRegistrationMode(IMAGE_REGISTRATION_OFF);
+
+    // open streams
+    if (m_device.getSensorInfo(SENSOR_COLOR) != NULL) {
+
+        if(m_rgb_stream.create(m_device, SENSOR_COLOR)!=STATUS_OK)
+            return 1;
+
+    }
+    else
+        return 1;
+
+    if (m_device.getSensorInfo(SENSOR_DEPTH) != NULL) {
+
+        if(m_depth_stream.create(m_device, SENSOR_DEPTH)!=STATUS_OK)
+            return 1;
+
+    }
+    else
+        return 1;
+
+    // standard settings
+    VideoMode mode(m_rgb_stream.getVideoMode());
+    mode.setResolution(m_rgb_cam.m_size[0],m_rgb_cam.m_size[1]);
+    m_rgb_stream.setVideoMode(mode);
+    m_rgb_stream.setMirroringEnabled(false);
+
+    // make sure the hardware does not temper with brightness etc.
+    CameraSettings* cam = m_rgb_stream.getCameraSettings();
+    if(cam!=NULL) {
+
+        cam->setAutoExposureEnabled(false);
+        cam->setAutoWhiteBalanceEnabled(false);
+
+    }
+
+    VideoMode dmode(m_depth_stream.getVideoMode());
+    dmode.setResolution(m_depth_cam.m_size[0],m_depth_cam.m_size[1]);
+    dmode.setPixelFormat(PIXEL_FORMAT_SHIFT_9_2);
+    m_depth_stream.setVideoMode(dmode);
+    m_depth_stream.setMirroringEnabled(false);
+
+    if(m_rgb_stream.start()!= STATUS_OK) {
+
+       cerr << "Couldn't start RGB stream: " << OpenNI::getExtendedError() << endl;
+       return 1;
+
+    }
+
+   if(m_depth_stream.start()!= STATUS_OK) {
+
+       cerr << "Couldn't start depth stream: " << OpenNI::getExtendedError() << endl;
+       return 1;
+
+   }
+
+   return 0;
+
+}
+
 
 bool CDepthColorSensor::CloseDevice() {
 
@@ -236,6 +258,7 @@ bool CDepthColorSensor::Get(cv::Mat& rgb, cv::Mat& depth) {
 bool CDepthColorSensor::IsSane() {
 
     return m_depth_stream.isValid() && m_rgb_stream.isValid() && m_device.isValid();
+
 }
 
 void CDepthColorSensor::ConfigureRGB(const std::vector<size_t>& size, const std::vector<float>& f, const std::vector<float>& c, const float& alpha, const std::vector<float>& k, const cv::Mat& F) {

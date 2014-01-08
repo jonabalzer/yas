@@ -1031,12 +1031,29 @@ void MainWindow::on_actionOpen_triggered()
 
     m_timer.stop();
 
-    QStringList filenames = QFileDialog::getOpenFileNames(this,tr("Open file..."),".",tr("*.exr"));
+    QStringList filenames = QFileDialog::getOpenFileNames(this,tr("Open file..."),".",tr("*.exr;;*.oni"));
 
     if(filenames.size()==0)
         return;
 
+    if(filenames.size()==1 && filenames[0].endsWith(".oni")) {
+
+        // if sensor is running close it first
+        if(m_sensor.IsSane())
+            m_sensor.CloseDevice();
+
+        // open file
+        if(m_sensor.OpenDevice(filenames[0].toStdString().c_str()))
+            QMessageBox::warning(this,"Error","Could not write to disk");
+
+        return;
+
+    }
+
     for(size_t i=0; i<filenames.size(); i++) {
+
+        if(!filenames[i].endsWith(".exr"))
+            continue;
 
         RgbaInputFile file(filenames[i].toStdString().c_str());
 

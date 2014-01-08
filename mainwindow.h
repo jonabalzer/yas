@@ -63,7 +63,6 @@ public:
 
     size_t storage_size() { return m_rgb_storage.size(); }
 
-
 signals:
 
     void current_image_changed(cv::Mat& rgb, cv::Mat& depth);

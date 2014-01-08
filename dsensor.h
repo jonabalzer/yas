@@ -39,14 +39,23 @@ public:
     //! Constructor.
     CDepthColorSensor();
 
-    //! Destructor.
-    virtual ~CDepthColorSensor() { CloseDevice(); openni::OpenNI::shutdown(); }
-
     //! Parametrized constructor.
     CDepthColorSensor(CCam rgb, CDepthCam depth);
 
+    //! Deleted copy constructor.
+    CDepthColorSensor(const CDepthColorSensor& sensor) = delete;
+
+    //! Deleted assignment operator.
+    CDepthColorSensor operator=(const CDepthColorSensor& sensor) = delete;
+
+    //! Destructor.
+    virtual ~CDepthColorSensor() { CloseDevice(); openni::OpenNI::shutdown(); }
+
     //! Open a PrimeSense device by number.
     bool OpenDevice(int i);
+
+    //! Open an ONI file.
+    bool OpenDevice(const char* filename);
 
     //! Closes the active device and all streams associated with it.
     bool CloseDevice();
@@ -120,10 +129,9 @@ private:
     openni::VideoStream m_depth_stream;                        //! OpenNI depth stream
     openni::Recorder m_recorder;                               //! a recorder
 
+    //! Initialize device.
+    bool InitDevice();
 
-    // protect from copying
-    CDepthColorSensor(const CDepthColorSensor& sensor);
-    CDepthColorSensor operator=(const CDepthColorSensor& sensor);
 
 };
 
