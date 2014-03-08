@@ -81,15 +81,51 @@ FORMS    += mainwindow.ui \
             params.ui \
             alignwindow.ui
 
-unix:!symbian {
-
 QMAKE_CXXFLAGS += -fopenmp -fpermissive -std=c++0x -O3
 
 QMAKE_LFLAGS += -Wl,-rpath=.
 
+# see whether we can find the driver
+!exists($$OPENNI_DIR) {
+    error("Could not configure project because the location of the OpenNI driver seems to be incorrect.")
+}
+
+unix:!symbian {
+
+# see if all necessary packages exist
+!packagesExist(opencv OpenEXR) {
+    error("Some of the required dependencies are missing.")
+}
+
+!exists(/usr/lib/libann.so) {
+    error("Some of the required dependencies are missing.")
+}
+
+CONFIG += link_pkgconfig
+
+PKGCONFIG += opencv \
+             OpenEXR
+
 LIBS += -L$$OPENNI_DIR/Redist/ \
         -L$$OPENNI_DIR/Redist/OpenNI2/Drivers \
-        -L/usr/local/lib/ \
+        -lOpenNI2 \
+        -lOniFile \
+        -lPS1080 \
+        -lann \
+        -lgomp
+
+INCLUDEPATH += $$OPENNI_DIR/Include
+
+}
+
+mac:!linux:!symbian {
+
+INCLUDEPATH += /opt/local/include \             # macports installs stuff in /opt/local
+               /opt/local/include/OpenEXR \
+               /usr/local/include
+
+# pkg-config does not work on mac by default, so add these manually
+LIBS += -L/usr/local/lib/ \
         -lopencv_core \
         -lopencv_highgui \
         -lopencv_video \
@@ -100,29 +136,8 @@ LIBS += -L$$OPENNI_DIR/Redist/ \
         -lIex \
         -lIlmThread \
         -lIlmImf \
-        -lOpenNI2 \
-        -lOniFile \
-        -lPS1080 \
-        -lann \
-        -lgomp
 
-INCLUDEPATH += /usr/local/include \
-               /usr/include/OpenEXR \
-               $$OPENNI_DIR/Include \
 
-}
-
-unix:!mac:!symbian {
-
-    DEFINES += linux
-
-}
-
-mac:!linux:!symbian {
-
-INCLUDEPATH += /opt/local/include \             # macports installs stuff in /opt/local
-               /opt/local/include/OpenEXR
-
-DEFINES += __APPLE__                            # for typedefs of unsigned types
+DEFINES += __APPLE__   # for typedefs of unsigned types
 
 }

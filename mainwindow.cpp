@@ -992,9 +992,23 @@ void MainWindow::on_actionSave_triggered()
         index--;
     else return;
 
+    QString extension;
     QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",
-                               tr("*.png;;*.exr;;*.ply;;*.pgm;;*.txt"));
+                               tr(".png;;.exr;;.ply;;.pgm;;.txt;;.r4r"),
+                               &extension);
+
+    // if no extension is provided, add the selected
+    if(!filename.endsWith(".png") &&
+       !filename.endsWith(".exr") &&
+       !filename.endsWith(".ply") &&
+       !filename.endsWith(".pgm") &&
+       !filename.endsWith(".txt") &&
+       !filename.endsWith(".r4r")) {
+
+        filename = filename + extension;
+
+    }
 
     bool error = false;
 
@@ -1129,9 +1143,23 @@ void MainWindow::on_actionSave_all_triggered()
 
     m_timer.stop();
 
+    QString extension;
     QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",
-                               tr("*.png;;*.exr;;*.ply;;*.pgm;;*.txt"));
+                               tr(".png;;.exr;;.ply;;.pgm;;.txt;;.r4r"),
+                               &extension);
+
+    // if no extension is provided, add the selected
+    if(!filename.endsWith(".png") &&
+       !filename.endsWith(".exr") &&
+       !filename.endsWith(".ply") &&
+       !filename.endsWith(".pgm") &&
+       !filename.endsWith(".txt") &&
+       !filename.endsWith(".r4r")) {
+
+        filename = filename + extension;
+
+    }
 
     int format = 0;
 
