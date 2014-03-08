@@ -32,6 +32,9 @@
     <layout class="QHBoxLayout" name="playControl">
      <item>
       <widget class="QPushButton" name="recordButton">
+       <property name="toolTip">
+        <string>Start writing depth/RGB stream to an ONI file</string>
+       </property>
        <property name="text">
         <string>Record</string>
        </property>
@@ -45,6 +48,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="pauseButton">
+       <property name="toolTip">
+        <string>Stop the live stream</string>
+       </property>
        <property name="text">
         <string>Pause</string>
        </property>
@@ -52,6 +58,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="stepButton">
+       <property name="toolTip">
+        <string>Acquire a single image without storing it</string>
+       </property>
        <property name="text">
         <string>Step</string>
        </property>
@@ -59,6 +68,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="runButton">
+       <property name="toolTip">
+        <string>Start the live stream</string>
+       </property>
        <property name="text">
         <string>Run</string>
        </property>
@@ -74,6 +86,9 @@
       <width>320</width>
       <height>240</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>Live depth image stream</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
@@ -96,6 +111,9 @@
       <width>320</width>
       <height>240</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>Live RGB image stream</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
@@ -138,6 +156,9 @@
       <height>240</height>
      </rect>
     </property>
+    <property name="toolTip">
+     <string>Stored RGB image</string>
+    </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
     </property>
@@ -159,6 +180,9 @@
       <width>320</width>
       <height>240</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>Stored depth image</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
@@ -185,6 +209,9 @@
     <layout class="QHBoxLayout" name="saveControlLayout">
      <item>
       <widget class="QSpinBox" name="spinBoxStorage">
+       <property name="toolTip">
+        <string>Iterate through stored images</string>
+       </property>
        <property name="maximum">
         <number>0</number>
        </property>
@@ -206,6 +233,9 @@
      </item>
      <item>
       <widget class="QSlider" name="minDepthClipSlider">
+       <property name="toolTip">
+        <string>Set minimum depth</string>
+       </property>
        <property name="maximum">
         <number>199</number>
        </property>
@@ -230,6 +260,9 @@
      </item>
      <item>
       <widget class="QSlider" name="depthClipSlider">
+       <property name="toolTip">
+        <string>Set maximum depth</string>
+       </property>
        <property name="maximum">
         <number>199</number>
        </property>
@@ -257,6 +290,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="storeButton">
+       <property name="toolTip">
+        <string>Store the current live image for alignment</string>
+       </property>
        <property name="text">
         <string>Store</string>
        </property>
@@ -264,6 +300,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="clearButton">
+       <property name="toolTip">
+        <string>Remove current image from storage</string>
+       </property>
        <property name="text">
         <string>Clear</string>
        </property>
@@ -278,7 +317,7 @@
      <x>0</x>
      <y>0</y>
      <width>671</width>
-     <height>25</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

@@ -161,7 +161,7 @@ void MainWindow::on_pauseButton_clicked()
 bool MainWindow::save_as_png(size_t index, QString fn) {
 
     Mat rgb;
-    cvtColor(m_rgb_storage[index],rgb,CV_BGR2RGB);
+    cvtColor(m_rgb_storage[index],rgb,COLOR_BGR2RGB);
 
     imwrite(fn.toStdString().c_str(),rgb);
 
@@ -411,7 +411,7 @@ bool MainWindow::save_pcl_as_ply(size_t index, QString fn) {
 bool MainWindow::save_as_pgm(size_t index, QString fn) {
 
     vector<int> params;
-    params.push_back(CV_IMWRITE_PXM_BINARY);
+    params.push_back(IMWRITE_PXM_BINARY);
     params.push_back(1);
 
     return !imwrite(fn.toStdString().c_str(),m_depth_storage[index],params);
@@ -695,7 +695,7 @@ void MainWindow::update_live_view() {
     img.convertTo(depthf, CV_8UC1, 255.0/6000.0);
 
     Mat depthrgb;
-    cvtColor(depthf, depthrgb, CV_GRAY2BGR);
+    cvtColor(depthf, depthrgb, COLOR_GRAY2BGR);
 
     QImage imgdd(depthrgb.data,depthf.cols,depthf.rows,QImage::Format_RGB888);
 
