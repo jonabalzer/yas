@@ -386,7 +386,7 @@ bool MainWindow::save_pcl_as_ply(size_t index, QString fn) {
 
     out << "ply" << endl;
     out << "format ascii 1.0" << endl;
-    out << "comment written by ucla vision lab kinect scan" << endl;
+    out << "comment written by ucla vision lab YAS" << endl;
     out << "element vertex " << points.size() << endl;
     out << "property float32 x" << endl;
     out << "property float32 y" << endl;
@@ -1183,7 +1183,7 @@ void MainWindow::on_actionSave_all_triggered()
     bool error = false;
 
     QProgressDialog progress("Saving...", "Abort",0,(int)m_rgb_storage.size(),this);
-    progress.setWindowTitle("KinectScan");
+    progress.setWindowTitle("YAS");
     progress.setWindowModality(Qt::WindowModal);
 
     for(size_t i=0; i<m_rgb_storage.size(); i++)  {
