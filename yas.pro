@@ -103,8 +103,9 @@ unix:!symbian {
 
 CONFIG += link_pkgconfig
 
-PKGCONFIG += opencv \
-             OpenEXR
+PKGCONFIG += OpenEXR \
+             opencv
+
 
 LIBS += -L$$OPENNI_DIR/Redist/ \
         -L$$OPENNI_DIR/Redist/OpenNI2/Drivers \

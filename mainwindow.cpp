@@ -218,11 +218,11 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
 
     Mat Fcv;
 
-    // only save trafo if we store raw data!!!
-    if(!warp)
+    // only save trafo if we store raw data!!! why???
+    //if(!warp)
         Fcv = m_trafo_storage.at(index);
-    else
-        Fcv = Mat::eye(4,4,CV_32FC1);
+    //else
+    //    Fcv = Mat::eye(4,4,CV_32FC1);
 
     Matrix44<float> Fexr;
 
@@ -238,7 +238,7 @@ bool MainWindow::save_as_exr(size_t index, QString fn) {
     header.insert ("view", M44fAttribute (Fexr));
 
     // create and write file
-    RgbaOutputFile file(fn.toStdString().c_str(),header, WRITE_RGBA);
+    RgbaOutputFile file(fn.toStdString().c_str(),header,WRITE_RGBA);
     file.setFrameBuffer (&out[0][0],1,m_rgb_storage[index].cols);
     file.writePixels (m_rgb_storage[index].rows);
 
@@ -779,7 +779,7 @@ void MainWindow::update_static_view(Mat& rgb, Mat& depth) {
 
 void MainWindow::on_actionAbout_triggered()
 {
-      QMessageBox::information(this,"About","(c) J. Balzer, T. Moerwald. \n More info on YAS: http://vision.ucla.edu");
+      QMessageBox::information(this,"About","(c) J. Balzer, T. Moerwald. \n https://bitbucket.org/jbalzer/yas");
 }
 
 
@@ -995,7 +995,7 @@ void MainWindow::on_actionSave_triggered()
     QString extension;
     QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",
-                               tr(".png;;.exr;;.ply;;.pgm;;.txt;;.r4r"),
+                               tr(".exr;;.ply;;.png;;.pgm;;.txt;;.r4r"),
                                &extension);
 
     // if no extension is provided, add the selected
@@ -1040,8 +1040,7 @@ void MainWindow::on_actionSave_triggered()
 
 }
 
-void MainWindow::on_actionOpen_triggered()
-{
+void MainWindow::on_actionOpen_triggered() {
 
     m_timer.stop();
 
@@ -1058,7 +1057,7 @@ void MainWindow::on_actionOpen_triggered()
 
         // open file
         if(m_sensor.OpenDevice(filenames[0].toStdString().c_str()))
-            QMessageBox::warning(this,"Error","Could not write to disk");
+            QMessageBox::warning(this,"Error","No ONI stream...");
 
         return;
 
@@ -1146,7 +1145,7 @@ void MainWindow::on_actionSave_all_triggered()
     QString extension;
     QString filename = QFileDialog::getSaveFileName(this, tr("Save file..."),
                                ".",
-                               tr(".png;;.exr;;.ply;;.pgm;;.txt;;.r4r"),
+                               tr(".exr;;.ply;;.png;;.pgm;;.txt;;.r4r"),
                                &extension);
 
     // if no extension is provided, add the selected
@@ -1720,5 +1719,16 @@ void MainWindow::on_actionAll_triggered()
     // if checked, estimate the world coordinate system
     if(m_params->center_wc())
         m_trafo_storage[0] = estimate_world_frame();
+
+}
+
+void MainWindow::on_actionSplit_ONI_Stream_triggered() {
+
+    QString filename = QFileDialog::getOpenFileName(this,tr("Open file..."),".",tr("*.oni"));
+
+    if(filename.size()==0)
+        return;
+
+    // FIXME: ToDo
 
 }

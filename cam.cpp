@@ -295,8 +295,8 @@ Vec3f CCam::UnProjectLocal(const Vec2i& u) const {
 
 }
 
-void CCam::GetIntrinsics(size_t size[2], float f[2], float c[2], float& alpha, float k[5])
-{
+void CCam::GetIntrinsics(size_t size[2], float f[2], float c[2], float& alpha, float k[5]) {
+
   size[0] = m_size[0];
   size[1] = m_size[1];
   f[0] = m_f[0];
@@ -309,6 +309,7 @@ void CCam::GetIntrinsics(size_t size[2], float f[2], float c[2], float& alpha, f
   k[2] = m_k[2];
   k[3] = m_k[3];
   k[4] = m_k[4];
+
 }
 
 CDepthCam::CDepthCam():

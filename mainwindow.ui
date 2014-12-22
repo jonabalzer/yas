@@ -357,6 +357,7 @@
     </widget>
     <addaction name="actionPoisson"/>
     <addaction name="menuAlign"/>
+    <addaction name="actionSplit_ONI_Stream"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuWindows"/>
@@ -417,6 +418,11 @@
   <action name="actionAll">
    <property name="text">
     <string>All</string>
+   </property>
+  </action>
+  <action name="actionSplit_ONI_Stream">
+   <property name="text">
+    <string>Split ONI Stream...</string>
    </property>
   </action>
  </widget>

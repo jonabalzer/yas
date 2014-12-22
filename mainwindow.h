@@ -118,6 +118,8 @@ private slots:
 
     void on_actionAll_triggered();
 
+    void on_actionSplit_ONI_Stream_triggered();
+
 private:
 
     // ui

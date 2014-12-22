@@ -334,7 +334,7 @@ Vec3f CDepthColorSensor::GetNormal(size_t i, size_t j, const Mat& disp) {
     z[1] = m_depth_cam.DisparityToDepth(i+1,j,(float)disp.at<unsigned short>(i+1,j));
     z[2] = m_depth_cam.DisparityToDepth(i,j-1,(float)disp.at<unsigned short>(i,j-1));
     z[3] = m_depth_cam.DisparityToDepth(i,j+1,(float)disp.at<unsigned short>(i,j+1));
-    z[4] = m_depth_cam.DisparityToDepth(i,j+1,(float)disp.at<unsigned short>(i,j));
+    z[4] = m_depth_cam.DisparityToDepth(i,j,(float)disp.at<unsigned short>(i,j));
 
      if(z[0]>0 && z[1]>0 && z[2]>0 && z[3]>0 && z[4]>0) {
 
