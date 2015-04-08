@@ -41,7 +41,7 @@ A preprint is available [here](http://arxiv.org/abs/1311.2642
 ## Build instructions 
 
 ### Dependencies
-- [OpenNI](http://www.openni.org/OpenNI)
+- [OpenNI](http://structure.io/openni)
 - [OpenCV](http://opencv.org/)
 - [QT](http://qt-project.org/)
 - [OpenEXR](http://www.openexr.com/)
@@ -51,7 +51,7 @@ A preprint is available [here](http://arxiv.org/abs/1311.2642
 
 ### Installing the driver
 
-Unless you have upgraded your Ubuntu to version 13.04 or 13.10, you should be fine with the precompiled binaries which can be download from the [Primesense website](http://www.openni.org/openni-sdk/). Simply unzip the driver and call the install script, while the sensor is not connected to your machine. Once the driver is installed, a good test to verify whether it is working properly is to plug in your device and run the `SimpleViewer` located in the subfolder `/Samples/Bin`.
+Unless you have upgraded your Ubuntu to version 13.04 or 13.10, you should be fine with the precompiled binaries which can be download from [Occipital](http://structure.io/openni). Simply unzip the driver and call the install script, while the sensor is not connected to your machine. Once the driver is installed, a good test to verify whether it is working properly is to plug in your device and run the `SimpleViewer` located in the subfolder `/Samples/Bin`.
 
 Otherwise, you will need to download the sources from [GitHub](https://github.com/OpenNI/OpenNI2). Inside the make file `ThirdParty/PSCommon/BuildSystem/CommonCppMakefile` add `pthread` to the variable `$USED_LIBS` in line 29. From inside the root directory call 
 ```
