@@ -119,3 +119,7 @@ The basic reconstruction workflow is as follows:
 	**Caveat**: At the present time, the third-party open-source code for Poisson reconstruction does not perform as well as the one integrated in Meshlab. We will investigate the issue and fix it in future releases. For the time being, it is recommended to export the aligned oriented point clouds to PLY (choose **Save all...** from the **File** menu, enter a prefix, select *PLY* from the combo box in the lower right of the dialogue and hit **OK**), import them to Meshlab, merge visible layers (right-click on the layers panel, don't forget to check *Keep unreferenced vertices*), and finally start mesh reconstruction with **Filter:Point Set:Surface Reconstruction:Poisson**. 
 
 See this [short video clip](http://youtu.be/T1rRg-LkLio) to familiarize yourself with the basic workflow of building models with YAS from sparse view points. 
+
+## Calibration
+
+YAS supports all calibration parameters by [Herrera's MATLAB toolbox](http://www.ee.oulu.fi/~dherrera/kinect/). A short screen cast demonstrating its basic usage can be found [here](http://youtu.be/DcTLHLKSLGo).
