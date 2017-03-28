@@ -35,7 +35,7 @@ A preprint is available [here](http://arxiv.org/abs/1311.2642
 - 3d viewer
 
 ### Contributors
-- [J. Balzer](https://sites.google.com/site/jonabalzer/)
+- [J. Balzer](http://vision.ucla.edu/~jbalzer/)
 - [T. Mörwald](http://users.acin.tuwien.ac.at/tmoerwald/)
 
 ## Build instructions 
